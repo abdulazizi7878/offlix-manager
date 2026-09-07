@@ -72,6 +72,9 @@ export async function POST(request) {
           user: result.user,
           sessionExpiresAt:
             result.sessionExpiresAt,
+
+          requiresEmailVerification:
+            result.requiresEmailVerification,
         },
       },
       {

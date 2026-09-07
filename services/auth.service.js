@@ -237,6 +237,8 @@ const AuthService = {
     const client = await pool.connect();
 
     try {
+      await client.query("BEGIN");
+
       const user =
         await AuthRepository.findUserByLogin(
           client,
@@ -319,12 +321,57 @@ const AuthService = {
         authAccount.id
       );
 
-      if (!user.email_verified_at) {
-        throw new AppError(
-          "Please verify your email before signing in.",
-          403,
-          "EMAIL_NOT_VERIFIED"
-        );
+      let verificationEmail = null;
+
+      /*
+       * Generate a verification OTP automatically
+       * when the user's email exists but is not verified.
+       */
+      if (user.email && !user.email_verified_at) {
+        const cooldownSeconds = 60;
+
+        const recentOtp =
+          await AuthRepository.findRecentOtp(
+            client,
+            user.id,
+            OTP_PURPOSE,
+            cooldownSeconds
+          );
+
+        if (!recentOtp) {
+          await AuthRepository.invalidateActiveOtps(
+            client,
+            user.id,
+            OTP_PURPOSE
+          );
+
+          const otp = generateOtp();
+
+          const otpHash = hashOtp(otp);
+
+          const otpExpiresAt = new Date(
+            Date.now() +
+            OTP_EXPIRES_MINUTES * 60 * 1000
+          );
+
+          await AuthRepository.createOtp(
+            client,
+            {
+              userId: user.id,
+              codeHash: otpHash,
+              purpose: OTP_PURPOSE,
+              expiresAt: otpExpiresAt,
+            }
+          );
+
+          verificationEmail = {
+            to: user.email,
+            name: user.name,
+            otp,
+            expiresInMinutes:
+              OTP_EXPIRES_MINUTES,
+          };
+        }
       }
 
       const sessionToken =
@@ -333,7 +380,7 @@ const AuthService = {
       const tokenHash =
         hashToken(sessionToken);
 
-      const expiresAt =
+      const sessionExpiresAt =
         getSessionExpiration();
 
       const session =
@@ -342,13 +389,43 @@ const AuthService = {
           {
             userId: user.id,
             tokenHash,
-            expiresAt,
+            expiresAt: sessionExpiresAt,
           }
         );
 
+      await client.query("COMMIT");
+
+      /*
+       * Send the email only after the database transaction
+       * has successfully committed.
+       */
+      if (verificationEmail) {
+        try {
+          await EmailService.sendVerificationOtp(
+            verificationEmail
+          );
+        } catch (emailError) {
+          console.error(
+            "Login verification email failed:",
+            emailError
+          );
+
+          throw new AppError(
+            "Your login was successful, but we could not send the verification code. Please use Resend Code on the verification page.",
+            503,
+            "EMAIL_DELIVERY_FAILED"
+          );
+        }
+      }
+
       return {
         sessionToken,
-        sessionExpiresAt: session.expires_at,
+        sessionExpiresAt:
+          session.expires_at,
+
+        requiresEmailVerification:
+          Boolean(user.email) &&
+          !user.email_verified_at,
 
         user: {
           id: user.id,
@@ -359,6 +436,23 @@ const AuthService = {
           accountId: user.account_id,
         },
       };
+    } catch (error) {
+      await client.query("ROLLBACK");
+
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      console.error(
+        "AuthService.login:",
+        error
+      );
+
+      throw new AppError(
+        "Unable to sign in right now.",
+        500,
+        "LOGIN_FAILED"
+      );
     } finally {
       client.release();
     }

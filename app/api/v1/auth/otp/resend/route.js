@@ -1,3 +1,5 @@
+// file: app/api/v1/auth/otp/resend/route.js
+
 import { NextResponse } from "next/server";
 
 import {

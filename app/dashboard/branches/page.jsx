@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Plus, GitBranch, MoreHorizontal, Pencil, Power, AlertCircle, RefreshCcw } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
@@ -14,6 +14,7 @@ export default function BranchesOverviewPage() {
   const [error, setError] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const menuRef = useRef(null);
 
   const fetchBranches = async () => {
     setIsLoading(true);
@@ -30,6 +31,19 @@ export default function BranchesOverviewPage() {
 
   useEffect(() => {
     fetchBranches();
+  }, []);
+
+  // Handle clicking outside to close the dropdown menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleStatusToggle = async (branch) => {
@@ -54,15 +68,20 @@ export default function BranchesOverviewPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border)">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Branches</h1>
-          <p className="text-sm text-(--muted-foreground) mt-1">
-            Manage the locations connected to your business.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl">
+            <GitBranch className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Branches</h1>
+            <p className="text-sm text-(--muted-foreground) mt-0.5">
+              Manage the locations connected to your business.
+            </p>
+          </div>
         </div>
         <Link
           href="/dashboard/branches/create"
-          className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-(--ring)"
+          className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity focus:outline-none focus:ring-2 focus:ring-(--ring)"
         >
           <Plus className="w-4 h-4" />
           <span>Create branch</span>
@@ -112,7 +131,7 @@ export default function BranchesOverviewPage() {
           </div>
           <Link
             href="/dashboard/branches/create"
-            className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
           >
             <Plus className="w-4 h-4" />
             <span>Create branch</span>
@@ -123,7 +142,7 @@ export default function BranchesOverviewPage() {
       {/* Branches Table */}
       {!isLoading && !error && branches.length > 0 && (
         <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto pb-24">
             <table className="w-full text-left text-sm">
               <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
                 <tr>
@@ -151,11 +170,10 @@ export default function BranchesOverviewPage() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          isActive 
-                            ? "bg-(--success)/10 text-(--success)" 
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${isActive
+                            ? "bg-(--success)/10 text-(--success)"
                             : "bg-(--muted) text-(--muted-foreground)"
-                        }`}>
+                          }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-(--success)" : "bg-(--muted-foreground)"}`} />
                           {isActive ? "Active" : "Inactive"}
                         </span>
@@ -172,8 +190,8 @@ export default function BranchesOverviewPage() {
                           >
                             <Pencil className="w-4 h-4" />
                           </Link>
-                          
-                          <div className="relative">
+
+                          <div className="relative" ref={openMenuId === branch.id ? menuRef : null}>
                             <button
                               onClick={() => setOpenMenuId(openMenuId === branch.id ? null : branch.id)}
                               className="p-1.5 text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted) rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-(--ring)"
@@ -183,7 +201,7 @@ export default function BranchesOverviewPage() {
                             </button>
 
                             {openMenuId === branch.id && (
-                              <div className="absolute right-0 mt-2 w-44 bg-(--card) border border-(--border) rounded-xl shadow-lg py-1 z-20 text-xs">
+                              <div className="absolute right-0 bottom-full mb-1 w-44 bg-(--card) border border-(--border) rounded-xl shadow-lg py-1 z-50 text-xs">
                                 <Link
                                   href={`/dashboard/branches/${branch.id}`}
                                   className="block px-4 py-2 text-left hover:bg-(--muted) text-(--foreground)"

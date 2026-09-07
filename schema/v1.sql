@@ -45,11 +45,11 @@ CREATE TABLE users (
 
     name VARCHAR(150) NOT NULL,
 
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) UNIQUE,
 
     phone VARCHAR(30) UNIQUE,
 
-    username VARCHAR(50) NOT NULL UNIQUE,
+    username VARCHAR(50) UNIQUE,
 
     email_verified_at TIMESTAMPTZ,
 
