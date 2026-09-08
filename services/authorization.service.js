@@ -1,3 +1,6 @@
+
+// file: services/authorization.service.js
+
 import AppError from "@/lib/errors/AppError";
 
 const AuthorizationService = {

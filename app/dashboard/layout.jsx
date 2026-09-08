@@ -10,7 +10,6 @@ import {
   GitBranch,
   Package,
   ShoppingCart,
-  Warehouse,
   Receipt,
   Users,
   BarChart3,
@@ -34,8 +33,7 @@ export default function DashboardLayout({ children }) {
   const [isBranchesOpen, setIsBranchesOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isSalesOpen, setIsSalesOpen] = useState(false);
-  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-  const [isExpensesOpen, setIsExpensesOpen] = useState(false);
+  const [isMoneyOpen, setIsMoneyOpen] = useState(false);
   const [isUsersOpen, setIsUsersOpen] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -53,11 +51,8 @@ export default function DashboardLayout({ children }) {
     if (pathname.includes("/dashboard/sales")) {
       setIsSalesOpen(true);
     }
-    if (pathname.includes("/dashboard/inventory")) {
-      setIsInventoryOpen(true);
-    }
-    if (pathname.includes("/dashboard/expenses")) {
-      setIsExpensesOpen(true);
+    if (pathname.includes("/dashboard/money")) {
+      setIsMoneyOpen(true);
     }
     if (pathname.includes("/dashboard/users")) {
       setIsUsersOpen(true);
@@ -268,40 +263,130 @@ export default function DashboardLayout({ children }) {
               </div>
               {isSalesOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
-          </div>
-
-          {/* Inventory Group */}
-          <div className="space-y-1">
-            <button
-              onClick={() => setIsInventoryOpen(!isInventoryOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/inventory")
-                ? "bg-(--primary) text-(--primary-foreground)"
-                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <Warehouse className="w-4 h-4" />
-                <span>Inventory</span>
+            {isSalesOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/sales"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/sales")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Overview
+                </Link>
+                <Link
+                  href="/dashboard/sales/create"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/sales/create")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Create
+                </Link>
               </div>
-              {isInventoryOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </button>
+            )}
           </div>
 
-          {/* Expenses Group */}
+          {/* Money Group */}
           <div className="space-y-1">
             <button
-              onClick={() => setIsExpensesOpen(!isExpensesOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/expenses")
+              onClick={() => setIsMoneyOpen(!isMoneyOpen)}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/money")
                 ? "bg-(--primary) text-(--primary-foreground)"
                 : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
                 <Receipt className="w-4 h-4" />
-                <span>Expenses</span>
+                <span>Money</span>
               </div>
-              {isExpensesOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {isMoneyOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
+            {isMoneyOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/money"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Overview
+                </Link>
+                <Link
+                  href="/dashboard/money/accounts"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/accounts")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Accounts
+                </Link>
+                <Link
+                  href="/dashboard/money/transactions"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/transactions")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Transactions
+                </Link>
+                <Link
+                  href="/dashboard/money/receivables"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/receivables")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Receivables
+                </Link>
+                <Link
+                  href="/dashboard/money/payables"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/payables")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Payables
+                </Link>
+                <Link
+                  href="/dashboard/money/transfers"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/transfers")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Transfers
+                </Link>
+                <Link
+                  href="/dashboard/money/withdrawals"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/withdrawals")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Withdrawals
+                </Link>
+                <Link
+                  href="/dashboard/money/settlements"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/settlements")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Settlements
+                </Link>
+                <Link
+                  href="/dashboard/money/total-money"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/total-money")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Total Money
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Users Group */}
@@ -346,8 +431,11 @@ export default function DashboardLayout({ children }) {
 
           {/* Reports Link */}
           <Link
-            href="/dashboard"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted) transition-colors outline-none border-0"
+            href="/dashboard/reports"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard/reports")
+              ? "bg-(--primary) text-(--primary-foreground)"
+              : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              }`}
           >
             <BarChart3 className="w-4 h-4" />
             <span>Reports</span>

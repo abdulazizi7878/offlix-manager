@@ -1,4 +1,4 @@
-// file: schemas/product.schema.js
+// file: validations/product.schema.js
 
 import { z } from "zod";
 
