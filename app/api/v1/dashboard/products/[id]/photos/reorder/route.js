@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import ProductService from "@/services/product.service";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
 
 const reorderSchema = z.object({
     photoIds: z
@@ -39,8 +39,8 @@ export async function PATCH(
 
         const result =
             await ProductService.reorderProductPhotos(
-                user.id,
-                user.accountId,
+                user.user.id,
+                user.user.accountId,
                 productId,
                 photoIds
             );
