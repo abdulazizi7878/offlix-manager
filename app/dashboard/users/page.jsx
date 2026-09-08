@@ -83,10 +83,29 @@ export default function UsersOverviewPage() {
 
             {/* Loading Skeleton */}
             {isLoading && !error && (
-                <div className="space-y-3">
-                    {[1, 2, 3, 4].map((n) => (
-                        <div key={n} className="h-16 bg-(--muted)/40 rounded-xl animate-pulse" />
-                    ))}
+                <div className="space-y-4 animate-pulse">
+                    <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden p-6 space-y-4">
+                        <div className="flex items-center justify-between pb-4 border-b border-(--border)">
+                            <div className="h-4 w-32 bg-(--muted) rounded-md" />
+                            <div className="h-4 w-24 bg-(--muted) rounded-md" />
+                            <div className="h-4 w-36 bg-(--muted) rounded-md" />
+                            <div className="h-4 w-20 bg-(--muted) rounded-md" />
+                        </div>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                            <div key={n} className="flex items-center justify-between py-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-(--muted)" />
+                                    <div className="space-y-1.5">
+                                        <div className="h-4 w-28 bg-(--muted) rounded-md" />
+                                        <div className="h-3 w-36 bg-(--muted) rounded-md" />
+                                    </div>
+                                </div>
+                                <div className="h-4 w-28 bg-(--muted) rounded-md" />
+                                <div className="h-4 w-32 bg-(--muted) rounded-md" />
+                                <div className="h-6 w-20 bg-(--muted) rounded-full" />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -116,7 +135,7 @@ export default function UsersOverviewPage() {
             {!isLoading && !error && users.length > 0 && (
                 <div className="space-y-4">
                     <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
                                     <tr>

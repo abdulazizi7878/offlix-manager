@@ -166,8 +166,8 @@ export default function DashboardLayout({ children }) {
           <Link
             href="/dashboard"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard")
-                ? "bg-(--primary) text-(--primary-foreground)"
-                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              ? "bg-(--primary) text-(--primary-foreground)"
+              : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
               }`}
           >
             <LayoutDashboard className="w-4 h-4" />
@@ -179,8 +179,8 @@ export default function DashboardLayout({ children }) {
             <button
               onClick={() => setIsBranchesOpen(!isBranchesOpen)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/branches")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -195,8 +195,8 @@ export default function DashboardLayout({ children }) {
                 <Link
                   href="/dashboard/branches"
                   className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/branches")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
                     }`}
                 >
                   Overview
@@ -204,8 +204,8 @@ export default function DashboardLayout({ children }) {
                 <Link
                   href="/dashboard/branches/create"
                   className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/branches/create")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
                     }`}
                 >
                   Create
@@ -219,8 +219,8 @@ export default function DashboardLayout({ children }) {
             <button
               onClick={() => setIsProductsOpen(!isProductsOpen)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/products")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -230,9 +230,25 @@ export default function DashboardLayout({ children }) {
               {isProductsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
             {isProductsOpen && (
-              <div className="pl-9 space-y-1 py-1 text-xs text-(--muted-foreground)">
-                <span className="block px-3 py-2 opacity-60">Overview (Soon)</span>
-                <span className="block px-3 py-2 opacity-60">Create (Soon)</span>
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/products"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/products")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Overview
+                </Link>
+                <Link
+                  href="/dashboard/products/create"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/products/create")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Create
+                </Link>
               </div>
             )}
           </div>
@@ -242,8 +258,8 @@ export default function DashboardLayout({ children }) {
             <button
               onClick={() => setIsSalesOpen(!isSalesOpen)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/sales")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -259,8 +275,8 @@ export default function DashboardLayout({ children }) {
             <button
               onClick={() => setIsInventoryOpen(!isInventoryOpen)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/inventory")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -276,8 +292,8 @@ export default function DashboardLayout({ children }) {
             <button
               onClick={() => setIsExpensesOpen(!isExpensesOpen)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/expenses")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -293,8 +309,8 @@ export default function DashboardLayout({ children }) {
             <button
               onClick={() => setIsUsersOpen(!isUsersOpen)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/users")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -309,8 +325,8 @@ export default function DashboardLayout({ children }) {
                 <Link
                   href="/dashboard/users"
                   className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/users")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
                     }`}
                 >
                   Overview
@@ -318,8 +334,8 @@ export default function DashboardLayout({ children }) {
                 <Link
                   href="/dashboard/users/create"
                   className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/users/create")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
                     }`}
                 >
                   Create

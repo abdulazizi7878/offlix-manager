@@ -331,6 +331,7 @@ VALUES
     ('users.view', 'View users', 'View employees and users.'),
     ('users.add', 'Add users', 'Add employees to a branch.'),
     ('users.remove', 'Remove users', 'Remove employees from a branch.'),
+    ('users.update', 'Update users', 'Update employee branch membership and permissions.'),
 
     ('products.view', 'View products', 'View products.'),
     ('products.create', 'Create products', 'Create new products.'),
@@ -351,3 +352,228 @@ VALUES
 
     ('reports.view', 'View reports', 'View business reports.')
 ON CONFLICT (key) DO NOTHING;
+
+-- ============================================================
+-- OFFLIX PRODUCT SYSTEM
+-- Categories + Products + Product Photos
+-- ============================================================
+
+BEGIN;
+
+
+-- ============================================================
+-- 1. CATEGORIES
+-- ============================================================
+-- Global categories:
+--   account_id IS NULL
+--   scope = 'global'
+--
+-- Account-specific categories:
+--   account_id IS NOT NULL
+--   scope = 'account'
+--
+-- Global categories are shared by every account.
+-- Account categories belong only to their account.
+-- ============================================================
+
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    name VARCHAR(100) NOT NULL,
+
+    scope VARCHAR(20) NOT NULL DEFAULT 'account',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (
+        (scope = 'global' AND account_id IS NULL)
+        OR
+        (scope = 'account' AND account_id IS NOT NULL)
+    ),
+
+    CHECK (length(trim(name)) > 0)
+);
+
+
+-- Global category names must be unique.
+CREATE UNIQUE INDEX uq_categories_global_name
+    ON categories (LOWER(name))
+    WHERE scope = 'global';
+
+
+-- Account-specific category names must be unique
+-- inside each account.
+CREATE UNIQUE INDEX uq_categories_account_name
+    ON categories (account_id, LOWER(name))
+    WHERE scope = 'account';
+
+
+CREATE INDEX idx_categories_account_id
+    ON categories(account_id);
+
+CREATE INDEX idx_categories_scope
+    ON categories(scope);
+
+CREATE INDEX idx_categories_account_scope
+    ON categories(account_id, scope);
+
+
+-- ============================================================
+-- 2. PRODUCTS
+-- ============================================================
+-- Every product belongs to:
+--   1 account
+--   1 branch
+--   1 category
+--
+-- category_id can point to:
+--   - a global category
+--   - an account-specific category
+--
+-- The service layer MUST verify that an account-specific
+-- category belongs to the same account as the product.
+-- ============================================================
+
+CREATE TABLE products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id),
+
+    branch_id UUID NOT NULL,
+
+    category_id UUID NOT NULL
+        REFERENCES categories(id),
+
+    name VARCHAR(150) NOT NULL,
+
+    slug VARCHAR(180) NOT NULL,
+
+    description TEXT,
+
+    type VARCHAR(20) NOT NULL DEFAULT 'private',
+
+    cost_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+
+    selling_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+
+    status VARCHAR(30) NOT NULL DEFAULT 'active',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (length(trim(name)) > 0),
+
+    CHECK (length(trim(slug)) > 0),
+
+    CHECK (type IN ('public', 'private')),
+
+    CHECK (status IN ('active', 'inactive')),
+
+    CHECK (cost_price >= 0),
+
+    CHECK (selling_price >= 0),
+
+    UNIQUE (slug),
+
+    CONSTRAINT fk_products_branch_account
+        FOREIGN KEY (branch_id, account_id)
+        REFERENCES branches(id, account_id)
+);
+
+
+-- ============================================================
+-- PRODUCT INDEXES
+-- ============================================================
+
+CREATE INDEX idx_products_account_id
+    ON products(account_id);
+
+CREATE INDEX idx_products_branch_id
+    ON products(branch_id);
+
+CREATE INDEX idx_products_category_id
+    ON products(category_id);
+
+CREATE INDEX idx_products_account_branch
+    ON products(account_id, branch_id);
+
+CREATE INDEX idx_products_account_category
+    ON products(account_id, category_id);
+
+CREATE INDEX idx_products_account_type
+    ON products(account_id, type);
+
+CREATE INDEX idx_products_account_status
+    ON products(account_id, status);
+
+CREATE INDEX idx_products_branch_status
+    ON products(branch_id, status);
+
+
+-- ============================================================
+-- 3. PRODUCT PHOTOS
+-- ============================================================
+-- Maximum 6 photos per product.
+--
+-- position:
+--   1 = primary photo
+--   2 = second photo
+--   ...
+--   6 = sixth photo
+--
+-- Provider:
+--   cloudinary
+--   r2
+--
+-- The schema intentionally stores both provider and object_key
+-- so the storage implementation remains provider-agnostic.
+-- ============================================================
+
+CREATE TABLE product_photos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    product_id UUID NOT NULL
+        REFERENCES products(id)
+        ON DELETE CASCADE,
+
+    provider VARCHAR(30) NOT NULL,
+
+    object_key TEXT NOT NULL,
+
+    url TEXT NOT NULL,
+
+    position INTEGER NOT NULL,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (provider IN ('cloudinary', 'r2')),
+
+    CHECK (position BETWEEN 1 AND 6),
+
+    CHECK (length(trim(object_key)) > 0),
+
+    CHECK (length(trim(url)) > 0),
+
+    UNIQUE (product_id, position)
+);
+
+
+-- ============================================================
+-- PRODUCT PHOTO INDEXES
+-- ============================================================
+
+CREATE INDEX idx_product_photos_product_id
+    ON product_photos(product_id);
+
+CREATE INDEX idx_product_photos_provider
+    ON product_photos(provider);
+
+
+COMMIT;
