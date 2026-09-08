@@ -32,6 +32,8 @@ export default function EditProductPage() {
     const [costPrice, setCostPrice] = useState("");
     const [sellingPrice, setSellingPrice] = useState("");
     const [status, setStatus] = useState("active");
+    const [stock, setStock] = useState("0");
+    const [lowStockThreshold, setLowStockThreshold] = useState("5");
 
     const [existingPhotos, setExistingPhotos] = useState([]);
     const [newFiles, setNewFiles] = useState([]);
@@ -65,6 +67,8 @@ export default function EditProductPage() {
             const fetchedCostPrice = String(p.cost_price ?? p.costPrice ?? "");
             const fetchedSellingPrice = String(p.selling_price ?? p.sellingPrice ?? "");
             const fetchedStatus = p.status || "active";
+            const fetchedStock = String(p.stock ?? "0");
+            const fetchedLowStockThreshold = String(p.low_stock_threshold ?? p.lowStockThreshold ?? "5");
 
             setName(fetchedName);
             setSlug(fetchedSlug);
@@ -75,6 +79,8 @@ export default function EditProductPage() {
             setCostPrice(fetchedCostPrice);
             setSellingPrice(fetchedSellingPrice);
             setStatus(fetchedStatus);
+            setStock(fetchedStock);
+            setLowStockThreshold(fetchedLowStockThreshold);
 
             const formattedPhotos = rawPhotos.map(photo => ({
                 ...photo,
@@ -97,6 +103,8 @@ export default function EditProductPage() {
                 costPrice: fetchedCostPrice,
                 sellingPrice: fetchedSellingPrice,
                 status: fetchedStatus,
+                stock: fetchedStock,
+                lowStockThreshold: fetchedLowStockThreshold,
                 photoIds: formattedPhotos.map(photo => photo.id).sort().join(",")
             });
 
@@ -127,10 +135,12 @@ export default function EditProductPage() {
             type !== initialState.type ||
             costPrice !== initialState.costPrice ||
             sellingPrice !== initialState.sellingPrice ||
-            status !== initialState.status;
+            status !== initialState.status ||
+            stock !== initialState.stock ||
+            lowStockThreshold !== initialState.lowStockThreshold;
 
         return fieldsChanged || photosChanged;
-    }, [initialState, name, slug, description, branchId, categoryId, type, costPrice, sellingPrice, status, existingPhotos, newFiles]);
+    }, [initialState, name, slug, description, branchId, categoryId, type, costPrice, sellingPrice, status, stock, lowStockThreshold, existingPhotos, newFiles]);
 
     const handleNewFilesChange = (e) => {
         const files = Array.from(e.target.files || []);
@@ -221,6 +231,8 @@ export default function EditProductPage() {
             formData.append("costPrice", costPrice || "0");
             formData.append("sellingPrice", sellingPrice || "0");
             formData.append("status", status);
+            formData.append("stock", stock !== "" ? stock : "0");
+            formData.append("lowStockThreshold", lowStockThreshold !== "" ? lowStockThreshold : "5");
 
             await fetchApi(
                 `/api/v1/dashboard/products/${productId}`,
@@ -261,10 +273,8 @@ export default function EditProductPage() {
                         photo.updated_at ?? photo.updatedAt,
                 }));
 
-                // Put uploaded photos into Existing Photos
                 setExistingPhotos(formattedPhotos);
 
-                // Remove them from Add New Photos
                 newPreviews.forEach((url) => {
                     URL.revokeObjectURL(url);
                 });
@@ -280,18 +290,9 @@ export default function EditProductPage() {
             }
 
             toast.success("Product updated successfully!");
-
-            // Reload the server data so the UI is guaranteed
-            // to contain the newly uploaded photos.
             await loadData();
 
-        }  catch (error) {
-            console.error("FETCH API ERROR:", {
-                endpoint,
-                method: options.method || "GET",
-                error: JSON.stringify(error, null, 2),
-            });
-
+        } catch (error) {
             if (error.code) {
                 throw error;
             }
@@ -437,6 +438,7 @@ export default function EditProductPage() {
                                 min="0"
                                 value={costPrice}
                                 onChange={(e) => setCostPrice(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
                             />
                         </div>
@@ -450,6 +452,7 @@ export default function EditProductPage() {
                                 required
                                 value={sellingPrice}
                                 onChange={(e) => setSellingPrice(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
                             />
                         </div>
@@ -464,6 +467,43 @@ export default function EditProductPage() {
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                             </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Inventory Section */}
+                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Inventory</h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-(--foreground)">Stock *</label>
+                            <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                required
+                                value={stock}
+                                onChange={(e) => setStock(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
+                                placeholder="0"
+                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-(--foreground)">Low Stock Threshold *</label>
+                            <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                required
+                                value={lowStockThreshold}
+                                onChange={(e) => setLowStockThreshold(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
+                                placeholder="5"
+                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                            />
                         </div>
                     </div>
                 </div>

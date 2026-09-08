@@ -2,21 +2,22 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Upload, X, Plus, Loader2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Upload, X, Loader2, AlertCircle } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
 export default function CreateProductPage() {
     const router = useRouter();
+    const fileInputRef = useRef(null);
+
     const [isLoading, setIsLoading] = useState(false);
     const [branches, setBranches] = useState([]);
     const [categories, setCategories] = useState([]);
     const [error, setError] = useState(null);
 
-    // Form State
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
     const [description, setDescription] = useState("");
@@ -26,97 +27,82 @@ export default function CreateProductPage() {
     const [costPrice, setCostPrice] = useState("");
     const [sellingPrice, setSellingPrice] = useState("");
     const [status, setStatus] = useState("active");
+    const [stock, setStock] = useState("0");
+    const [lowStockThreshold, setLowStockThreshold] = useState("5");
 
-    // Photos state
-    const [selectedFiles, setSelectedFiles] = useState([]);
+    const [files, setFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
 
-    // Load branches and categories on mount
     useEffect(() => {
-        async function loadMetadata() {
+        async function fetchDropdownData() {
             try {
                 const [branchRes, categoryRes] = await Promise.all([
                     fetchApi("/api/v1/dashboard/branches").catch(() => ({ data: [] })),
                     fetchApi("/api/v1/dashboard/categories").catch(() => ({ data: [] })),
                 ]);
-                const branchList = branchRes.data?.branches || branchRes.data || [];
-                const categoryList = categoryRes.data?.categories || categoryRes.data || [];
 
-                setBranches(branchList);
-                setCategories(categoryList);
-
-                if (branchList.length > 0) setBranchId(branchList[0].id);
-                if (categoryList.length > 0) setCategoryId(categoryList[0].id);
+                setBranches(branchRes.data?.branches || branchRes.data || []);
+                setCategories(categoryRes.data?.categories || categoryRes.data || []);
             } catch (err) {
-                console.error("Failed to fetch metadata", err);
+                console.error("Failed to load branches or categories", err);
             }
         }
-        loadMetadata();
+        fetchDropdownData();
     }, []);
 
-    // Auto-generate slug from name
-    useEffect(() => {
-        if (name) {
-            const generated = name
-                .toLowerCase()
-                .trim()
-                .replace(/[^\w\s-]/g, "")
-                .replace(/[\s_-]+/g, "-")
-                .replace(/^-+|-+$/g, "");
-            setSlug(generated);
-        }
-    }, [name]);
+    const handleFilesChange = (e) => {
+        const selectedFiles = Array.from(e.target.files || []);
 
-    const handleFileChange = (e) => {
-        const files = Array.from(e.target.files || []);
-        if (selectedFiles.length + files.length > 6) {
-            toast.error("You can upload up to 6 photos.");
+        if (files.length + selectedFiles.length > 6) {
+            toast.error("Maximum 6 photos allowed in total.");
+            if (fileInputRef.current) fileInputRef.current.value = "";
             return;
         }
 
         const validFiles = [];
-        const newPreviews = [];
+        const previewsArr = [];
 
-        for (const file of files) {
+        for (const file of selectedFiles) {
             if (!file.type.startsWith("image/")) {
-                toast.error(`${file.name} is not an image file.`);
+                toast.error(`${file.name} is not an image.`);
                 continue;
             }
             if (file.size > 5 * 1024 * 1024) {
-                toast.error(`${file.name} exceeds 5MB size limit.`);
+                toast.error(`${file.name} is larger than 5MB.`);
                 continue;
             }
             validFiles.push(file);
-            newPreviews.push(URL.createObjectURL(file));
+            previewsArr.push(URL.createObjectURL(file));
         }
 
-        setSelectedFiles((prev) => [...prev, ...validFiles]);
-        setPreviews((prev) => [...prev, ...newPreviews]);
+        setFiles((prev) => [...prev, ...validFiles]);
+        setPreviews((prev) => [...prev, ...previewsArr]);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
-    const removePhoto = (index) => {
-        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-        setPreviews((prev) => {
-            URL.revokeObjectURL(prev[index]);
-            return prev.filter((_, i) => i !== index);
-        });
+    const removeFile = (idx) => {
+        URL.revokeObjectURL(previews[idx]);
+        setFiles((prev) => prev.filter((_, i) => i !== idx));
+        setPreviews((prev) => prev.filter((_, i) => i !== idx));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
-        // Basic validation
-        if (name.length < 2 || name.length > 150) {
-            setError("Name must be between 2 and 150 characters.");
-            return;
-        }
-        if (type === "public" && selectedFiles.length === 0) {
-            setError("Public products must have at least one photo.");
+        if (type === "public" && files.length === 0) {
+            setError("Public products require at least one photo.");
             return;
         }
 
         setIsLoading(true);
+
         try {
             const formData = new FormData();
             formData.append("name", name);
@@ -128,20 +114,27 @@ export default function CreateProductPage() {
             formData.append("costPrice", costPrice || "0");
             formData.append("sellingPrice", sellingPrice || "0");
             formData.append("status", status);
+            formData.append("stock", stock !== "" ? stock : "0");
+            formData.append("lowStockThreshold", lowStockThreshold !== "" ? lowStockThreshold : "5");
 
-            selectedFiles.forEach((file) => {
+            files.forEach((file) => {
                 formData.append("photos", file);
             });
 
-            await fetchApi("/api/v1/dashboard/products", {
+            const res = await fetchApi("/api/v1/dashboard/products", {
                 method: "POST",
                 body: formData,
-                // Let browser handle multipart boundary headers automatically
-                headers: {},
             });
 
             toast.success("Product created successfully!");
-            router.push("/dashboard/products");
+            const newProduct = res.data?.product || res.data || res;
+            const newId = newProduct?.id;
+
+            if (newId) {
+                router.push(`/dashboard/products/${newId}`);
+            } else {
+                router.push("/dashboard/products");
+            }
         } catch (err) {
             setError(err.message || "Failed to create product.");
         } finally {
@@ -154,13 +147,13 @@ export default function CreateProductPage() {
             <div className="flex items-center gap-4 pb-4 border-b border-(--border)">
                 <Link
                     href="/dashboard/products"
-                    className="p-2 border border-(--border) rounded-lg hover:bg-(--muted) transition-colors text-(--muted-foreground)"
+                    className="p-2 border border-(--border) rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </Link>
                 <div>
                     <h1 className="text-xl font-bold tracking-tight">Create Product</h1>
-                    <p className="text-xs text-(--muted-foreground)">Add a new item to your inventory catalog.</p>
+                    <p className="text-xs text-(--muted-foreground)">Add a new product to your inventory.</p>
                 </div>
             </div>
 
@@ -172,7 +165,6 @@ export default function CreateProductPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Basic Info */}
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">General Information</h2>
 
@@ -184,8 +176,8 @@ export default function CreateProductPage() {
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                placeholder="e.g. Wireless Mechanical Keyboard"
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--ring)"
+                                placeholder="e.g. Wireless Mouse"
+                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
                             />
                         </div>
 
@@ -196,8 +188,8 @@ export default function CreateProductPage() {
                                 required
                                 value={slug}
                                 onChange={(e) => setSlug(e.target.value)}
-                                placeholder="wireless-mechanical-keyboard"
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono text-xs focus:outline-none focus:ring-2 focus:ring-(--ring)"
+                                placeholder="e.g. wireless-mouse"
+                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono text-xs focus:outline-none"
                             />
                         </div>
                     </div>
@@ -208,8 +200,8 @@ export default function CreateProductPage() {
                             rows={3}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Detailed product features and description..."
-                            className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--ring)"
+                            placeholder="Detailed description of the product..."
+                            className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
                         />
                     </div>
 
@@ -219,8 +211,10 @@ export default function CreateProductPage() {
                             <select
                                 value={branchId}
                                 onChange={(e) => setBranchId(e.target.value)}
+                                required
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
                             >
+                                <option value="">Select Branch</option>
                                 {branches.map((b) => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
@@ -232,8 +226,10 @@ export default function CreateProductPage() {
                             <select
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
+                                required
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
                             >
+                                <option value="">Select Category</option>
                                 {categories.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
@@ -254,7 +250,6 @@ export default function CreateProductPage() {
                     </div>
                 </div>
 
-                {/* Pricing & Status */}
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Pricing & Status</h2>
 
@@ -267,6 +262,7 @@ export default function CreateProductPage() {
                                 min="0"
                                 value={costPrice}
                                 onChange={(e) => setCostPrice(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
                                 placeholder="0.00"
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
                             />
@@ -281,6 +277,7 @@ export default function CreateProductPage() {
                                 required
                                 value={sellingPrice}
                                 onChange={(e) => setSellingPrice(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
                                 placeholder="0.00"
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
                             />
@@ -300,13 +297,44 @@ export default function CreateProductPage() {
                     </div>
                 </div>
 
-                {/* Product Photos */}
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Product Photos (Max 6)</h2>
-                        <span className="text-xs text-(--muted-foreground)">{selectedFiles.length}/6 uploaded</span>
-                    </div>
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Inventory</h2>
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-(--foreground)">Stock *</label>
+                            <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                required
+                                value={stock}
+                                onChange={(e) => setStock(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
+                                placeholder="0"
+                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-(--foreground)">Low Stock Threshold *</label>
+                            <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                required
+                                value={lowStockThreshold}
+                                onChange={(e) => setLowStockThreshold(e.target.value)}
+                                onWheel={(e) => e.currentTarget.blur()}
+                                placeholder="5"
+                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Photos</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                         {previews.map((src, idx) => (
                             <div key={idx} className="relative group aspect-square rounded-lg border border-(--border) overflow-hidden bg-(--muted)">
@@ -318,7 +346,7 @@ export default function CreateProductPage() {
                                 )}
                                 <button
                                     type="button"
-                                    onClick={() => removePhoto(idx)}
+                                    onClick={() => removeFile(idx)}
                                     className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     <X className="w-3.5 h-3.5" />
@@ -326,15 +354,16 @@ export default function CreateProductPage() {
                             </div>
                         ))}
 
-                        {selectedFiles.length < 6 && (
-                            <label className="border-2 border-dashed border-(--border) hover:border-(--primary) rounded-lg aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-(--muted-foreground) hover:text-(--foreground)">
-                                <Upload className="w-5 h-5" />
+                        {files.length < 6 && (
+                            <label className="border-2 border-dashed border-(--border) hover:border-(--primary) rounded-lg aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50">
+                                <Upload className="w-5 h-5 animate-bounce" />
                                 <span className="text-[10px] font-medium">Add Photo</span>
                                 <input
+                                    ref={fileInputRef}
                                     type="file"
                                     accept="image/*"
                                     multiple
-                                    onChange={handleFileChange}
+                                    onChange={handleFilesChange}
                                     className="hidden"
                                 />
                             </label>
@@ -352,10 +381,10 @@ export default function CreateProductPage() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-5 py-2 rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-5 py-2 rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <span>Save Product</span>
+                        <span>Create Product</span>
                     </button>
                 </div>
             </form>

@@ -1,3 +1,5 @@
+// file: app/api/v1/dashboard/products/route.js
+
 import { NextResponse } from "next/server";
 
 import ProductService from "@/services/product.service";
@@ -8,7 +10,9 @@ import {
 } from "@/validations/product.validation";
 
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+
 import AppError from "@/lib/errors/AppError";
+
 import { withErrorHandling } from "@/lib/api/with-error-handling";
 
 export const POST = withErrorHandling(async (request) => {
@@ -32,16 +36,38 @@ export const POST = withErrorHandling(async (request) => {
 
     const rawData = {
         branchId: formData.get("branchId"),
+
         categoryId: formData.get("categoryId"),
+
         name: formData.get("name"),
+
         slug: formData.get("slug"),
-        description: formData.get("description") || null,
-        type: formData.get("type") || "private",
-        costPrice: Number(formData.get("costPrice") || 0),
-        sellingPrice: Number(
-            formData.get("sellingPrice") || 0
-        ),
-        status: formData.get("status") || "active",
+
+        description:
+            formData.get("description") || null,
+
+        type:
+            formData.get("type") || "private",
+
+        costPrice:
+            Number(formData.get("costPrice") || 0),
+
+        sellingPrice:
+            Number(
+                formData.get("sellingPrice") || 0
+            ),
+
+        stock:
+            Number(formData.get("stock") || 0),
+
+        lowStockThreshold:
+            Number(
+                formData.get("lowStockThreshold") || 5
+            ),
+
+        status:
+            formData.get("status") || "active",
+
         photos,
     };
 
@@ -83,17 +109,33 @@ export const GET = withErrorHandling(async (request) => {
         new URL(request.url);
 
     const query = {
-        page: searchParams.get("page") ?? undefined,
-        limit: searchParams.get("limit") ?? undefined,
-        search: searchParams.get("search") ?? undefined,
+        page:
+            searchParams.get("page") ??
+            undefined,
+
+        limit:
+            searchParams.get("limit") ??
+            undefined,
+
+        search:
+            searchParams.get("search") ??
+            undefined,
+
         branchId:
-            searchParams.get("branchId") ?? undefined,
+            searchParams.get("branchId") ??
+            undefined,
+
         categoryId:
-            searchParams.get("categoryId") ?? undefined,
+            searchParams.get("categoryId") ??
+            undefined,
+
         status:
-            searchParams.get("status") ?? undefined,
+            searchParams.get("status") ??
+            undefined,
+
         type:
-            searchParams.get("type") ?? undefined,
+            searchParams.get("type") ??
+            undefined,
     };
 
     const validatedQuery =

@@ -1,3 +1,5 @@
+// file: schemas/product.schema.js
+
 import { z } from "zod";
 
 const productNameSchema = z
@@ -88,6 +90,20 @@ const productFileSchema = z
         }
     );
 
+const productStockSchema = z
+    .number()
+    .int("Stock must be a whole number.")
+    .nonnegative("Stock cannot be negative.");
+
+const productLowStockThresholdSchema = z
+    .number()
+    .int(
+        "Low stock threshold must be a whole number."
+    )
+    .nonnegative(
+        "Low stock threshold cannot be negative."
+    );
+
 export const productPhotosSchema = z
     .array(productFileSchema)
     .max(
@@ -121,6 +137,12 @@ export const createProductSchema = z.object({
 
     sellingPrice:
         productPriceSchema.default(0),
+
+    stock:
+        productStockSchema.default(0),
+
+    lowStockThreshold:
+        productLowStockThresholdSchema.default(5),
 
     status:
         productStatusSchema.default(
@@ -160,6 +182,12 @@ export const updateProductSchema = z
         sellingPrice:
             productPriceSchema.optional(),
 
+        stock:
+            productStockSchema.optional(),
+
+        lowStockThreshold:
+            productLowStockThresholdSchema.optional(),
+
         status:
             productStatusSchema.optional(),
 
@@ -181,6 +209,8 @@ export const updateProductSchema = z
             data.type !== undefined ||
             data.costPrice !== undefined ||
             data.sellingPrice !== undefined ||
+            data.stock !== undefined ||
+            data.lowStockThreshold !== undefined ||
             data.status !== undefined ||
             data.photos !== undefined,
         {

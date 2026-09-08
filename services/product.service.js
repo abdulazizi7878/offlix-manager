@@ -1,13 +1,9 @@
 // file: services/product.service.js
 
 import pool from "@/lib/database";
-
 import AppError from "@/lib/errors/AppError";
-
 import ProductRepository from "@/repositories/product.repository";
-
 import AuthorizationService from "@/services/authorization.service";
-
 import Storage from "@/lib/storage";
 
 const MAX_PAGE_SIZE = 100;
@@ -17,7 +13,6 @@ const MAX_PRODUCT_PHOTOS = 6;
 const ProductService = {
     async createProduct(userId, accountId, data) {
         const client = await pool.connect();
-
         const uploadedPhotos = [];
 
         try {
@@ -161,6 +156,12 @@ const ProductService = {
                         type: data.type,
                         costPrice: data.costPrice,
                         sellingPrice: data.sellingPrice,
+
+                        // Stock
+                        stock: data.stock,
+                        lowStockThreshold:
+                            data.lowStockThreshold,
+
                         status: data.status,
                     }
                 );
@@ -213,6 +214,7 @@ const ProductService = {
              * If database creation fails after uploading files,
              * clean those files from their actual providers.
              */
+
             await Promise.allSettled(
                 uploadedPhotos.map((photo) =>
                     Storage.delete({
@@ -379,8 +381,10 @@ const ProductService = {
                     limit,
                     total,
                     totalPages,
+
                     hasNextPage:
                         page < totalPages,
+
                     hasPreviousPage:
                         page > 1,
                 },
@@ -473,7 +477,6 @@ const ProductService = {
         data
     ) {
         const client = await pool.connect();
-
         const uploadedPhotos = [];
 
         try {
@@ -684,6 +687,7 @@ const ProductService = {
                 /*
                  * Capture old photos before removing DB rows.
                  */
+
                 const oldPhotos =
                     await ProductRepository.getProductPhotos(
                         client,
@@ -730,6 +734,7 @@ const ProductService = {
                 /*
                  * Delete old objects only after DB commit.
                  */
+
                 await Promise.allSettled(
                     oldPhotos.map((oldPhoto) =>
                         Storage.delete({
@@ -750,6 +755,7 @@ const ProductService = {
             /*
              * No photo replacement.
              */
+
             photos =
                 await ProductRepository.getProductPhotos(
                     client,
@@ -776,6 +782,7 @@ const ProductService = {
              * Clean up newly uploaded files when
              * the database operation fails.
              */
+
             await Promise.allSettled(
                 uploadedPhotos.map((photo) =>
                     Storage.delete({
@@ -923,6 +930,7 @@ const ProductService = {
             /*
              * This is intentionally a soft delete.
              */
+
             const deletedProduct =
                 await ProductRepository.updateProductStatus(
                     client,
@@ -991,14 +999,9 @@ const ProductService = {
         }
 
         const client = await pool.connect();
-
         const uploadedPhotos = [];
 
         try {
-
-            console.log("User:  ", userId);
-            console.log("Account:  ", accountId);
-
             const product =
                 await ProductRepository.getProductByIdForAccount(
                     client,
@@ -1042,6 +1045,7 @@ const ProductService = {
             /*
              * Upload files first.
              */
+
             for (const file of files) {
                 const uploaded =
                     await Storage.upload(file);
@@ -1096,6 +1100,7 @@ const ProductService = {
             /*
              * Remove uploaded files if DB insertion failed.
              */
+
             await Promise.allSettled(
                 uploadedPhotos.map((photo) =>
                     Storage.delete({
@@ -1182,6 +1187,7 @@ const ProductService = {
             /*
              * Public products cannot lose their final photo.
              */
+
             if (
                 product.type === "public" &&
                 photoCount <= 1
@@ -1221,6 +1227,7 @@ const ProductService = {
              *
              * 1, 2, 3
              */
+
             await client.query(
                 `
                 UPDATE product_photos
@@ -1248,6 +1255,7 @@ const ProductService = {
              * Delete the actual object from the correct
              * storage provider.
              */
+
             try {
                 await Storage.delete({
                     provider:
@@ -1347,6 +1355,7 @@ const ProductService = {
             /*
              * Every existing photo must be included.
              */
+
             if (
                 photos.length !==
                 photoIds.length
@@ -1361,6 +1370,7 @@ const ProductService = {
             /*
              * Prevent duplicate IDs.
              */
+
             const uniqueIds =
                 new Set(photoIds);
 
@@ -1378,6 +1388,7 @@ const ProductService = {
             /*
              * Verify every ID belongs to this product.
              */
+
             const existingIds =
                 new Set(
                     photos.map(

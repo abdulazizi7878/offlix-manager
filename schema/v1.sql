@@ -431,6 +431,16 @@ CREATE INDEX idx_categories_account_scope
 --   1 branch
 --   1 category
 --
+-- Stock is stored directly on the product because products
+-- are branch-based.
+--
+-- stock:
+--   Current quantity available in the product's branch.
+--
+-- low_stock_threshold:
+--   Quantity at or below which the product is considered
+--   low stock.
+--
 -- category_id can point to:
 --   - a global category
 --   - an account-specific category
@@ -462,6 +472,10 @@ CREATE TABLE products (
 
     selling_price NUMERIC(12,2) NOT NULL DEFAULT 0,
 
+    stock INTEGER NOT NULL DEFAULT 0,
+
+    low_stock_threshold INTEGER NOT NULL DEFAULT 5,
+
     status VARCHAR(30) NOT NULL DEFAULT 'active',
 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -478,6 +492,10 @@ CREATE TABLE products (
     CHECK (cost_price >= 0),
 
     CHECK (selling_price >= 0),
+
+    CHECK (stock >= 0),
+
+    CHECK (low_stock_threshold >= 0),
 
     UNIQUE (slug),
 
@@ -514,6 +532,9 @@ CREATE INDEX idx_products_account_status
 
 CREATE INDEX idx_products_branch_status
     ON products(branch_id, status);
+
+CREATE INDEX idx_products_branch_stock
+    ON products(branch_id, stock);
 
 
 -- ============================================================

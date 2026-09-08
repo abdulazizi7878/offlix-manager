@@ -41,6 +41,8 @@ export default function ProductDetailPage() {
                 categoryName: p.category_name ?? p.categoryName,
                 costPrice: p.cost_price ?? p.costPrice,
                 sellingPrice: p.selling_price ?? p.sellingPrice,
+                stock: p.stock ?? 0,
+                lowStockThreshold: p.low_stock_threshold ?? p.lowStockThreshold ?? 5,
                 createdAt: p.created_at ?? p.createdAt,
                 updatedAt: p.updated_at ?? p.updatedAt,
                 photos: (p.photos || []).map(photo => ({
@@ -283,6 +285,21 @@ export default function ProductDetailPage() {
                                 <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Selling Price</span>
                                 <p className="text-base font-mono font-semibold text-(--primary) mt-0.5">
                                     ${Number(product.sellingPrice || 0).toFixed(2)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-(--border)">
+                            <div>
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Stock</span>
+                                <p className="text-base font-mono font-semibold text-(--foreground) mt-0.5">
+                                    {product.stock}
+                                </p>
+                            </div>
+                            <div>
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Low Stock Threshold</span>
+                                <p className="text-base font-mono font-semibold text-(--muted-foreground) mt-0.5">
+                                    {product.lowStockThreshold}
                                 </p>
                             </div>
                         </div>

@@ -67,7 +67,7 @@ export default function ProductsPage() {
 
             const rawProducts = res.data?.products || res.data?.data || res.data || [];
 
-            // Map snake_case response fields and handle branch_name / category_name mapping
+            // Map snake_case response fields and handle stock fields mapping
             const productData = (Array.isArray(rawProducts) ? rawProducts : []).map(product => ({
                 ...product,
                 accountId: product.account_id ?? product.accountId,
@@ -77,6 +77,8 @@ export default function ProductsPage() {
                 categoryName: product.category_name ?? product.categoryName,
                 costPrice: product.cost_price ?? product.costPrice,
                 sellingPrice: product.selling_price ?? product.sellingPrice,
+                stock: product.stock ?? 0,
+                lowStockThreshold: product.low_stock_threshold ?? product.lowStockThreshold ?? 5,
                 createdAt: product.created_at ?? product.createdAt,
                 updatedAt: product.updated_at ?? product.updatedAt,
                 photos: (product.photos || []).map(photo => ({
@@ -264,6 +266,7 @@ export default function ProductsPage() {
                                     <th className="py-3 px-4">Branch</th>
                                     <th className="py-3 px-4">Category</th>
                                     <th className="py-3 px-4">Pricing</th>
+                                    <th className="py-3 px-4">Stock</th>
                                     <th className="py-3 px-4">Type</th>
                                     <th className="py-3 px-4">Status</th>
                                     <th className="py-3 px-4 text-right">Actions</th>
@@ -272,6 +275,7 @@ export default function ProductsPage() {
                             <tbody className="divide-y divide-(--border) text-sm">
                                 {products.map((product) => {
                                     const mainPhoto = product.photos?.[0]?.url || "";
+                                    const isLowStock = Number(product.stock) <= Number(product.lowStockThreshold);
                                     return (
                                         <tr key={product.id} className="hover:bg-(--muted)/20 transition-colors group">
                                             <td className="py-3 px-4">
@@ -303,6 +307,18 @@ export default function ProductsPage() {
                                                 </div>
                                                 <div className="text-[10px] font-mono text-(--muted-foreground)">
                                                     Cost: ${Number(product.costPrice || 0).toFixed(2)}
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className={`text-xs font-mono font-semibold ${isLowStock ? "text-(--destructive)" : "text-(--foreground)"}`}>
+                                                        {product.stock}
+                                                    </span>
+                                                    {isLowStock && (
+                                                        <span className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-(--destructive)/10 text-(--destructive)">
+                                                            Low
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="py-3 px-4">

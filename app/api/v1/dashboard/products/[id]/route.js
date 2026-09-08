@@ -1,3 +1,5 @@
+// file: app/api/v1/dashboard/products/[id]/route.js
+
 import { NextResponse } from "next/server";
 
 import ProductService from "@/services/product.service";
@@ -27,10 +29,7 @@ function getOptionalFormValue(formData, key) {
     return value;
 }
 
-function getNumberFormValue(
-    formData,
-    key
-) {
+function getNumberFormValue(formData, key) {
     const value = formData.get(key);
 
     if (value === null || value === "") {
@@ -153,6 +152,27 @@ function buildUpdateData(formData) {
         data.sellingPrice = sellingPrice;
     }
 
+    const stock =
+        getNumberFormValue(
+            formData,
+            "stock"
+        );
+
+    if (stock !== undefined) {
+        data.stock = stock;
+    }
+
+    const lowStockThreshold =
+        getNumberFormValue(
+            formData,
+            "lowStockThreshold"
+        );
+
+    if (lowStockThreshold !== undefined) {
+        data.lowStockThreshold =
+            lowStockThreshold;
+    }
+
     /*
      * Important:
      *
@@ -168,10 +188,12 @@ function buildUpdateData(formData) {
      * reliable "array field exists" primitive, we use
      * a dedicated `replacePhotos` field.
      */
-    const replacePhotos = formData.get("replacePhotos");
+    const replacePhotos =
+        formData.get("replacePhotos");
 
     if (replacePhotos === "true") {
-        data.photos = getFiles(formData, "photos");
+        data.photos =
+            getFiles(formData, "photos");
     }
 
     return data;

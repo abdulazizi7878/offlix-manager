@@ -4,33 +4,36 @@ const ProductRepository = {
     async createProduct(client, data) {
         const result = await client.query(
             `
-            INSERT INTO products (
-                account_id,
-                branch_id,
-                category_id,
-                name,
-                slug,
-                description,
-                type,
-                cost_price,
-                selling_price,
-                status
+            WITH inserted AS (
+                INSERT INTO products (
+                    account_id,
+                    branch_id,
+                    category_id,
+                    name,
+                    slug,
+                    description,
+                    type,
+                    cost_price,
+                    selling_price,
+                    stock,
+                    low_stock_threshold,
+                    status
+                )
+                VALUES (
+                    $1, $2, $3, $4, $5, $6,
+                    $7, $8, $9, $10, $11, $12
+                )
+                RETURNING *
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING
-                id,
-                account_id,
-                branch_id,
-                category_id,
-                name,
-                slug,
-                description,
-                type,
-                cost_price,
-                selling_price,
-                status,
-                created_at,
-                updated_at
+            SELECT
+                p.*,
+                b.name AS branch_name,
+                c.name AS category_name
+            FROM inserted p
+            INNER JOIN branches b
+                ON b.id = p.branch_id
+            INNER JOIN categories c
+                ON c.id = p.category_id
             `,
             [
                 data.accountId,
@@ -42,6 +45,8 @@ const ProductRepository = {
                 data.type ?? "private",
                 data.costPrice ?? 0,
                 data.sellingPrice ?? 0,
+                data.stock ?? 0,
+                data.lowStockThreshold ?? 5,
                 data.status ?? "active",
             ]
         );
@@ -51,29 +56,15 @@ const ProductRepository = {
 
     async getProductById(client, productId) {
         const result = await client.query(
-            `SELECT
-                p.id,
-                p.account_id,
-
-                p.branch_id,
+            `
+            SELECT
+                p.*,
                 b.name AS branch_name,
-
-                p.category_id,
-                c.name AS category_name,
-
-                p.name,
-                p.slug,
-                p.description,
-                p.type,
-                p.cost_price,
-                p.selling_price,
-                p.status,
-                p.created_at,
-                p.updated_at
+                c.name AS category_name
             FROM products p
-            LEFT JOIN branches b
+            INNER JOIN branches b
                 ON b.id = p.branch_id
-            LEFT JOIN categories c
+            INNER JOIN categories c
                 ON c.id = p.category_id
             WHERE p.id = $1
             LIMIT 1
@@ -92,35 +83,16 @@ const ProductRepository = {
         const result = await client.query(
             `
             SELECT
-                p.id,
-                p.account_id,
-
-                p.branch_id,
+                p.*,
                 b.name AS branch_name,
-
-                p.category_id,
-                c.name AS category_name,
-
-                p.name,
-                p.slug,
-                p.description,
-                p.type,
-                p.cost_price,
-                p.selling_price,
-                p.status,
-                p.created_at,
-                p.updated_at
-
+                c.name AS category_name
             FROM products p
-
-            LEFT JOIN branches b
+            INNER JOIN branches b
                 ON b.id = p.branch_id
-
-            LEFT JOIN categories c
+            INNER JOIN categories c
                 ON c.id = p.category_id
-
             WHERE p.id = $1
-            AND p.account_id = $2
+                AND p.account_id = $2
             LIMIT 1
             `,
             [productId, accountId]
@@ -133,20 +105,14 @@ const ProductRepository = {
         const result = await client.query(
             `
             SELECT
-                p.id,
-                p.account_id,
-                p.branch_id,
-                p.category_id,
-                p.name,
-                p.slug,
-                p.description,
-                p.type,
-                p.cost_price,
-                p.selling_price,
-                p.status,
-                p.created_at,
-                p.updated_at
+                p.*,
+                b.name AS branch_name,
+                c.name AS category_name
             FROM products p
+            INNER JOIN branches b
+                ON b.id = p.branch_id
+            INNER JOIN categories c
+                ON c.id = p.category_id
             WHERE p.slug = $1
             LIMIT 1
             `,
@@ -164,20 +130,14 @@ const ProductRepository = {
         const result = await client.query(
             `
             SELECT
-                p.id,
-                p.account_id,
-                p.branch_id,
-                p.category_id,
-                p.name,
-                p.slug,
-                p.description,
-                p.type,
-                p.cost_price,
-                p.selling_price,
-                p.status,
-                p.created_at,
-                p.updated_at
+                p.*,
+                b.name AS branch_name,
+                c.name AS category_name
             FROM products p
+            INNER JOIN branches b
+                ON b.id = p.branch_id
+            INNER JOIN categories c
+                ON c.id = p.category_id
             WHERE p.slug = $1
                 AND p.account_id = $2
             LIMIT 1
@@ -187,6 +147,7 @@ const ProductRepository = {
 
         return result.rows[0] ?? null;
     },
+
     async getProductsByAccountId(
         client,
         accountId,
@@ -219,19 +180,19 @@ const ProductRepository = {
         if (!isCreator) {
             conditions.push(
                 `
-            EXISTS (
-                SELECT 1
-                FROM branch_memberships bm
-                INNER JOIN branch_membership_permissions bmp
-                    ON bmp.branch_membership_id = bm.id
-                INNER JOIN permissions permission
-                    ON permission.id = bmp.permission_id
-                WHERE bm.user_id = $${parameterIndex}
-                    AND bm.branch_id = p.branch_id
-                    AND bm.status = 'active'
-                    AND permission.key = 'products.view'
-            )
-            `
+                EXISTS (
+                    SELECT 1
+                    FROM branch_memberships bm
+                    INNER JOIN branch_membership_permissions bmp
+                        ON bmp.branch_membership_id = bm.id
+                    INNER JOIN permissions permission
+                        ON permission.id = bmp.permission_id
+                    WHERE bm.user_id = $${parameterIndex}
+                        AND bm.branch_id = p.branch_id
+                        AND bm.status = 'active'
+                        AND permission.key = 'products.view'
+                )
+                `
             );
 
             values.push(userId);
@@ -277,15 +238,15 @@ const ProductRepository = {
         if (search) {
             conditions.push(
                 `
-            (
-                p.name ILIKE $${parameterIndex}
-                OR p.slug ILIKE $${parameterIndex}
-                OR COALESCE(
-                    p.description,
-                    ''
-                ) ILIKE $${parameterIndex}
-            )
-            `
+                (
+                    p.name ILIKE $${parameterIndex}
+                    OR p.slug ILIKE $${parameterIndex}
+                    OR COALESCE(
+                        p.description,
+                        ''
+                    ) ILIKE $${parameterIndex}
+                )
+                `
             );
 
             values.push(`%${search}%`);
@@ -306,28 +267,13 @@ const ProductRepository = {
         const result = await client.query(
             `
             SELECT
-                p.id,
-                p.account_id,
-
-                p.branch_id,
+                p.*,
                 b.name AS branch_name,
-
-                p.category_id,
-                c.name AS category_name,
-
-                p.name,
-                p.slug,
-                p.description,
-                p.type,
-                p.cost_price,
-                p.selling_price,
-                p.status,
-                p.created_at,
-                p.updated_at
+                c.name AS category_name
             FROM products p
-            LEFT JOIN branches b
+            INNER JOIN branches b
                 ON b.id = p.branch_id
-            LEFT JOIN categories c
+            INNER JOIN categories c
                 ON c.id = p.category_id
             WHERE ${conditions.join(" AND ")}
             ORDER BY
@@ -336,7 +282,7 @@ const ProductRepository = {
             LIMIT $${limitIndex}
             OFFSET $${offsetIndex}
             `,
-                    values
+            values
         );
 
         return result.rows;
@@ -466,56 +412,62 @@ const ProductRepository = {
     ) {
         const result = await client.query(
             `
-            UPDATE products
-            SET
-                branch_id = COALESCE(
-                    $2,
-                    branch_id
-                ),
-                category_id = COALESCE(
-                    $3,
-                    category_id
-                ),
-                name = COALESCE(
-                    $4,
-                    name
-                ),
-                slug = COALESCE(
-                    $5,
-                    slug
-                ),
-                description = COALESCE(
-                    $6,
-                    description
-                ),
-                type = COALESCE(
-                    $7,
-                    type
-                ),
-                cost_price = COALESCE(
-                    $8,
-                    cost_price
-                ),
-                selling_price = COALESCE(
-                    $9,
-                    selling_price
-                ),
-                updated_at = NOW()
-            WHERE id = $1
-            RETURNING
-                id,
-                account_id,
-                branch_id,
-                category_id,
-                name,
-                slug,
-                description,
-                type,
-                cost_price,
-                selling_price,
-                status,
-                created_at,
-                updated_at
+            WITH updated AS (
+                UPDATE products
+                SET
+                    branch_id = COALESCE(
+                        $2,
+                        branch_id
+                    ),
+                    category_id = COALESCE(
+                        $3,
+                        category_id
+                    ),
+                    name = COALESCE(
+                        $4,
+                        name
+                    ),
+                    slug = COALESCE(
+                        $5,
+                        slug
+                    ),
+                    description = COALESCE(
+                        $6,
+                        description
+                    ),
+                    type = COALESCE(
+                        $7,
+                        type
+                    ),
+                    cost_price = COALESCE(
+                        $8,
+                        cost_price
+                    ),
+                    selling_price = COALESCE(
+                        $9,
+                        selling_price
+                    ),
+                    stock = COALESCE(
+                        $10,
+                        stock
+                    ),
+                    low_stock_threshold = COALESCE(
+                        $11,
+                        low_stock_threshold
+                    ),
+                    updated_at = NOW()
+                WHERE id = $1
+                RETURNING *
+            )
+            SELECT
+                p.*,
+                b.name AS branch_name,
+                c.name AS category_name
+            FROM updated p
+            INNER JOIN branches b
+                ON b.id = p.branch_id
+            INNER JOIN categories c
+                ON c.id = p.category_id
             `,
             [
                 productId,
@@ -527,6 +479,8 @@ const ProductRepository = {
                 data.type ?? null,
                 data.costPrice ?? null,
                 data.sellingPrice ?? null,
+                data.stock ?? null,
+                data.lowStockThreshold ?? null,
             ]
         );
 
@@ -540,25 +494,23 @@ const ProductRepository = {
     ) {
         const result = await client.query(
             `
-            UPDATE products
-            SET
-                status = $2,
-                updated_at = NOW()
-            WHERE id = $1
-            RETURNING
-                id,
-                account_id,
-                branch_id,
-                category_id,
-                name,
-                slug,
-                description,
-                type,
-                cost_price,
-                selling_price,
-                status,
-                created_at,
-                updated_at
+            WITH updated AS (
+                UPDATE products
+                SET
+                    status = $2,
+                    updated_at = NOW()
+                WHERE id = $1
+                RETURNING *
+            )
+            SELECT
+                p.*,
+                b.name AS branch_name,
+                c.name AS category_name
+            FROM updated p
+            INNER JOIN branches b
+                ON b.id = p.branch_id
+            INNER JOIN categories c
+                ON c.id = p.category_id
             `,
             [productId, status]
         );
@@ -574,20 +526,7 @@ const ProductRepository = {
             `
             DELETE FROM products
             WHERE id = $1
-            RETURNING
-                id,
-                account_id,
-                branch_id,
-                category_id,
-                name,
-                slug,
-                description,
-                type,
-                cost_price,
-                selling_price,
-                status,
-                created_at,
-                updated_at
+            RETURNING *
             `,
             [productId]
         );
@@ -813,24 +752,24 @@ const ProductRepository = {
     async createProductPhoto(client, data) {
         const result = await client.query(
             `
-        INSERT INTO product_photos (
-            product_id,
-            provider,
-            object_key,
-            url,
-            position
-        )
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING
-            id,
-            product_id,
-            provider,
-            object_key,
-            url,
-            position,
-            created_at,
-            updated_at
-        `,
+            INSERT INTO product_photos (
+                product_id,
+                provider,
+                object_key,
+                url,
+                position
+            )
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING
+                id,
+                product_id,
+                provider,
+                object_key,
+                url,
+                position,
+                created_at,
+                updated_at
+            `,
             [
                 data.productId,
                 data.provider,
@@ -843,20 +782,24 @@ const ProductRepository = {
         return result.rows[0];
     },
 
-    async deleteProductPhoto(client, photoId, productId) {
+    async deleteProductPhoto(
+        client,
+        photoId,
+        productId
+    ) {
         const result = await client.query(
             `
-        DELETE FROM product_photos
-        WHERE id = $1
-          AND product_id = $2
-        RETURNING
-            id,
-            product_id,
-            provider,
-            object_key,
-            url,
-            position
-        `,
+            DELETE FROM product_photos
+            WHERE id = $1
+                AND product_id = $2
+            RETURNING
+                id,
+                product_id,
+                provider,
+                object_key,
+                url,
+                position
+            `,
             [photoId, productId]
         );
 
@@ -995,48 +938,62 @@ const ProductRepository = {
 
         return result.rows[0] ?? null;
     },
-    async getProductPhotoById(client, productId, photoId) {
+
+    async getProductPhotoById(
+        client,
+        productId,
+        photoId
+    ) {
         const result = await client.query(
             `
-        SELECT
-            id,
-            product_id,
-            provider,
-            object_key,
-            url,
-            position,
-            created_at,
-            updated_at
-        FROM product_photos
-        WHERE id = $1
-          AND product_id = $2
-        LIMIT 1
-        `,
+            SELECT
+                id,
+                product_id,
+                provider,
+                object_key,
+                url,
+                position,
+                created_at,
+                updated_at
+            FROM product_photos
+            WHERE id = $1
+                AND product_id = $2
+            LIMIT 1
+            `,
             [photoId, productId]
         );
 
         return result.rows[0] || null;
     },
-    async reorderProductPhotos(client, productId, photoIds) {
+
+    async reorderProductPhotos(
+        client,
+        productId,
+        photoIds
+    ) {
         await client.query(
             `
-        UPDATE product_photos
-        SET position = position + 100
-        WHERE product_id = $1
-        `,
+            UPDATE product_photos
+            SET position = position + 100
+            WHERE product_id = $1
+            `,
             [productId]
         );
 
-        for (let index = 0; index < photoIds.length; index++) {
+        for (
+            let index = 0;
+            index < photoIds.length;
+            index++
+        ) {
             await client.query(
                 `
-            UPDATE product_photos
-            SET
-                position = $1,
-                updated_at = NOW()
-            WHERE id = $2
-              AND product_id = $3
-            `,
+                UPDATE product_photos
+                SET
+                    position = $1,
+                    updated_at = NOW()
+                WHERE id = $2
+                    AND product_id = $3
+                `,
                 [
                     index + 1,
                     photoIds[index],
@@ -1047,19 +1004,19 @@ const ProductRepository = {
 
         const result = await client.query(
             `
-        SELECT
-            id,
-            product_id,
-            provider,
-            object_key,
-            url,
-            position,
-            created_at,
-            updated_at
-        FROM product_photos
-        WHERE product_id = $1
-        ORDER BY position ASC
-        `,
+            SELECT
+                id,
+                product_id,
+                provider,
+                object_key,
+                url,
+                position,
+                created_at,
+                updated_at
+            FROM product_photos
+            WHERE product_id = $1
+            ORDER BY position ASC
+            `,
             [productId]
         );
 
