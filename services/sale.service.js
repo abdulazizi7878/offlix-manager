@@ -6,8 +6,6 @@ import AppError from "@/lib/errors/AppError";
 
 import SaleRepository from "@/repositories/sale.repository";
 
-import FinanceRepository from "@/repositories/finance.repository";
-
 import AuthorizationService from "@/services/authorization.service";
 
 const MAX_PAGE_SIZE = 100;
@@ -16,6 +14,8 @@ const DEFAULT_PAGE_SIZE = 20;
 const SaleService = {
     async createSale(userId, accountId, data) {
         const client = await pool.connect();
+
+        let transactionStarted = false;
 
         try {
             await AuthorizationService.assertAccountMember(
@@ -48,10 +48,15 @@ const SaleService = {
             );
 
             const productIds = new Set(
-                data.items.map((item) => item.productId)
+                data.items.map(
+                    (item) => item.productId
+                )
             );
 
-            if (productIds.size !== data.items.length) {
+            if (
+                productIds.size !==
+                data.items.length
+            ) {
                 throw new AppError(
                     "A product cannot appear more than once in a sale.",
                     400,
@@ -59,9 +64,14 @@ const SaleService = {
                 );
             }
 
-            const paidAmount = Number(data.paidAmount || 0);
+            const paidAmount = Number(
+                data.paidAmount || 0
+            );
 
-            if (!Number.isFinite(paidAmount) || paidAmount < 0) {
+            if (
+                !Number.isFinite(paidAmount) ||
+                paidAmount < 0
+            ) {
                 throw new AppError(
                     "Paid amount must be zero or greater.",
                     400,
@@ -69,7 +79,10 @@ const SaleService = {
                 );
             }
 
-            if (data.paymentType === "credit" && paidAmount !== 0) {
+            if (
+                data.paymentType === "credit" &&
+                paidAmount !== 0
+            ) {
                 throw new AppError(
                     "A credit sale cannot have a paid amount.",
                     400,
@@ -78,9 +91,11 @@ const SaleService = {
             }
 
             await client.query("BEGIN");
+            transactionStarted = true;
 
             const validatedItems = [];
-            let subtotal = 0;
+
+            let subtotalCents = 0;
 
             for (const item of data.items) {
                 const product =
@@ -107,7 +122,10 @@ const SaleService = {
                     );
                 }
 
-                if (product.stock < item.quantity) {
+                if (
+                    product.stock <
+                    item.quantity
+                ) {
                     throw new AppError(
                         `Insufficient stock for "${product.name}".`,
                         400,
@@ -115,21 +133,37 @@ const SaleService = {
                     );
                 }
 
-                // Use the actual price entered for this sale.
-                // product.selling_price is only the default product price.
-                const price = Number(item.pricePerItem);
-                const total = price * item.quantity;
+                /*
+                 * The employee can sell at the actual
+                 * price entered for this sale.
+                 *
+                 * product.selling_price is only the
+                 * default/reference product price.
+                 */
 
-                subtotal += total;
+                const priceCents = Math.round(
+                    Number(item.pricePerItem) * 100
+                );
+
+                const totalCents =
+                    priceCents *
+                    item.quantity;
+
+                subtotalCents += totalCents;
 
                 validatedItems.push({
                     productId: product.id,
                     productName: product.name,
                     quantity: item.quantity,
-                    pricePerItem: price,
-                    totalAmount: total,
+                    pricePerItem:
+                        priceCents / 100,
+                    totalAmount:
+                        totalCents / 100,
                 });
             }
+
+            const subtotal =
+                subtotalCents / 100;
 
             const totalAmount = subtotal;
 
@@ -141,24 +175,11 @@ const SaleService = {
                 );
             }
 
-            let paymentStatus;
-
-            if (data.paymentType === "credit") {
-                paymentStatus = "credit";
-            } else if (paidAmount === totalAmount) {
-                paymentStatus = "paid";
-            } else {
-                paymentStatus = "partial";
-            }
-
             /*
-             * Keep paymentType and the actual calculated payment status
-             * consistent.
-             *
-             * A "paid" payment type must actually pay the full amount.
-             * A "partial" payment type must pay something, but less
-             * than the total.
+             * The requested payment type must match
+             * the actual amount being paid.
              */
+
             if (
                 data.paymentType === "paid" &&
                 paidAmount !== totalAmount
@@ -172,7 +193,10 @@ const SaleService = {
 
             if (
                 data.paymentType === "partial" &&
-                (paidAmount <= 0 || paidAmount >= totalAmount)
+                (
+                    paidAmount <= 0 ||
+                    paidAmount >= totalAmount
+                )
             ) {
                 throw new AppError(
                     "A partial sale must have a payment greater than zero and less than the sale total.",
@@ -181,18 +205,35 @@ const SaleService = {
                 );
             }
 
+            let paymentStatus;
+
+            if (
+                data.paymentType === "credit"
+            ) {
+                paymentStatus = "credit";
+            } else if (
+                paidAmount === totalAmount
+            ) {
+                paymentStatus = "paid";
+            } else {
+                paymentStatus = "partial";
+            }
+
             const sale =
                 await SaleRepository.createSale(
                     client,
                     {
                         accountId,
-                        branchId: data.branchId,
-                        customerName: data.customerName,
+                        branchId:
+                            data.branchId,
+                        customerName:
+                            data.customerName,
                         notes: data.notes,
                         subtotal,
                         totalAmount,
                         paymentStatus,
-                        createdByUserId: userId,
+                        createdByUserId:
+                            userId,
                     }
                 );
 
@@ -222,10 +263,16 @@ const SaleService = {
             }
 
             /*
-             * The employee only chooses the payment method.
+             * Sales only records the customer's payment.
              *
-             * The backend determines the branch financial account.
+             * It does NOT decide:
+             * - which financial account receives money
+             * - which money transaction is created
+             * - which receivable is created
+             *
+             * Those belong to the Financial feature.
              */
+
             if (
                 data.paymentType === "paid" ||
                 data.paymentType === "partial"
@@ -238,102 +285,34 @@ const SaleService = {
                     );
                 }
 
-                let financialAccount = null;
-
-                if (
-                    data.paymentStatus === "paid" ||
-                    data.paymentStatus === "partial"
-                ) {
-                    if (data.paymentMethod === "cash") {
-                        financialAccount =
-                            await FinanceRepository.getActiveBranchFinancialAccountByType(
-                                client,
-                                accountId,
-                                data.branchId,
-                                "cash"
-                            );
-                    }
-
-                    if (data.paymentMethod === "bank") {
-                        financialAccount =
-                            await FinanceRepository.getDefaultBranchBankAccount(
-                                client,
-                                accountId,
-                                data.branchId
-                            );
-                    }
-
-                    if (!financialAccount) {
-                        throw new AppError(
-                            "No suitable financial account is configured for this branch.",
-                            400,
-                            "FINANCIAL_ACCOUNT_NOT_CONFIGURED"
-                        );
-                    }
-
-                    const moneyTransaction =
-                        await FinanceRepository.createMoneyTransaction(
-                            client,
-                            {
-                                accountId,
-                                branchId: data.branchId,
-                                type: "sale_payment",
-                                amount: paidAmount,
-                                fromFinancialAccountId: null,
-                                toFinancialAccountId: financialAccount.id,
-                                description: `Payment for sale ${sale.id}`,
-                                referenceType: "sale",
-                                referenceId: sale.id,
-                                createdByUserId,
-                            }
-                        );
-
-                    await FinanceRepository.createPayment(
-                        client,
-                        {
-                            accountId,
-                            branchId: data.branchId,
-                            paymentType: "sale_payment",
-                            saleId: sale.id,
-                            receivableId: null,
-                            amount: paidAmount,
-                            paymentMethod: data.paymentMethod,
-                            financialAccountId: financialAccount.id,
-                            moneyTransactionId: moneyTransaction.id,
-                            createdByUserId,
-                        }
-                    );
-                }
-            }
-
-            const unpaidAmount =
-                totalAmount - paidAmount;
-
-            if (unpaidAmount > 0) {
-                await FinanceRepository.createReceivable(
+                await SaleRepository.createSalePayment(
                     client,
                     {
-                        accountId,
-                        branchId: data.branchId,
                         saleId: sale.id,
-                        customerName: data.customerName,
-                        originalAmount: unpaidAmount,
-                        dueAt: data.dueAt,
-                        notes: data.notes,
-                        createdByUserId: userId,
+                        amount: paidAmount,
+                        paymentMethod:
+                            data.paymentMethod,
+                        createdByUserId:
+                            userId,
                     }
                 );
             }
 
             await client.query("COMMIT");
+            transactionStarted = false;
 
+            /*
+             * Fetch the complete sale after commit.
+             */
             return await SaleRepository.getSaleById(
                 client,
                 sale.id,
                 accountId
             );
         } catch (error) {
-            await client.query("ROLLBACK");
+            if (transactionStarted) {
+                await client.query("ROLLBACK");
+            }
 
             if (error instanceof AppError) {
                 throw error;
@@ -362,7 +341,11 @@ const SaleService = {
         }
     },
 
-    async getSale(userId, accountId, saleId) {
+    async getSale(
+        userId,
+        accountId,
+        saleId
+    ) {
         const client = await pool.connect();
 
         try {
@@ -440,7 +423,7 @@ const SaleService = {
                 Math.max(
                     1,
                     Number(options.limit) ||
-                        DEFAULT_PAGE_SIZE
+                    DEFAULT_PAGE_SIZE
                 )
             );
 
@@ -503,6 +486,7 @@ const SaleService = {
 
             return {
                 sales,
+
                 pagination: {
                     page,
                     limit,

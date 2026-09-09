@@ -1,13 +1,17 @@
-
 // file: app/api/v1/dashboard/sales/[saleId]/route.js
 
 import { NextResponse } from "next/server";
 
 import SaleService from "@/services/sale.service";
-import { saleIdSchema } from "@/validations/sale.validation";
+
+import {
+    saleIdSchema,
+} from "@/validations/sale.validation";
 
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+
 import AppError from "@/lib/errors/AppError";
+
 import { withErrorHandling } from "@/lib/api/with-error-handling";
 
 export const GET = withErrorHandling(
@@ -26,7 +30,8 @@ export const GET = withErrorHandling(
         const { user } =
             currentUser;
 
-        const { saleId } = await params;
+        const { saleId } =
+            await params;
 
         const id =
             saleIdSchema.parse(saleId);

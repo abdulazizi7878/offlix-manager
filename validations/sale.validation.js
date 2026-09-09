@@ -122,6 +122,18 @@ export const createSaleSchema = z
                     "Credit sales cannot contain a payment.",
             });
         }
+
+        if (
+            data.paymentType === "credit" &&
+            data.paymentMethod
+        ) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["paymentMethod"],
+                message:
+                    "Credit sales cannot contain a payment method.",
+            });
+        }
     });
 
 export const saleIdSchema =
@@ -152,7 +164,26 @@ export const saleListQuerySchema = z.object({
         .uuid("Invalid branch ID.")
         .optional(),
 
+    employeeId: z
+        .string()
+        .uuid("Invalid employee ID.")
+        .optional(),
+
     paymentStatus: z
-        .enum(["credit", "partial", "paid"])
+        .enum([
+            "credit",
+            "partial",
+            "paid",
+        ])
+        .optional(),
+
+    dateFrom: z
+        .coerce
+        .date()
+        .optional(),
+
+    dateTo: z
+        .coerce
+        .date()
         .optional(),
 });

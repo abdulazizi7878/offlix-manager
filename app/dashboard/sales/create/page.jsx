@@ -29,6 +29,7 @@ export default function CreateSalePage() {
 
     const [branchId, setBranchId] = useState("");
     const [customerName, setCustomerName] = useState("");
+    const [notes, setNotes] = useState("");
 
     const [paymentType, setPaymentType] = useState("paid");
     const [paymentMethod, setPaymentMethod] = useState("cash");
@@ -289,6 +290,13 @@ export default function CreateSalePage() {
         const newItems = [...items];
 
         if (field === "productId") {
+            // Prevent duplicate products in the same sale
+            const isDuplicate = newItems.some((item, i) => i !== index && item.productId === value);
+            if (isDuplicate && value !== "") {
+                toast.error("This product is already added to the sale.");
+                return;
+            }
+
             const selectedProduct =
                 products.find(
                     (product) =>
@@ -580,7 +588,7 @@ export default function CreateSalePage() {
         setIsSubmitting(true);
 
         try {
-            await fetchApi(
+            const response = await fetchApi(
                 "/api/v1/dashboard/sales",
                 {
                     method: "POST",
@@ -590,6 +598,8 @@ export default function CreateSalePage() {
                         customerName:
                             customerName.trim() ||
                             undefined,
+
+                        notes: notes.trim() || undefined,
 
                         paymentType,
 
@@ -625,9 +635,14 @@ export default function CreateSalePage() {
                 "Sale created successfully"
             );
 
-            router.push(
-                "/dashboard/sales"
-            );
+            const createdSale = response.data || response;
+            const newSaleId = createdSale.id || createdSale._id;
+
+            if (newSaleId) {
+                router.push(`/dashboard/sales/${newSaleId}`);
+            } else {
+                router.push("/dashboard/sales");
+            }
         } catch (err) {
             toast.error(
                 err.message ||
@@ -682,8 +697,7 @@ export default function CreateSalePage() {
                     </h1>
 
                     <p className="text-xs text-(--muted-foreground)">
-                        Record a sale transaction,
-                        items, and payment terms.
+                        Record a sale transaction, items, and payment terms.
                     </p>
                 </div>
             </div>
@@ -765,6 +779,20 @@ export default function CreateSalePage() {
                             />
                         </div>
                     </div>
+
+                    {/* Notes */}
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-(--muted-foreground)">
+                            Notes (Optional)
+                        </label>
+                        <textarea
+                            placeholder="Add any additional sale notes here..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            rows={2}
+                            className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
+                        />
+                    </div>
                 </div>
 
                 {/* Products / Items */}
@@ -776,8 +804,7 @@ export default function CreateSalePage() {
                             </h2>
 
                             <p className="text-xs text-(--muted-foreground) mt-1">
-                                Quantities are limited
-                                by available stock.
+                                Quantities are limited by available stock.
                             </p>
                         </div>
 
@@ -839,14 +866,16 @@ export default function CreateSalePage() {
                                             )
                                             : 0;
 
+                                    const lineTotal = Number(item.quantity || 0) * Number(item.pricePerItem || 0);
+
                                     return (
                                         <div
                                             key={
                                                 index
                                             }
-                                            className="space-y-2"
+                                            className="space-y-2 p-3 rounded-xl border border-(--border) bg-(--muted)/10"
                                         >
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex flex-col sm:flex-row items-center gap-3">
                                                 {/* Product */}
                                                 <select
                                                     value={
@@ -864,12 +893,11 @@ export default function CreateSalePage() {
                                                         )
                                                     }
                                                     disabled={isProductsLoading}
-                                                    className="flex-1 min-w-0 px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 disabled:opacity-50 focus:outline-none focus:border-(--primary)"
+                                                    className="flex-1 w-full sm:min-w-0 px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 disabled:opacity-50 focus:outline-none focus:border-(--primary)"
                                                     required
                                                 >
                                                     <option value="" className="bg-slate-900 text-slate-100 py-2">
-                                                        Select
-                                                        product
+                                                        Select product
                                                     </option>
 
                                                     {products.map(
@@ -921,120 +949,118 @@ export default function CreateSalePage() {
                                                     )}
                                                 </select>
 
-                                                {/* Quantity */}
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max={
-                                                        maxQuantity
-                                                    }
-                                                    step="1"
-                                                    placeholder="Qty"
-                                                    value={
-                                                        item.quantity
-                                                    }
-                                                    onChange={(
-                                                        e
-                                                    ) =>
-                                                        handleItemChange(
-                                                            index,
-                                                            "quantity",
-                                                            e
-                                                                .target
-                                                                .value
-                                                        )
-                                                    }
-                                                    disabled={isProductsLoading || !item.productId}
-                                                    className="w-20 px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent disabled:opacity-50 focus:outline-none focus:border-(--primary)"
-                                                    required
-                                                />
-
-                                                {/* Price */}
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    placeholder="Price"
-                                                    value={
-                                                        item.pricePerItem
-                                                    }
-                                                    onChange={(
-                                                        e
-                                                    ) =>
-                                                        handleItemChange(
-                                                            index,
-                                                            "pricePerItem",
-                                                            e
-                                                                .target
-                                                                .value
-                                                        )
-                                                    }
-                                                    disabled={isProductsLoading || !item.productId}
-                                                    className="w-28 px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent disabled:opacity-50 focus:outline-none focus:border-(--primary)"
-                                                    required
-                                                />
-
-                                                {/* Remove */}
-                                                {items.length >
-                                                    1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleRemoveItem(
-                                                                    index
+                                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                    {/* Quantity */}
+                                                    <div className="flex-1 sm:w-20">
+                                                        <span className="text-[10px] text-(--muted-foreground) sm:hidden">Qty</span>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max={
+                                                                maxQuantity
+                                                            }
+                                                            step="1"
+                                                            placeholder="Qty"
+                                                            value={
+                                                                item.quantity
+                                                            }
+                                                            onChange={(
+                                                                e
+                                                            ) =>
+                                                                handleItemChange(
+                                                                    index,
+                                                                    "quantity",
+                                                                    e
+                                                                        .target
+                                                                        .value
                                                                 )
                                                             }
-                                                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    )}
+                                                            disabled={isProductsLoading || !item.productId}
+                                                            className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent disabled:opacity-50 focus:outline-none focus:border-(--primary)"
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    {/* Price */}
+                                                    <div className="flex-1 sm:w-28">
+                                                        <span className="text-[10px] text-(--muted-foreground) sm:hidden">Price</span>
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            min="0"
+                                                            placeholder="Price"
+                                                            value={
+                                                                item.pricePerItem
+                                                            }
+                                                            onChange={(
+                                                                e
+                                                            ) =>
+                                                                handleItemChange(
+                                                                    index,
+                                                                    "pricePerItem",
+                                                                    e
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            disabled={isProductsLoading || !item.productId}
+                                                            className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent disabled:opacity-50 focus:outline-none focus:border-(--primary)"
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    {/* Line Total Display */}
+                                                    <div className="hidden md:block w-28 text-right font-mono text-xs font-semibold">
+                                                        {lineTotal.toLocaleString()} birr
+                                                    </div>
+
+                                                    {/* Remove */}
+                                                    {items.length >
+                                                        1 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    handleRemoveItem(
+                                                                        index
+                                                                    )
+                                                                }
+                                                                className="p-2.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                </div>
                                             </div>
 
                                             {/* Stock information */}
                                             {item.productId && (
-                                                <div className="flex items-center justify-between pl-1 text-xs">
+                                                <div className="flex items-center justify-between pl-1 text-xs pt-1 border-t border-(--border)/50">
                                                     <span className="text-(--muted-foreground)">
-                                                        Stock:
-                                                        {" "}
+                                                        Stock:{" "}
                                                         <span className="font-medium text-(--foreground)">
-                                                            {
-                                                                stock
-                                                            }
+                                                            {stock}
                                                         </span>
                                                     </span>
 
                                                     <span className="text-(--muted-foreground)">
-                                                        In this
-                                                        sale:
-                                                        {" "}
+                                                        In this sale:{" "}
                                                         <span className="font-medium text-(--foreground)">
-                                                            {
-                                                                totalProductQuantity
-                                                            }
+                                                            {totalProductQuantity}
                                                         </span>
-
                                                         {" / "}
-
-                                                        {
-                                                            stock
-                                                        }
+                                                        {stock}
                                                     </span>
 
                                                     <span
                                                         className={
-                                                            maxQuantity <=
-                                                                0
+                                                            maxQuantity <= 0
                                                                 ? "text-(--destructive) font-medium"
                                                                 : "text-(--muted-foreground)"
                                                         }
                                                     >
-                                                        Remaining:
-                                                        {" "}
+                                                        Remaining:{" "}
                                                         <span className="font-medium">
-                                                            {
-                                                                maxQuantity
-                                                            }
+                                                            {maxQuantity}
                                                         </span>
                                                     </span>
                                                 </div>
@@ -1069,7 +1095,7 @@ export default function CreateSalePage() {
                         {/* Payment Type */}
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-(--muted-foreground)">
-                                Payment Type
+                                Payment Status
                             </label>
 
                             <select
@@ -1134,10 +1160,9 @@ export default function CreateSalePage() {
                         {/* Partial Payment */}
                         {paymentType ===
                             "partial" && (
-                                <div className="space-y-1">
+                                <div className="space-y-1 md:col-span-2">
                                     <label className="text-xs font-medium text-(--muted-foreground)">
-                                        Paid Amount
-                                        (birr)
+                                        Paid Amount (birr)
                                     </label>
 
                                     <input
@@ -1163,16 +1188,18 @@ export default function CreateSalePage() {
                                     />
 
                                     <p className="text-xs text-(--muted-foreground)">
-                                        Remaining:{" "}
-                                        {Math.max(
-                                            0,
-                                            saleTotal -
-                                            Number(
-                                                paidAmount ||
-                                                0
-                                            )
-                                        ).toLocaleString()}{" "}
-                                        birr
+                                        Remaining Balance:{" "}
+                                        <span className="font-semibold text-rose-500 font-mono">
+                                            {Math.max(
+                                                0,
+                                                saleTotal -
+                                                Number(
+                                                    paidAmount ||
+                                                    0
+                                                )
+                                            ).toLocaleString()}{" "}
+                                            birr
+                                        </span>
                                     </p>
                                 </div>
                             )}
@@ -1183,11 +1210,7 @@ export default function CreateSalePage() {
                         "credit" && (
                             <div className="p-3 rounded-lg bg-(--muted)/50 border border-(--border)">
                                 <p className="text-xs text-(--muted-foreground)">
-                                    No payment will be
-                                    recorded now. The
-                                    full sale amount will
-                                    be added to
-                                    receivables.
+                                    No payment will be recorded now. The full sale amount will be added to credit receivables.
                                 </p>
                             </div>
                         )}

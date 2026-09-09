@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import FinanceService from "@/services/finance.service";
 import {
     createFinancialAccountSchema,
     financialAccountListQuerySchema,

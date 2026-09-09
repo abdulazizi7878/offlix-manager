@@ -28,8 +28,7 @@ export const POST = withErrorHandling(
             );
         }
 
-        const { user } =
-            currentUser;
+        const { user } = currentUser;
 
         const body =
             await request.json();
@@ -69,8 +68,7 @@ export const GET = withErrorHandling(
             );
         }
 
-        const { user } =
-            currentUser;
+        const { user } = currentUser;
 
         const { searchParams } =
             new URL(request.url);
@@ -93,9 +91,23 @@ export const GET = withErrorHandling(
                     searchParams.get("branchId") ??
                     undefined,
 
+                employeeId:
+                    searchParams.get("employeeId") ??
+                    undefined,
+
                 paymentStatus:
                     searchParams.get(
                         "paymentStatus"
+                    ) ?? undefined,
+
+                dateFrom:
+                    searchParams.get(
+                        "dateFrom"
+                    ) ?? undefined,
+
+                dateTo:
+                    searchParams.get(
+                        "dateTo"
                     ) ?? undefined,
             });
 

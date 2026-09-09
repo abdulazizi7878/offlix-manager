@@ -2,288 +2,452 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ShoppingCart, Plus, AlertCircle, Search, Filter, Store, ArrowUpDown, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+    Plus,
+    Search,
+    Filter,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    ArrowUpDown,
+    CheckCircle2,
+    Clock,
+    AlertCircle,
+    FileText,
+    TrendingUp,
+    DollarSign,
+    Building2,
+    User,
+} from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
-
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+
 dayjs.extend(relativeTime);
 
 export default function SalesOverviewPage() {
+    const router = useRouter();
     const [sales, setSales] = useState([]);
+    const [summary, setSummary] = useState({
+        totalSales: 0,
+        totalRevenue: 0,
+        paid: 0,
+        partial: 0,
+        credit: 0,
+    });
+    const [branches, setBranches] = useState([]);
+    const [employees, setEmployees] = useState([]);
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Filter and Search States
-    const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'paid', 'partial'
-    const [branchFilter, setBranchFilter] = useState("all"); // 'all', or specific branch name
-    const [sortBy, setSortBy] = useState("newest"); // 'newest', 'oldest', 'amount-high', 'amount-low'
+    // Filters & Pagination
+    const [search, setSearch] = useState("");
+    const [branchId, setBranchId] = useState("");
+    const [employeeId, setEmployeeId] = useState("");
+    const [paymentStatus, setPaymentStatus] = useState("");
+    const [selectedDate, setSelectedDate] = useState("");
+
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    const loadFilterOptions = async () => {
+        try {
+            const [branchesRes, employeesRes] = await Promise.all([
+                fetchApi("/api/v1/dashboard/branches").catch(() => ({ data: [] })),
+                fetchApi("/api/v1/dashboard/users").catch(() => ({ data: [] })),
+            ]);
+
+            setBranches(
+                branchesRes.data?.branches ||
+                branchesRes.data ||
+                branchesRes ||
+                []
+            );
+            setEmployees(
+                employeesRes.data?.users ||
+                employeesRes.data ||
+                employeesRes ||
+                []
+            );
+        } catch (err) {
+            console.error("Failed to load filter options", err);
+        }
+    };
+
+    const loadSales = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const params = new URLSearchParams();
+            if (search) params.append("search", search);
+            if (branchId) params.append("branchId", branchId);
+            if (employeeId) params.append("employeeId", employeeId);
+            if (paymentStatus) params.append("paymentStatus", paymentStatus);
+
+            if (selectedDate) {
+                params.append("startDate", selectedDate);
+                params.append("endDate", selectedDate);
+            }
+
+            params.append("page", page.toString());
+
+            const response = await fetchApi(`/api/v1/dashboard/sales?${params.toString()}`);
+
+            const data = response.data || response;
+            setSales(data.sales || data.items || data || []);
+
+            if (data.summary) {
+                setSummary(data.summary);
+            } else {
+                const list = data.sales || data.items || data || [];
+                const rev = list.reduce((acc, s) => acc + Number(s.totalAmount || s.total_amount || 0), 0);
+                const pCount = list.filter(s => (s.paymentStatus || s.payment_status) === "paid").length;
+                const partCount = list.filter(s => (s.paymentStatus || s.payment_status) === "partial").length;
+                const credCount = list.filter(s => (s.paymentStatus || s.payment_status) === "credit").length;
+
+                setSummary({
+                    totalSales: list.length,
+                    totalRevenue: rev,
+                    paid: pCount,
+                    partial: partCount,
+                    credit: credCount,
+                });
+            }
+
+            if (data.totalPages) {
+                setTotalPages(data.totalPages);
+            }
+        } catch (err) {
+            setError(err.message || "Failed to load sales data.");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [search, branchId, employeeId, paymentStatus, selectedDate, page]);
 
     useEffect(() => {
-        async function loadSales() {
-            try {
-                const res = await fetchApi("/api/v1/dashboard/sales");
-                setSales(res.data?.sales || res.data || res);
-            } catch (err) {
-                setError(err.message || "Failed to load sales.");
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        loadSales();
+        loadFilterOptions();
     }, []);
 
-    // Extract unique branch names for the branch filter dropdown
-    const availableBranches = useMemo(() => {
-        const branches = sales.map((sale) => sale.branchName || sale.branch_name).filter(Boolean);
-        return Array.from(new Set(branches));
-    }, [sales]);
+    useEffect(() => {
+        loadSales();
+    }, [loadSales]);
 
-    // Filter and Sort Logic
-    const filteredSales = useMemo(() => {
-        return sales
-            .filter((sale) => {
-                const customer = (sale.customerName || sale.customer_name || "Walk-in Customer").toLowerCase();
-                const branchName = sale.branchName || sale.branch_name || "";
-                const branch = branchName.toLowerCase();
-                const employee = (sale.employeeName || sale.employee_name || "").toLowerCase();
-                const id = (sale.id || "").toLowerCase();
+    const handleSelectToday = () => {
+        const todayStr = new Date().toISOString().split("T")[0];
+        setSelectedDate(todayStr);
+        setPage(1);
+    };
 
-                const query = searchQuery.toLowerCase();
-                const matchesSearch = customer.includes(query) || branch.includes(query) || employee.includes(query) || id.includes(query);
-
-                const status = sale.paymentStatus || sale.payment_status;
-                const matchesStatus = statusFilter === "all" || status === statusFilter;
-
-                const matchesBranch = branchFilter === "all" || branchName === branchFilter;
-
-                return matchesSearch && matchesStatus && matchesBranch;
-            })
-            .sort((a, b) => {
-                const dateA = new Date(a.createdAt || a.created_at || 0);
-                const dateB = new Date(b.createdAt || b.created_at || 0);
-                const amountA = Number(a.totalAmount || a.total_amount || 0);
-                const amountB = Number(b.totalAmount || b.total_amount || 0);
-
-                if (sortBy === "newest") return dateB - dateA;
-                if (sortBy === "oldest") return dateA - dateB;
-                if (sortBy === "amount-high") return amountB - amountA;
-                if (sortBy === "amount-low") return amountA - amountB;
-                return 0;
-            });
-    }, [sales, searchQuery, statusFilter, branchFilter, sortBy]);
-
-    // Calculate Summary Metrics
-    const totalRevenue = useMemo(() => {
-        return sales.reduce((acc, curr) => acc + Number(curr.totalAmount || curr.total_amount || 0), 0);
-    }, [sales]);
-
-    const totalPaid = useMemo(() => {
-        return sales.reduce((acc, curr) => acc + Number(curr.paidAmount || curr.paid_amount || 0), 0);
-    }, [sales]);
-
-    if (isLoading) {
-        return (
-            <div className="max-w-6xl mx-auto space-y-6 pb-16 animate-pulse">
-                <div className="flex justify-between pb-4 border-b border-(--border)">
-                    <div className="h-8 w-40 bg-(--muted) rounded-md" />
-                    <div className="h-8 w-28 bg-(--muted) rounded-md" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="h-24 bg-(--muted) rounded-xl" />
-                    <div className="h-24 bg-(--muted) rounded-xl" />
-                    <div className="h-24 bg-(--muted) rounded-xl" />
-                </div>
-                <div className="h-64 bg-(--muted) rounded-xl" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="max-w-6xl mx-auto p-6">
-                <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center gap-3 text-(--destructive)">
-                    <AlertCircle className="w-5 h-5 shrink-0" />
-                    <p className="text-sm font-semibold">{error}</p>
-                </div>
-            </div>
-        );
-    }
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case "paid":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        <CheckCircle2 className="w-3 h-3" /> Paid
+                    </span>
+                );
+            case "partial":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                        <Clock className="w-3 h-3" /> Partial
+                    </span>
+                );
+            case "credit":
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                        <AlertCircle className="w-3 h-3" /> Credit
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-(--muted) text-(--muted-foreground)">
+                        {status}
+                    </span>
+                );
+        }
+    };
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 pb-16">
-            <div className="flex items-center justify-between pb-4 border-b border-(--border)">
+        <div className="max-w-7xl mx-auto space-y-6 pb-16">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight">Sales History & Overview</h1>
-                    <p className="text-xs text-(--muted-foreground)">Track business sales, payment statuses, revenue, and branch transactions.</p>
+                    <h1 className="text-2xl font-bold tracking-tight">Sales</h1>
+                    <p className="text-sm text-(--muted-foreground)">
+                        Manage transactions, track payments, and review sales records.
+                    </p>
                 </div>
+
                 <Link
                     href="/dashboard/sales/create"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-(--primary) text-(--primary-foreground) rounded-lg text-xs font-medium hover:opacity-90 transition-opacity"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-(--primary) text-(--primary-foreground) rounded-xl text-sm font-medium hover:opacity-95 transition-opacity shadow-xs"
                 >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                     <span>Create Sale</span>
                 </Link>
             </div>
 
-            {/* Quick Metrics Overview Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-1 shadow-xs">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Total Recorded Sales</span>
-                    <p className="text-2xl font-mono font-bold">{sales.length}</p>
+            {/* Sales Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
+                    <span className="text-xs font-medium text-(--muted-foreground)">Total Sales</span>
+                    <div className="text-xl font-bold font-mono">{summary.totalSales}</div>
                 </div>
-                <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-1 shadow-xs">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Total Revenue</span>
-                    <p className="text-2xl font-mono font-bold text-(--primary)">{totalRevenue.toLocaleString()} birr</p>
+
+                <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
+                    <span className="text-xs font-medium text-(--muted-foreground)">Total Revenue</span>
+                    <div className="text-xl font-bold font-mono text-(--primary)">
+                        {Number(summary.totalRevenue || 0).toLocaleString()} birr
+                    </div>
                 </div>
-                <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-1 shadow-xs">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Total Received Cash</span>
-                    <p className="text-2xl font-mono font-bold text-emerald-600">{totalPaid.toLocaleString()} birr</p>
+
+                <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
+                    <span className="text-xs font-medium text-(--muted-foreground)">Paid</span>
+                    <div className="text-xl font-bold font-mono text-emerald-500">{summary.paid}</div>
+                </div>
+
+                <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
+                    <span className="text-xs font-medium text-(--muted-foreground)">Partial</span>
+                    <div className="text-xl font-bold font-mono text-amber-500">{summary.partial}</div>
+                </div>
+
+                <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
+                    <span className="text-xs font-medium text-(--muted-foreground)">Credit</span>
+                    <div className="text-xl font-bold font-mono text-rose-500">{summary.credit}</div>
                 </div>
             </div>
 
-            {/* Filter and Search Bar Controls with Fixed Dark Mode Select Options */}
-            <div className="bg-(--card) border border-(--border) rounded-xl p-4 flex flex-col md:flex-row items-center gap-3 shadow-xs">
-                <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
-                    <input
-                        type="text"
-                        placeholder="Search by customer, branch, employee, or ID..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2.5 bg-(--muted)/30 border border-(--border) rounded-xl text-xs focus:outline-none focus:border-(--primary) transition-colors"
-                    />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-                    {/* Modern Branch Filter */}
-                    <div className="relative group">
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-(--muted)/30 border border-(--border) rounded-xl text-xs hover:border-(--primary)/55 transition-colors cursor-pointer">
-                            <Store className="w-3.5 h-3.5 text-(--muted-foreground)" />
-                            <span className="font-medium text-(--foreground)">
-                                {branchFilter === "all" ? "All Branches" : branchFilter}
-                            </span>
-                            <ChevronDown className="w-3.5 h-3.5 text-(--muted-foreground) ml-1" />
-                        </div>
-                        <select
-                            value={branchFilter}
-                            onChange={(e) => setBranchFilter(e.target.value)}
-                            aria-label="Filter by branch"
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full bg-slate-900 text-slate-100"
-                        >
-                            <option value="all" className="bg-slate-900 text-slate-100 py-2">All Branches</option>
-                            {availableBranches.map((branch) => (
-                                <option key={branch} value={branch} className="bg-slate-900 text-slate-100 py-2">{branch}</option>
-                            ))}
-                        </select>
+            {/* Filters Section */}
+            <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
+                        <input
+                            type="text"
+                            placeholder="Search customer, ID..."
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setPage(1);
+                            }}
+                            className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
+                        />
                     </div>
 
-                    {/* Modern Status Filter */}
-                    <div className="relative group">
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-(--muted)/30 border border-(--border) rounded-xl text-xs hover:border-(--primary)/50 transition-colors cursor-pointer">
-                            <Filter className="w-3.5 h-3.5 text-(--muted-foreground)" />
-                            <span className="font-medium text-(--foreground) capitalize">
-                                {statusFilter === "all" ? "All Statuses" : statusFilter}
-                            </span>
-                            <ChevronDown className="w-3.5 h-3.5 text-(--muted-foreground) ml-1" />
-                        </div>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            aria-label="Filter by payment status"
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full bg-slate-900 text-slate-100"
-                        >
-                            <option value="all" className="bg-slate-900 text-slate-100 py-2">All Statuses</option>
-                            <option value="paid" className="bg-slate-900 text-slate-100 py-2">Paid</option>
-                            <option value="partial" className="bg-slate-900 text-slate-100 py-2">Partial</option>
-                        </select>
-                    </div>
+                    <select
+                        value={branchId}
+                        onChange={(e) => {
+                            setBranchId(e.target.value);
+                            setPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
+                    >
+                        <option value="" className="bg-slate-900 text-slate-100 py-2">All Branches</option>
+                        {branches.map((b) => (
+                            <option key={b.id} value={b.id} className="bg-slate-900 text-slate-100 py-2">
+                                {b.name}
+                            </option>
+                        ))}
+                    </select>
 
-                    {/* Modern Sort Dropdown */}
-                    <div className="relative group">
-                        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-(--muted)/30 border border-(--border) rounded-xl text-xs hover:border-(--primary)/50 transition-colors cursor-pointer">
-                            <ArrowUpDown className="w-3.5 h-3.5 text-(--muted-foreground)" />
-                            <span className="font-medium text-(--foreground)">
-                                {sortBy === "newest" && "Newest First"}
-                                {sortBy === "oldest" && "Oldest First"}
-                                {sortBy === "amount-high" && "Amount: High to Low"}
-                                {sortBy === "amount-low" && "Amount: Low to High"}
-                            </span>
-                            <ChevronDown className="w-3.5 h-3.5 text-(--muted-foreground) ml-1" />
-                        </div>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            aria-label="Sort sales"
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full bg-slate-900 text-slate-100"
-                        >
-                            <option value="newest" className="bg-slate-900 text-slate-100 py-2">Newest First</option>
-                            <option value="oldest" className="bg-slate-900 text-slate-100 py-2">Oldest First</option>
-                            <option value="amount-high" className="bg-slate-900 text-slate-100 py-2">Amount: High to Low</option>
-                            <option value="amount-low" className="bg-slate-900 text-slate-100 py-2">Amount: Low to High</option>
-                        </select>
-                    </div>
+                    <select
+                        value={employeeId}
+                        onChange={(e) => {
+                            setEmployeeId(e.target.value);
+                            setPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
+                    >
+                        <option value="" className="bg-slate-900 text-slate-100 py-2">All Employees</option>
+
+                        {employees.map((emp) => (
+                            <option key={emp.id} value={emp.id} className="bg-slate-900 text-slate-100 py-2">
+                                {emp.name || emp.username}
+                            </option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={paymentStatus}
+                        onChange={(e) => {
+                            setPaymentStatus(e.target.value);
+                            setPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
+                    >
+                        <option value="" className="bg-slate-900 text-slate-100 py-2">All Payment Statuses</option>
+                        <option value="paid" className="bg-slate-900 text-slate-100 py-2">Paid</option>
+                        <option value="partial" className="bg-slate-900 text-slate-100 py-2">Partial</option>
+                        <option value="credit" className="bg-slate-900 text-slate-100 py-2">Credit</option>
+                    </select>
                 </div>
-            </div>
 
-            {/* Sales List */}
-            {filteredSales.length === 0 ? (
-                <div className="bg-(--card) border border-(--border) rounded-xl p-12 text-center space-y-3">
-                    <ShoppingCart className="w-10 h-10 mx-auto text-(--muted-foreground)" />
-                    <h2 className="text-sm font-semibold">No matching sales found</h2>
-                    <p className="text-xs text-(--muted-foreground)">Try adjusting your search query, branch filter, or status options.</p>
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-3">
-                    {filteredSales.map((sale) => {
-                        const rawDate = sale.createdAt || sale.created_at;
-                        const paymentStatus = sale.paymentStatus || sale.payment_status;
-                        const totalAmount = Number(sale.totalAmount || sale.total_amount || 0);
-                        const paidAmount = Number(sale.paidAmount || sale.paid_amount || 0);
-                        const remainingAmount = Number(sale.remainingAmount || sale.remaining_amount || 0);
-                        const itemCount = sale.itemCount || sale.item_count || 1;
-
-                        return (
-                            <Link
-                                key={sale.id}
-                                href={`/dashboard/sales/${sale.id}`}
-                                className="bg-(--card) border border-(--border) rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-(--primary) transition-all shadow-xs"
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-(--border)">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <span className="text-xs text-(--muted-foreground) shrink-0 flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5" /> Date Filter:
+                        </span>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => {
+                                setSelectedDate(e.target.value);
+                                setPage(1);
+                            }}
+                            className="px-3 py-1.5 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
+                        />
+                        {selectedDate && (
+                            <button
+                                onClick={() => {
+                                    setSelectedDate("");
+                                    setPage(1);
+                                }}
+                                className="text-xs text-(--muted-foreground) hover:text-(--foreground) underline ml-1"
                             >
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-bold">{sale.customerName || sale.customer_name || "Walk-in Customer"}</span>
-                                        <span className={`text-[10px] font-medium px-2.5 py-0.5 rounded-full uppercase ${paymentStatus === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                                            {paymentStatus}
-                                        </span>
-                                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-(--muted) text-(--muted-foreground)">
-                                            {itemCount} {Number(itemCount) === 1 ? 'item' : 'items'}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs font-mono text-(--muted-foreground)">
-                                        Branch: {sale.branchName || sale.branch_name || "N/A"} • By: {sale.employeeName || sale.employee_name || "N/A"} • {dayjs(rawDate).fromNow()} ({dayjs(rawDate).format("MMM D, YYYY")})
-                                    </p>
-                                </div>
+                                Clear Date
+                            </button>
+                        )}
+                    </div>
 
-                                <div className="flex items-center justify-between md:justify-end gap-6 pt-2 md:pt-0 border-t md:border-t-0 border-(--border)">
-                                    <div className="text-left md:text-right">
-                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Paid / Balance</p>
-                                        <p className="text-xs font-mono font-medium">
-                                            <span className="text-emerald-600">{paidAmount.toLocaleString()}</span> / <span className="text-amber-600">{remainingAmount.toLocaleString()}</span> birr
-                                        </p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Total</p>
-                                        <span className="text-base font-mono font-bold text-(--primary)">{totalAmount.toLocaleString()} birr</span>
-                                    </div>
-                                </div>
-                            </Link>
-                        );
-                    })}
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                        <button
+                            onClick={handleSelectToday}
+                            className="px-3 py-1.5 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-xl text-xs font-medium transition-colors border border-(--border)"
+                        >
+                            Select Today
+                        </button>
+                    </div>
                 </div>
-            )}
+            </div>
+
+            {/* Content Table */}
+            <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
+                {isLoading ? (
+                    <div className="p-12 text-center space-y-3">
+                        <div className="w-6 h-6 border-2 border-(--primary) border-t-transparent rounded-full animate-spin mx-auto" />
+                        <p className="text-xs text-(--muted-foreground)">Loading sales records...</p>
+                    </div>
+                ) : error ? (
+                    <div className="p-8 text-center space-y-3 text-(--destructive)">
+                        <AlertCircle className="w-8 h-8 mx-auto" />
+                        <p className="text-sm font-semibold">{error}</p>
+                        <button
+                            onClick={loadSales}
+                            className="px-3 py-1.5 bg-(--muted) text-(--foreground) rounded-lg text-xs font-medium hover:opacity-80"
+                        >
+                            Try Again
+                        </button>
+                    </div>
+                ) : sales.length === 0 ? (
+                    <div className="p-12 text-center space-y-3">
+                        <FileText className="w-10 h-10 text-(--muted-foreground) mx-auto opacity-40" />
+                        <h3 className="text-sm font-semibold">No sales found</h3>
+                        <p className="text-xs text-(--muted-foreground)">
+                            Try clearing filters or record a new sale transaction.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
+                                    <th className="py-3 px-4">Sale ID / Date</th>
+                                    <th className="py-3 px-4">Branch</th>
+                                    <th className="py-3 px-4">Customer</th>
+                                    <th className="py-3 px-4">Employee</th>
+                                    <th className="py-3 px-4 text-right">Total</th>
+                                    <th className="py-3 px-4">Status</th>
+                                    <th className="py-3 px-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-(--border) text-sm">
+                                {sales.map((sale) => {
+                                    const id = sale.id || sale._id;
+                                    const dateStr = sale.createdAt || sale.created_at || sale.date;
+
+                                    const branchName = sale.branch_name || sale.branchName || sale.branch?.name || "—";
+                                    const customer = sale.customerName || sale.customer_name || "Walk-in";
+                                    const empName = sale.employee_name || sale.employeeName || sale.employee?.name || sale.employee?.username || "—";
+
+                                    const total = Number(sale.totalAmount || sale.total_amount || 0);
+                                    const status = sale.paymentStatus || sale.payment_status || "paid";
+
+                                    const relativeTime = dateStr ? dayjs(dateStr).fromNow() : "";
+
+                                    return (
+                                        <tr
+                                            key={id}
+                                            onClick={() => router.push(`/dashboard/sales/${id}`)}
+                                            className="hover:bg-(--muted)/20 transition-colors cursor-pointer"
+                                        >
+                                            <td className="py-3 px-4 font-mono">
+                                                <div className="font-semibold text-xs text-(--primary) hover:underline">
+                                                    #{String(id).slice(-8)}
+                                                </div>
+                                                <div className="text-[11px] text-(--muted-foreground)" title={dateStr ? new Date(dateStr).toLocaleString() : ""}>
+                                                    {relativeTime}
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4 text-xs">
+                                                {branchName}
+                                            </td>
+                                            <td className="py-3 px-4 text-xs font-medium">
+                                                {customer}
+                                            </td>
+                                            <td className="py-3 px-4 text-xs text-(--muted-foreground)">
+                                                {empName}
+                                            </td>
+                                            <td className="py-3 px-4 text-right font-mono font-semibold text-xs">
+                                                {total.toLocaleString()} birr
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                {getStatusBadge(status)}
+                                            </td>
+                                            <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                                <Link
+                                                    href={`/dashboard/sales/${id}`}
+                                                    className="inline-flex items-center px-2.5 py-1 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-lg text-xs font-medium transition-colors"
+                                                >
+                                                    View
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {totalPages > 1 && (
+                    <div className="p-4 border-t border-(--border) flex items-center justify-between">
+                        <span className="text-xs text-(--muted-foreground)">
+                            Page {page} of {totalPages}
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                                disabled={page === 1}
+                                className="p-1.5 border border-(--border) rounded-lg hover:bg-(--muted) disabled:opacity-40 transition-colors"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                                disabled={page === totalPages}
+                                className="p-1.5 border border-(--border) rounded-lg hover:bg-(--muted) disabled:opacity-40 transition-colors"
+                            >
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
