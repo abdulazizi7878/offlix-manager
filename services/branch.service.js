@@ -69,7 +69,7 @@ const BranchService = {
       
       for (const employee of data.employees ?? []) {
         const existingEmployee =
-          await BranchRepository.getEmployeeById(
+          await BranchRepository.getEmployeeForAccount(
             client,
             accountId,
             employee.userId
