@@ -39,7 +39,7 @@ export default function ProductsPage() {
     const loadFilterOptions = async () => {
         try {
             const [branchRes, categoryRes] = await Promise.all([
-                fetchApi("/api/v1/dashboard/branches").catch(() => ({ data: [] })),
+                fetchApi("/api/v1/dashboard/available-branches?permission=products.view").catch(() => ({ data: [] })),
                 fetchApi("/api/v1/dashboard/categories").catch(() => ({ data: [] })),
             ]);
             setBranches(branchRes.data?.branches || branchRes.data || []);

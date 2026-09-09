@@ -48,7 +48,7 @@ export default function CreateSalePage() {
     useEffect(() => {
         async function loadBranches() {
             try {
-                const branchesResponse = await fetchApi("/api/v1/dashboard/branches");
+                const branchesResponse = await fetchApi("/api/v1/dashboard/available-branches?permission=sales.view");
 
                 setBranches(
                     branchesResponse.data?.branches ||

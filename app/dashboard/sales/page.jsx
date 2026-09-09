@@ -57,7 +57,7 @@ export default function SalesOverviewPage() {
     const loadFilterOptions = async () => {
         try {
             const [branchesRes, employeesRes] = await Promise.all([
-                fetchApi("/api/v1/dashboard/branches").catch(() => ({ data: [] })),
+                fetchApi("/api/v1/dashboard/available-branches?permission=sales.view").catch(() => ({ data: [] })),
                 fetchApi("/api/v1/dashboard/users").catch(() => ({ data: [] })),
             ]);
 

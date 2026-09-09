@@ -37,7 +37,7 @@ export default function CreateProductPage() {
         async function fetchDropdownData() {
             try {
                 const [branchRes, categoryRes] = await Promise.all([
-                    fetchApi("/api/v1/dashboard/branches").catch(() => ({ data: [] })),
+                    fetchApi("/api/v1/dashboard/available-branches?permission=products.create").catch(() => ({ data: [] })),
                     fetchApi("/api/v1/dashboard/categories").catch(() => ({ data: [] })),
                 ]);
 
@@ -391,3 +391,4 @@ export default function CreateProductPage() {
         </div>
     );
 }
+
