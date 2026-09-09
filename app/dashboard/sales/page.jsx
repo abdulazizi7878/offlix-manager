@@ -224,8 +224,8 @@ export default function SalesOverviewPage() {
 
             {/* Filters Section */}
             <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <div className="relative">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
                         <input
                             type="text"
@@ -238,7 +238,9 @@ export default function SalesOverviewPage() {
                             className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                         />
                     </div>
+                </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-(--border)">
                     <select
                         value={branchId}
                         onChange={(e) => {
@@ -264,7 +266,6 @@ export default function SalesOverviewPage() {
                         className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
                     >
                         <option value="" className="bg-slate-900 text-slate-100 py-2">All Employees</option>
-
                         {employees.map((emp) => (
                             <option key={emp.id} value={emp.id} className="bg-slate-900 text-slate-100 py-2">
                                 {emp.name || emp.username}
@@ -285,13 +286,8 @@ export default function SalesOverviewPage() {
                         <option value="partial" className="bg-slate-900 text-slate-100 py-2">Partial</option>
                         <option value="credit" className="bg-slate-900 text-slate-100 py-2">Credit</option>
                     </select>
-                </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-(--border)">
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <span className="text-xs text-(--muted-foreground) shrink-0 flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5" /> Date Filter:
-                        </span>
+                    <div className="flex items-center gap-2">
                         <input
                             type="date"
                             value={selectedDate}
@@ -299,7 +295,7 @@ export default function SalesOverviewPage() {
                                 setSelectedDate(e.target.value);
                                 setPage(1);
                             }}
-                            className="px-3 py-1.5 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
+                            className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                         />
                         {selectedDate && (
                             <button
@@ -307,21 +303,21 @@ export default function SalesOverviewPage() {
                                     setSelectedDate("");
                                     setPage(1);
                                 }}
-                                className="text-xs text-(--muted-foreground) hover:text-(--foreground) underline ml-1"
+                                className="text-xs text-(--muted-foreground) hover:text-(--foreground) underline shrink-0"
                             >
-                                Clear Date
+                                Clear
                             </button>
                         )}
                     </div>
+                </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                        <button
-                            onClick={handleSelectToday}
-                            className="px-3 py-1.5 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-xl text-xs font-medium transition-colors border border-(--border)"
-                        >
-                            Select Today
-                        </button>
-                    </div>
+                <div className="flex items-center justify-end pt-2 border-t border-(--border)">
+                    <button
+                        onClick={handleSelectToday}
+                        className="px-3 py-1.5 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-xl text-xs font-medium transition-colors border border-(--border)"
+                    >
+                        Select Today
+                    </button>
                 </div>
             </div>
 

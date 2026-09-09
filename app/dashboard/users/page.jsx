@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Users, MoreHorizontal, Pencil, AlertCircle, RefreshCcw, ChevronLeft, ChevronRight, CheckCircle2, XCircle, UserCheck, ShieldCheck, Mail, Phone, Calendar } from "lucide-react";
+import { Plus, Users, MoreHorizontal, Pencil, AlertCircle, RefreshCcw, ChevronLeft, ChevronRight, CheckCircle2, XCircle, UserCheck, ShieldCheck, Mail, Phone, Calendar, Search } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
@@ -12,15 +12,22 @@ export default function UsersOverviewPage() {
     const [users, setUsers] = useState([]);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1, hasNextPage: false, hasPreviousPage: false });
     const [currentPage, setCurrentPage] = useState(1);
+    const [search, setSearch] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [openMenuId, setOpenMenuId] = useState(null);
 
-    const fetchUsers = async (page = 1) => {
+    const fetchUsers = async (page = 1, searchQuery = "") => {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await fetchApi(`/api/v1/dashboard/users?page=${page}&limit=10`);
+            const params = new URLSearchParams();
+            params.append("page", page.toString());
+            params.append("limit", "10");
+            if (searchQuery) {
+                params.append("search", searchQuery);
+            }
+
+            const res = await fetchApi(`/api/v1/dashboard/users?${params.toString()}`);
             const data = res.data || {};
             setUsers(data.users || []);
             if (data.pagination) {
@@ -34,8 +41,12 @@ export default function UsersOverviewPage() {
     };
 
     useEffect(() => {
-        fetchUsers(currentPage);
-    }, [currentPage]);
+        const timer = setTimeout(() => {
+            fetchUsers(currentPage, search);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [currentPage, search]);
 
     return (
         <div className="space-y-6">
@@ -61,6 +72,25 @@ export default function UsersOverviewPage() {
                 </Link>
             </div>
 
+            {/* Filters Section */}
+            <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
+                        <input
+                            type="text"
+                            placeholder="Search employee name, email, phone..."
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                            className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
+                        />
+                    </div>
+                </div>
+            </div>
+
             {/* Error State */}
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
@@ -72,7 +102,7 @@ export default function UsersOverviewPage() {
                         </div>
                     </div>
                     <button
-                        onClick={() => fetchUsers(currentPage)}
+                        onClick={() => fetchUsers(currentPage, search)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-(--background) border border-(--border) text-(--foreground) text-xs font-medium rounded-lg hover:bg-(--muted) transition-colors"
                     >
                         <RefreshCcw className="w-3.5 h-3.5" />
@@ -116,9 +146,9 @@ export default function UsersOverviewPage() {
                         <Users className="w-6 h-6" />
                     </div>
                     <div className="max-w-sm mx-auto space-y-1">
-                        <h2 className="text-lg font-semibold">No employees yet</h2>
+                        <h2 className="text-lg font-semibold">No employees found</h2>
                         <p className="text-xs text-(--muted-foreground)">
-                            Add your first employee to start managing your team members.
+                            Try clearing your search or add a new employee to start managing your team.
                         </p>
                     </div>
                     <Link

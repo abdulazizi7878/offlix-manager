@@ -2,9 +2,9 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { Plus, GitBranch, MoreHorizontal, Pencil, Power, AlertCircle, RefreshCcw } from "lucide-react";
+import { Plus, GitBranch, MoreHorizontal, Pencil, Power, AlertCircle, RefreshCcw, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
@@ -16,22 +16,54 @@ export default function BranchesOverviewPage() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const menuRef = useRef(null);
 
-  const fetchBranches = async () => {
+  // Pagination & Filters
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+
+  const fetchBranches = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetchApi("/api/v1/dashboard/branches");
-      setBranches(res.data?.branches || res.data || []);
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+      });
+      if (status) queryParams.append("status", status);
+
+      const res = await fetchApi(`/api/v1/dashboard/branches?${queryParams.toString()}`);
+
+      // Since the API returns { success: true, data: [...] } directly as an array:
+      const rawBranches = Array.isArray(res.data) ? res.data : (res.data?.branches || res.data?.data || []);
+
+      setBranches(rawBranches);
+      setTotalPages(Math.ceil(rawBranches.length / limit) || 1);
     } catch (err) {
       setError(err.message || "Failed to load branches.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, limit, status]);
 
   useEffect(() => {
     fetchBranches();
-  }, []);
+  }, [fetchBranches]);
+
+  // UseMemo hook for instant client-side searching and status filtering
+  const filteredBranches = useMemo(() => {
+    return branches.filter((branch) => {
+      const matchesSearch = search.trim() === "" ||
+        branch.name?.toLowerCase().includes(search.toLowerCase()) ||
+        branch.description?.toLowerCase().includes(search.toLowerCase());
+
+      const matchesStatus = status === "" || branch.status === status;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [branches, search, status]);
 
   // Handle clicking outside to close the dropdown menu
   useEffect(() => {
@@ -65,7 +97,7 @@ export default function BranchesOverviewPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border)">
         <div className="flex items-center gap-3">
@@ -75,17 +107,48 @@ export default function BranchesOverviewPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Branches</h1>
             <p className="text-sm text-(--muted-foreground) mt-0.5">
-              Manage the locations connected to your business.
+              Manage the locations connected to your business. ({filteredBranches.length} total)
             </p>
           </div>
         </div>
         <Link
           href="/dashboard/branches/create"
-          className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity focus:outline-none focus:ring-2 focus:ring-(--ring)"
+          className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity focus:outline-none focus:ring-2 focus:ring-(--ring) shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Create branch</span>
         </Link>
+      </div>
+
+      {/* Search & Filters Toolbar */}
+      <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
+            <input
+              type="text"
+              placeholder="Search branches by name, description..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="w-full pl-9 pr-4 py-2 bg-(--background) border border-(--border) rounded-lg text-sm text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--ring)"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-(--border)">
+          <select
+            value={status}
+            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            className="px-3 py-1.5 bg-(--background) border border-(--border) rounded-lg text-xs text-(--foreground) focus:outline-none"
+          >
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
       </div>
 
       {/* Error State */}
@@ -108,41 +171,17 @@ export default function BranchesOverviewPage() {
         </div>
       )}
 
-      {/* Loading Skeleton */}
-      {isLoading && !error && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="h-16 bg-(--muted)/40 rounded-xl animate-pulse" />
-          ))}
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!isLoading && !error && branches.length === 0 && (
-        <div className="p-12 text-center bg-(--card) border border-(--border) rounded-xl space-y-4">
-          <div className="mx-auto w-12 h-12 bg-(--muted) text-(--muted-foreground) rounded-full flex items-center justify-center">
-            <GitBranch className="w-6 h-6" />
+      {/* Branches Table / Content Container */}
+      <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
+        {/* Loading Skeleton */}
+        {isLoading ? (
+          <div className="p-8 space-y-4 animate-pulse">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-12 bg-(--muted) rounded-lg w-full" />
+            ))}
           </div>
-          <div className="max-w-sm mx-auto space-y-1">
-            <h2 className="text-lg font-semibold">No branches yet</h2>
-            <p className="text-xs text-(--muted-foreground)">
-              Create your first branch to start organizing your business locations.
-            </p>
-          </div>
-          <Link
-            href="/dashboard/branches/create"
-            className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create branch</span>
-          </Link>
-        </div>
-      )}
-
-      {/* Branches Table */}
-      {!isLoading && !error && branches.length > 0 && (
-        <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
-          <div className="overflow-x-auto pb-24">
+        ) : filteredBranches.length > 0 ? (
+          <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
                 <tr>
@@ -153,7 +192,7 @@ export default function BranchesOverviewPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-(--border)">
-                {branches.map((branch) => {
+                {filteredBranches.map((branch) => {
                   const isActive = branch.status === "active";
                   const isActioning = actionLoadingId === branch.id;
 
@@ -171,8 +210,8 @@ export default function BranchesOverviewPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${isActive
-                            ? "bg-(--success)/10 text-(--success)"
-                            : "bg-(--muted) text-(--muted-foreground)"
+                          ? "bg-(--success)/10 text-(--success)"
+                          : "bg-(--muted) text-(--muted-foreground)"
                           }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-(--success)" : "bg-(--muted-foreground)"}`} />
                           {isActive ? "Active" : "Inactive"}
@@ -228,8 +267,56 @@ export default function BranchesOverviewPage() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="p-12 text-center space-y-3">
+            <div className="mx-auto w-12 h-12 bg-(--muted) text-(--muted-foreground) rounded-full flex items-center justify-center">
+              <GitBranch className="w-6 h-6" />
+            </div>
+            <div className="max-w-sm mx-auto space-y-1">
+              <h2 className="text-lg font-semibold">No branches found</h2>
+              <p className="text-xs text-(--muted-foreground)">
+                {search || status
+                  ? "Try changing your search or filters."
+                  : "Create your first branch to start organizing your business locations."}
+              </p>
+            </div>
+            {!search && !status && (
+              <div className="pt-2">
+                <Link
+                  href="/dashboard/branches/create"
+                  className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create branch</span>
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Pagination bar */}
+        {!isLoading && totalPages > 1 && (
+          <div className="flex items-center justify-between p-4 border-t border-(--border) text-xs text-(--muted-foreground)">
+            <span>Page {page} of {totalPages}</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page === 1}
+                className="p-1.5 border border-(--border) rounded-lg disabled:opacity-40 hover:bg-(--muted)"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                disabled={page === totalPages}
+                className="p-1.5 border border-(--border) rounded-lg disabled:opacity-40 hover:bg-(--muted)"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
