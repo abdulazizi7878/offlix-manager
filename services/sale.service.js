@@ -1,3 +1,5 @@
+// file: services/sale.service.js
+
 import pool from "@/lib/database";
 
 import AppError from "@/lib/errors/AppError";
@@ -113,8 +115,9 @@ const SaleService = {
                     );
                 }
 
-                const price = Number(product.selling_price);
-
+                // Use the actual price entered for this sale.
+                // product.selling_price is only the default product price.
+                const price = Number(item.pricePerItem);
                 const total = price * item.quantity;
 
                 subtotal += total;
@@ -219,23 +222,14 @@ const SaleService = {
             }
 
             /*
-             * Only paid and partial sales move money immediately.
+             * The employee only chooses the payment method.
              *
-             * Credit sales create a receivable but do not create
-             * a payment or money transaction.
+             * The backend determines the branch financial account.
              */
             if (
                 data.paymentType === "paid" ||
                 data.paymentType === "partial"
             ) {
-                if (!data.financialAccountId) {
-                    throw new AppError(
-                        "Financial account is required for a paid or partial sale.",
-                        400,
-                        "FINANCIAL_ACCOUNT_REQUIRED"
-                    );
-                }
-
                 if (!data.paymentMethod) {
                     throw new AppError(
                         "Payment method is required for a paid or partial sale.",
@@ -244,86 +238,72 @@ const SaleService = {
                     );
                 }
 
-                const financialAccount =
-                    await FinanceRepository.getFinancialAccountById(
-                        client,
-                        data.financialAccountId,
-                        accountId
-                    );
-
-                if (!financialAccount) {
-                    throw new AppError(
-                        "Financial account not found.",
-                        404,
-                        "FINANCIAL_ACCOUNT_NOT_FOUND"
-                    );
-                }
-
-                if (financialAccount.status !== "active") {
-                    throw new AppError(
-                        "Financial account is inactive.",
-                        400,
-                        "FINANCIAL_ACCOUNT_INACTIVE"
-                    );
-                }
+                let financialAccount = null;
 
                 if (
-                    data.paymentMethod === "cash" &&
-                    financialAccount.type !== "cash"
+                    data.paymentStatus === "paid" ||
+                    data.paymentStatus === "partial"
                 ) {
-                    throw new AppError(
-                        "A cash payment must use a cash account.",
-                        400,
-                        "INVALID_PAYMENT_ACCOUNT"
-                    );
-                }
+                    if (data.paymentMethod === "cash") {
+                        financialAccount =
+                            await FinanceRepository.getActiveBranchFinancialAccountByType(
+                                client,
+                                accountId,
+                                data.branchId,
+                                "cash"
+                            );
+                    }
 
-                if (
-                    data.paymentMethod === "bank" &&
-                    financialAccount.type !== "bank"
-                ) {
-                    throw new AppError(
-                        "A bank payment must use a bank account.",
-                        400,
-                        "INVALID_PAYMENT_ACCOUNT"
-                    );
-                }
+                    if (data.paymentMethod === "bank") {
+                        financialAccount =
+                            await FinanceRepository.getDefaultBranchBankAccount(
+                                client,
+                                accountId,
+                                data.branchId
+                            );
+                    }
 
-                const transaction =
-                    await FinanceRepository.createMoneyTransaction(
+                    if (!financialAccount) {
+                        throw new AppError(
+                            "No suitable financial account is configured for this branch.",
+                            400,
+                            "FINANCIAL_ACCOUNT_NOT_CONFIGURED"
+                        );
+                    }
+
+                    const moneyTransaction =
+                        await FinanceRepository.createMoneyTransaction(
+                            client,
+                            {
+                                accountId,
+                                branchId: data.branchId,
+                                type: "sale_payment",
+                                amount: paidAmount,
+                                fromFinancialAccountId: null,
+                                toFinancialAccountId: financialAccount.id,
+                                description: `Payment for sale ${sale.id}`,
+                                referenceType: "sale",
+                                referenceId: sale.id,
+                                createdByUserId,
+                            }
+                        );
+
+                    await FinanceRepository.createPayment(
                         client,
                         {
                             accountId,
                             branchId: data.branchId,
-                            type: "sale_payment",
+                            paymentType: "sale_payment",
+                            saleId: sale.id,
+                            receivableId: null,
                             amount: paidAmount,
-                            fromFinancialAccountId: null,
-                            toFinancialAccountId:
-                                financialAccount.id,
-                            description:
-                                `Payment for sale ${ sale.id }`,
-                            referenceType: "sale",
-                            referenceId: sale.id,
-                            createdByUserId: userId,
+                            paymentMethod: data.paymentMethod,
+                            financialAccountId: financialAccount.id,
+                            moneyTransactionId: moneyTransaction.id,
+                            createdByUserId,
                         }
                     );
-
-                await FinanceRepository.createPayment(
-                    client,
-                    {
-                        accountId,
-                        branchId: data.branchId,
-                        paymentType: "sale_payment",
-                        saleId: sale.id,
-                        amount: paidAmount,
-                        paymentMethod: data.paymentMethod,
-                        financialAccountId:
-                            financialAccount.id,
-                        moneyTransactionId:
-                            transaction.id,
-                        createdByUserId: userId,
-                    }
-                );
+                }
             }
 
             const unpaidAmount =

@@ -21,17 +21,17 @@ export default function CreateSalePage() {
 
     const [branches, setBranches] = useState([]);
     const [products, setProducts] = useState([]);
-    const [accounts, setAccounts] = useState([]);
 
     const [isLoading, setIsLoading] = useState(true);
+    const [isProductsLoading, setIsProductsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [productsError, setProductsError] = useState(null);
 
     const [branchId, setBranchId] = useState("");
     const [customerName, setCustomerName] = useState("");
 
     const [paymentType, setPaymentType] = useState("paid");
     const [paymentMethod, setPaymentMethod] = useState("cash");
-    const [financialAccountId, setFinancialAccountId] = useState("");
     const [paidAmount, setPaidAmount] = useState("");
 
     const [items, setItems] = useState([
@@ -45,44 +45,86 @@ export default function CreateSalePage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        async function loadFormData() {
+        async function loadBranches() {
             try {
-                const [branchesResponse, productsResponse, accountsResponse] =
-                    await Promise.all([
-                        fetchApi("/api/v1/dashboard/branches"),
-                        fetchApi("/api/v1/dashboard/products"),
-                        fetchApi("/api/v1/dashboard/money/accounts"),
-                    ]);
+                const branchesResponse = await fetchApi("/api/v1/dashboard/branches");
 
                 setBranches(
                     branchesResponse.data?.branches ||
-                        branchesResponse.data ||
-                        branchesResponse
-                );
-
-                setProducts(
-                    productsResponse.data?.products ||
-                        productsResponse.data ||
-                        productsResponse
-                );
-
-                setAccounts(
-                    accountsResponse.data?.accounts ||
-                        accountsResponse.data ||
-                        accountsResponse
+                    branchesResponse.data ||
+                    branchesResponse
                 );
             } catch (err) {
                 setError(
                     err.message ||
-                        "Failed to load form requirements."
+                    "Failed to load form requirements."
                 );
             } finally {
                 setIsLoading(false);
             }
         }
 
-        loadFormData();
+        loadBranches();
     }, []);
+
+    useEffect(() => {
+        if (!branchId) {
+            setProducts([]);
+            setIsProductsLoading(false);
+            setProductsError(null);
+            return;
+        }
+
+        let isMounted = true;
+        const controller = new AbortController();
+
+        async function loadProductsForBranch() {
+            setIsProductsLoading(true);
+            setProductsError(null);
+
+            try {
+                const productsResponse = await fetchApi(
+                    `/api/v1/dashboard/products?branchId=${encodeURIComponent(branchId)}`,
+                    { signal: controller.signal }
+                );
+
+                if (!isMounted) return;
+
+                setProducts(
+                    productsResponse.data?.products ||
+                    productsResponse.data ||
+                    productsResponse
+                );
+            } catch (err) {
+                if (err.name === "AbortError") return;
+                if (!isMounted) return;
+
+                setProductsError(
+                    err.message || "Failed to load products for this branch."
+                );
+                setProducts([]);
+            } finally {
+                if (isMounted) {
+                    setIsProductsLoading(false);
+                }
+            }
+        }
+
+        setItems([
+            {
+                productId: "",
+                quantity: 1,
+                pricePerItem: 0,
+            },
+        ]);
+
+        loadProductsForBranch();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
+    }, [branchId]);
 
     const getProductStock = (productId) => {
         const product = products.find(
@@ -102,15 +144,11 @@ export default function CreateSalePage() {
     const getProductPrice = (product) => {
         return Number(
             product.sellingPrice ??
-                product.selling_price ??
-                0
+            product.selling_price ??
+            0
         );
     };
 
-    /*
-     * Returns the total quantity of a product already
-     * used by all OTHER rows.
-     */
     const getOtherRowsQuantity = (
         productId,
         currentIndex
@@ -136,14 +174,6 @@ export default function CreateSalePage() {
         );
     };
 
-    /*
-     * Available quantity for a product in this row.
-     *
-     * Example:
-     * Stock = 10
-     * Another row already uses 4
-     * Current row can use maximum 6
-     */
     const getAvailableQuantityForRow = (
         productId,
         currentIndex
@@ -361,11 +391,10 @@ export default function CreateSalePage() {
                     maxQuantity;
 
                 toast.error(
-                    `Only ${ maxQuantity } unit${
-    maxQuantity === 1
-        ? ""
-        : "s"
-} available for this row.`
+                    `Only ${maxQuantity} unit${maxQuantity === 1
+                        ? ""
+                        : "s"
+                    } available for this row.`
                 );
 
                 setItems(newItems);
@@ -397,9 +426,9 @@ export default function CreateSalePage() {
             (sum, item) =>
                 sum +
                 Number(item.quantity || 0) *
-                    Number(
-                        item.pricePerItem || 0
-                    ),
+                Number(
+                    item.pricePerItem || 0
+                ),
             0
         );
     };
@@ -439,13 +468,11 @@ export default function CreateSalePage() {
                     );
 
                 throw new Error(
-                    `"${product?.name || "Product"}" only has ${ stock } unit${
-    stock === 1 ? "" : "s"
-} in stock, but ${ requestedQuantity } ${
-    requestedQuantity === 1
-        ? "is"
-        : "are"
-} requested.`
+                    `"${product?.name || "Product"}" only has ${stock} unit${stock === 1 ? "" : "s"
+                    } in stock, but ${requestedQuantity} ${requestedQuantity === 1
+                        ? "is"
+                        : "are"
+                    } requested.`
                 );
             }
         }
@@ -460,13 +487,11 @@ export default function CreateSalePage() {
 
         if (value === "credit") {
             setPaymentMethod("");
-            setFinancialAccountId("");
             setPaidAmount("");
             return;
         }
 
         setPaymentMethod("cash");
-        setFinancialAccountId("");
 
         if (value === "paid") {
             setPaidAmount("");
@@ -481,9 +506,6 @@ export default function CreateSalePage() {
         value
     ) => {
         setPaymentMethod(value);
-
-        // Cash and bank use different financial accounts.
-        setFinancialAccountId("");
     };
 
     const handleSubmit = async (e) => {
@@ -555,16 +577,6 @@ export default function CreateSalePage() {
             return;
         }
 
-        if (
-            paymentType !== "credit" &&
-            !financialAccountId
-        ) {
-            toast.error(
-                "Please select a financial account."
-            );
-            return;
-        }
-
         setIsSubmitting(true);
 
         try {
@@ -583,15 +595,9 @@ export default function CreateSalePage() {
 
                         paymentMethod:
                             paymentType ===
-                            "credit"
+                                "credit"
                                 ? undefined
                                 : paymentMethod,
-
-                        financialAccountId:
-                            paymentType ===
-                            "credit"
-                                ? undefined
-                                : financialAccountId,
 
                         paidAmount:
                             finalPaidAmount,
@@ -625,7 +631,7 @@ export default function CreateSalePage() {
         } catch (err) {
             toast.error(
                 err.message ||
-                    "Failed to create sale."
+                "Failed to create sale."
             );
 
             setIsSubmitting(false);
@@ -658,25 +664,6 @@ export default function CreateSalePage() {
 
     const saleTotal =
         calculateTotal();
-
-    const availableAccounts =
-        accounts.filter((account) => {
-            if (
-                account.status !==
-                "active"
-            ) {
-                return false;
-            }
-
-            if (!paymentMethod) {
-                return false;
-            }
-
-            return (
-                account.type ===
-                paymentMethod
-            );
-        });
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-16">
@@ -728,10 +715,10 @@ export default function CreateSalePage() {
                                             .value
                                     )
                                 }
-                                className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
+                                className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
                                 required
                             >
-                                <option value="">
+                                <option value="" className="bg-slate-900 text-slate-100 py-2">
                                     Select branch
                                 </option>
 
@@ -744,6 +731,7 @@ export default function CreateSalePage() {
                                             value={
                                                 branch.id
                                             }
+                                            className="bg-slate-900 text-slate-100 py-2"
                                         >
                                             {
                                                 branch.name
@@ -773,7 +761,7 @@ export default function CreateSalePage() {
                                             .value
                                     )
                                 }
-                                className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
+                                className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                             />
                         </div>
                     </div>
@@ -798,7 +786,8 @@ export default function CreateSalePage() {
                             onClick={
                                 handleAddItem
                             }
-                            className="inline-flex items-center gap-1 text-xs font-medium text-(--primary) hover:underline"
+                            disabled={!branchId || isProductsLoading}
+                            className="inline-flex items-center gap-1 text-xs font-medium text-(--primary) hover:underline disabled:opacity-50"
                         >
                             <Plus className="w-3.5 h-3.5" />
 
@@ -806,233 +795,256 @@ export default function CreateSalePage() {
                         </button>
                     </div>
 
-                    <div className="space-y-4">
-                        {items.map(
-                            (
-                                item,
-                                index
-                            ) => {
-                                const stock =
-                                    getProductStock(
+                    {!branchId ? (
+                        <div className="p-4 rounded-lg bg-(--muted)/50 border border-(--border) text-center text-xs text-(--muted-foreground)">
+                            Please select a branch first to load products.
+                        </div>
+                    ) : isProductsLoading ? (
+                        <div className="p-8 flex items-center justify-center gap-2 text-xs text-(--muted-foreground)">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Loading products for this branch...
+                        </div>
+                    ) : productsError ? (
+                        <div className="p-4 rounded-lg bg-(--destructive)/10 border border-(--destructive)/20 text-xs text-(--destructive)">
+                            {productsError}
+                        </div>
+                    ) : products.length === 0 ? (
+                        <div className="p-4 rounded-lg bg-(--muted)/50 border border-(--border) text-center text-xs text-(--muted-foreground)">
+                            No products available for this branch.
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {items.map(
+                                (
+                                    item,
+                                    index
+                                ) => {
+                                    const stock =
+                                        getProductStock(
+                                            item.productId
+                                        );
+
+                                    const maxQuantity =
                                         item.productId
-                                    );
+                                            ? getAvailableQuantityForRow(
+                                                item.productId,
+                                                index
+                                            )
+                                            : undefined;
 
-                                const maxQuantity =
-                                    item.productId
-                                        ? getAvailableQuantityForRow(
-                                              item.productId,
-                                              index
-                                          )
-                                        : undefined;
+                                    const totalProductQuantity =
+                                        item.productId
+                                            ? getTotalProductQuantity(
+                                                item.productId
+                                            )
+                                            : 0;
 
-                                const totalProductQuantity =
-                                    item.productId
-                                        ? getTotalProductQuantity(
-                                              item.productId
-                                          )
-                                        : 0;
-
-                                return (
-                                    <div
-                                        key={
-                                            index
-                                        }
-                                        className="space-y-2"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {/* Product */}
-                                            <select
-                                                value={
-                                                    item.productId
-                                                }
-                                                onChange={(
-                                                    e
-                                                ) =>
-                                                    handleItemChange(
-                                                        index,
-                                                        "productId",
-                                                        e
-                                                            .target
-                                                            .value
-                                                    )
-                                                }
-                                                className="flex-1 min-w-0 px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                                required
-                                            >
-                                                <option value="">
-                                                    Select
-                                                    product
-                                                </option>
-
-                                                {products.map(
-                                                    (
-                                                        product
-                                                    ) => {
-                                                        const productStock =
-                                                            getProductStock(
-                                                                product.id
-                                                            );
-
-                                                        const isFullyAllocated =
-                                                            isProductFullyAllocated(
-                                                                product.id,
-                                                                index
-                                                            );
-
-                                                        return (
-                                                            <option
-                                                                key={
-                                                                    product.id
-                                                                }
-                                                                value={
-                                                                    product.id
-                                                                }
-                                                                disabled={
-                                                                    productStock <=
-                                                                        0 ||
-                                                                    isFullyAllocated
-                                                                }
-                                                            >
-                                                                {
-                                                                    product.name
-                                                                }{" "}
-                                                                (
-                                                                {getProductPrice(
-                                                                    product
-                                                                ).toLocaleString()}{" "}
-                                                                birr,
-                                                                stock:{" "}
-                                                                {
-                                                                    productStock
-                                                                }
-                                                                )
-                                                            </option>
-                                                        );
+                                    return (
+                                        <div
+                                            key={
+                                                index
+                                            }
+                                            className="space-y-2"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {/* Product */}
+                                                <select
+                                                    value={
+                                                        item.productId
                                                     }
-                                                )}
-                                            </select>
-
-                                            {/* Quantity */}
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                max={
-                                                    maxQuantity
-                                                }
-                                                step="1"
-                                                placeholder="Qty"
-                                                value={
-                                                    item.quantity
-                                                }
-                                                onChange={(
-                                                    e
-                                                ) =>
-                                                    handleItemChange(
-                                                        index,
-                                                        "quantity",
+                                                    onChange={(
                                                         e
-                                                            .target
-                                                            .value
-                                                    )
-                                                }
-                                                className="w-20 px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                                required
-                                            />
-
-                                            {/* Price */}
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                placeholder="Price"
-                                                value={
-                                                    item.pricePerItem
-                                                }
-                                                onChange={(
-                                                    e
-                                                ) =>
-                                                    handleItemChange(
-                                                        index,
-                                                        "pricePerItem",
-                                                        e
-                                                            .target
-                                                            .value
-                                                    )
-                                                }
-                                                className="w-28 px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                                required
-                                            />
-
-                                            {/* Remove */}
-                                            {items.length >
-                                                1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleRemoveItem(
-                                                            index
+                                                    ) =>
+                                                        handleItemChange(
+                                                            index,
+                                                            "productId",
+                                                            e
+                                                                .target
+                                                                .value
                                                         )
                                                     }
-                                                    className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                    disabled={isProductsLoading}
+                                                    className="flex-1 min-w-0 px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 disabled:opacity-50 focus:outline-none focus:border-(--primary)"
+                                                    required
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
+                                                    <option value="" className="bg-slate-900 text-slate-100 py-2">
+                                                        Select
+                                                        product
+                                                    </option>
 
-                                        {/* Stock information */}
-                                        {item.productId && (
-                                            <div className="flex items-center justify-between pl-1 text-xs">
-                                                <span className="text-(--muted-foreground)">
-                                                    Stock:
-                                                    {" "}
-                                                    <span className="font-medium text-(--foreground)">
+                                                    {products.map(
+                                                        (
+                                                            product
+                                                        ) => {
+                                                            const productStock =
+                                                                getProductStock(
+                                                                    product.id
+                                                                );
+
+                                                            const isFullyAllocated =
+                                                                isProductFullyAllocated(
+                                                                    product.id,
+                                                                    index
+                                                                );
+
+                                                            return (
+                                                                <option
+                                                                    key={
+                                                                        product.id
+                                                                    }
+                                                                    value={
+                                                                        product.id
+                                                                    }
+                                                                    disabled={
+                                                                        productStock <=
+                                                                        0 ||
+                                                                        isFullyAllocated
+                                                                    }
+                                                                    className="bg-slate-900 text-slate-100 py-2"
+                                                                >
+                                                                    {
+                                                                        product.name
+                                                                    }{" "}
+                                                                    (
+                                                                    {getProductPrice(
+                                                                        product
+                                                                    ).toLocaleString()}{" "}
+                                                                    birr,
+                                                                    stock:{" "}
+                                                                    {
+                                                                        productStock
+                                                                    }
+                                                                    )
+                                                                </option>
+                                                            );
+                                                        }
+                                                    )}
+                                                </select>
+
+                                                {/* Quantity */}
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max={
+                                                        maxQuantity
+                                                    }
+                                                    step="1"
+                                                    placeholder="Qty"
+                                                    value={
+                                                        item.quantity
+                                                    }
+                                                    onChange={(
+                                                        e
+                                                    ) =>
+                                                        handleItemChange(
+                                                            index,
+                                                            "quantity",
+                                                            e
+                                                                .target
+                                                                .value
+                                                        )
+                                                    }
+                                                    disabled={isProductsLoading || !item.productId}
+                                                    className="w-20 px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent disabled:opacity-50 focus:outline-none focus:border-(--primary)"
+                                                    required
+                                                />
+
+                                                {/* Price */}
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    placeholder="Price"
+                                                    value={
+                                                        item.pricePerItem
+                                                    }
+                                                    onChange={(
+                                                        e
+                                                    ) =>
+                                                        handleItemChange(
+                                                            index,
+                                                            "pricePerItem",
+                                                            e
+                                                                .target
+                                                                .value
+                                                        )
+                                                    }
+                                                    disabled={isProductsLoading || !item.productId}
+                                                    className="w-28 px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent disabled:opacity-50 focus:outline-none focus:border-(--primary)"
+                                                    required
+                                                />
+
+                                                {/* Remove */}
+                                                {items.length >
+                                                    1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleRemoveItem(
+                                                                    index
+                                                                )
+                                                            }
+                                                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                            </div>
+
+                                            {/* Stock information */}
+                                            {item.productId && (
+                                                <div className="flex items-center justify-between pl-1 text-xs">
+                                                    <span className="text-(--muted-foreground)">
+                                                        Stock:
+                                                        {" "}
+                                                        <span className="font-medium text-(--foreground)">
+                                                            {
+                                                                stock
+                                                            }
+                                                        </span>
+                                                    </span>
+
+                                                    <span className="text-(--muted-foreground)">
+                                                        In this
+                                                        sale:
+                                                        {" "}
+                                                        <span className="font-medium text-(--foreground)">
+                                                            {
+                                                                totalProductQuantity
+                                                            }
+                                                        </span>
+
+                                                        {" / "}
+
                                                         {
                                                             stock
                                                         }
                                                     </span>
-                                                </span>
 
-                                                <span className="text-(--muted-foreground)">
-                                                    In this
-                                                    sale:
-                                                    {" "}
-                                                    <span className="font-medium text-(--foreground)">
-                                                        {
-                                                            totalProductQuantity
+                                                    <span
+                                                        className={
+                                                            maxQuantity <=
+                                                                0
+                                                                ? "text-(--destructive) font-medium"
+                                                                : "text-(--muted-foreground)"
                                                         }
+                                                    >
+                                                        Remaining:
+                                                        {" "}
+                                                        <span className="font-medium">
+                                                            {
+                                                                maxQuantity
+                                                            }
+                                                        </span>
                                                     </span>
-
-                                                    {" / "}
-
-                                                    {
-                                                        stock
-                                                    }
-                                                </span>
-
-                                                <span
-                                                    className={
-                                                        maxQuantity <=
-                                                        0
-                                                            ? "text-(--destructive) font-medium"
-                                                            : "text-(--muted-foreground)"
-                                                    }
-                                                >
-                                                    Remaining:
-                                                    {" "}
-                                                    <span className="font-medium">
-                                                        {
-                                                            maxQuantity
-                                                        }
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            }
-                        )}
-                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                }
+                            )}
+                        </div>
+                    )}
 
                     {/* Total */}
                     <div className="pt-4 border-t border-(--border) flex justify-between items-center">
@@ -1070,18 +1082,18 @@ export default function CreateSalePage() {
                                             .value
                                     )
                                 }
-                                className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
+                                className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
                                 required
                             >
-                                <option value="paid">
+                                <option value="paid" className="bg-slate-900 text-slate-100 py-2">
                                     Paid
                                 </option>
 
-                                <option value="partial">
+                                <option value="partial" className="bg-slate-900 text-slate-100 py-2">
                                     Partial
                                 </option>
 
-                                <option value="credit">
+                                <option value="credit" className="bg-slate-900 text-slate-100 py-2">
                                     Credit (Unpaid)
                                 </option>
                             </select>
@@ -1090,168 +1102,102 @@ export default function CreateSalePage() {
                         {/* Payment Method */}
                         {paymentType !==
                             "credit" && (
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-(--muted-foreground)">
-                                    Payment Method
-                                </label>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-(--muted-foreground)">
+                                        Payment Method
+                                    </label>
 
-                                <select
-                                    value={
-                                        paymentMethod
-                                    }
-                                    onChange={(e) =>
-                                        handlePaymentMethodChange(
-                                            e.target
-                                                .value
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                    required
-                                >
-                                    <option value="">
-                                        Select payment
-                                        method
-                                    </option>
+                                    <select
+                                        value={
+                                            paymentMethod
+                                        }
+                                        onChange={(e) =>
+                                            handlePaymentMethodChange(
+                                                e.target
+                                                    .value
+                                            )
+                                        }
+                                        className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
+                                        required
+                                    >
+                                        <option value="cash" className="bg-slate-900 text-slate-100 py-2">
+                                            Cash
+                                        </option>
 
-                                    <option value="cash">
-                                        Cash
-                                    </option>
-
-                                    <option value="bank">
-                                        Bank
-                                    </option>
-                                </select>
-                            </div>
-                        )}
-
-                        {/* Financial Account */}
-                        {paymentType !==
-                            "credit" && (
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-(--muted-foreground)">
-                                    Financial Account
-                                </label>
-
-                                <select
-                                    value={
-                                        financialAccountId
-                                    }
-                                    onChange={(e) =>
-                                        setFinancialAccountId(
-                                            e.target
-                                                .value
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                    required
-                                >
-                                    <option value="">
-                                        Select financial
-                                        account
-                                    </option>
-
-                                    {availableAccounts.map(
-                                        (
-                                            account
-                                        ) => (
-                                            <option
-                                                key={
-                                                    account.id
-                                                }
-                                                value={
-                                                    account.id
-                                                }
-                                            >
-                                                {
-                                                    account.name
-                                                }
-                                            </option>
-                                        )
-                                    )}
-                                </select>
-
-                                {paymentMethod &&
-                                    availableAccounts.length ===
-                                        0 && (
-                                        <p className="text-xs text-(--destructive)">
-                                            No active{" "}
-                                            {
-                                                paymentMethod
-                                            }{" "}
-                                            accounts
-                                            available.
-                                        </p>
-                                    )}
-                            </div>
-                        )}
+                                        <option value="bank" className="bg-slate-900 text-slate-100 py-2">
+                                            Bank
+                                        </option>
+                                    </select>
+                                </div>
+                            )}
 
                         {/* Partial Payment */}
                         {paymentType ===
                             "partial" && (
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-(--muted-foreground)">
-                                    Paid Amount
-                                    (birr)
-                                </label>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-(--muted-foreground)">
+                                        Paid Amount
+                                        (birr)
+                                    </label>
 
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0.01"
-                                    max={
-                                        saleTotal ||
-                                        undefined
-                                    }
-                                    placeholder="Amount paid now"
-                                    value={
-                                        paidAmount
-                                    }
-                                    onChange={(e) =>
-                                        setPaidAmount(
-                                            e.target
-                                                .value
-                                        )
-                                    }
-                                    className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                    required
-                                />
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0.01"
+                                        max={
+                                            saleTotal ||
+                                            undefined
+                                        }
+                                        placeholder="Amount paid now"
+                                        value={
+                                            paidAmount
+                                        }
+                                        onChange={(e) =>
+                                            setPaidAmount(
+                                                e.target
+                                                    .value
+                                            )
+                                        }
+                                        className="w-full px-3 py-2.5 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
+                                        required
+                                    />
 
-                                <p className="text-xs text-(--muted-foreground)">
-                                    Remaining:{" "}
-                                    {Math.max(
-                                        0,
-                                        saleTotal -
+                                    <p className="text-xs text-(--muted-foreground)">
+                                        Remaining:{" "}
+                                        {Math.max(
+                                            0,
+                                            saleTotal -
                                             Number(
                                                 paidAmount ||
-                                                    0
+                                                0
                                             )
-                                    ).toLocaleString()}{" "}
-                                    birr
-                                </p>
-                            </div>
-                        )}
+                                        ).toLocaleString()}{" "}
+                                        birr
+                                    </p>
+                                </div>
+                            )}
                     </div>
 
                     {/* Credit information */}
                     {paymentType ===
                         "credit" && (
-                        <div className="p-3 rounded-lg bg-(--muted)/50 border border-(--border)">
-                            <p className="text-xs text-(--muted-foreground)">
-                                No payment will be
-                                recorded now. The
-                                full sale amount will
-                                be added to
-                                receivables.
-                            </p>
-                        </div>
-                    )}
+                            <div className="p-3 rounded-lg bg-(--muted)/50 border border-(--border)">
+                                <p className="text-xs text-(--muted-foreground)">
+                                    No payment will be
+                                    recorded now. The
+                                    full sale amount will
+                                    be added to
+                                    receivables.
+                                </p>
+                            </div>
+                        )}
                 </div>
 
                 {/* Actions */}
                 <div className="flex justify-end gap-3">
                     <Link
                         href="/dashboard/sales"
-                        className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
+                        className="px-4 py-2 border border-(--border) rounded-xl text-sm font-medium hover:bg-(--muted) transition-colors"
                     >
                         Cancel
                     </Link>
@@ -1261,7 +1207,7 @@ export default function CreateSalePage() {
                         disabled={
                             isSubmitting
                         }
-                        className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
+                        className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
                     >
                         {isSubmitting ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

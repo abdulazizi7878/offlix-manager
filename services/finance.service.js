@@ -1,3 +1,6 @@
+
+// file: services/finance.service.js
+
 import pool from "@/lib/database";
 import AppError from "@/lib/errors/AppError";
 import FinanceRepository from "@/repositories/finance.repository";

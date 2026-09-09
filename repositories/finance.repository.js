@@ -1,3 +1,6 @@
+
+// file: repositories/finance.repository.js
+
 const FinanceRepository = {
     async createFinancialAccount(
         client,
@@ -8,21 +11,23 @@ const FinanceRepository = {
             name,
             bankName,
             accountIdentifier,
+            isDefault,
         }
     ) {
         const result = await client.query(
             `
-            INSERT INTO financial_accounts (
-                account_id,
-                branch_id,
-                type,
-                name,
-                bank_name,
-                account_identifier
-            )
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *
-            `,
+        INSERT INTO financial_accounts (
+            account_id,
+            branch_id,
+            type,
+            name,
+            bank_name,
+            account_identifier,
+            is_default
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+        `,
             [
                 accountId,
                 branchId ?? null,
@@ -30,6 +35,7 @@ const FinanceRepository = {
                 name,
                 bankName ?? null,
                 accountIdentifier ?? null,
+                isDefault ?? false,
             ]
         );
 
@@ -632,6 +638,48 @@ const FinanceRepository = {
           AND status = 'active'
         `,
             [branchId, accountId]
+        );
+
+        return result.rows[0] ?? null;
+    },
+    async getActiveBranchFinancialAccountByType(
+        client,
+        accountId,
+        branchId,
+        type
+    ) {
+        const result = await client.query(
+            `
+        SELECT *
+        FROM financial_accounts
+        WHERE account_id = $1
+          AND branch_id = $2
+          AND type = $3
+          AND status = 'active'
+        LIMIT 1
+        `,
+            [accountId, branchId, type]
+        );
+
+        return result.rows[0] ?? null;
+    },
+    async getDefaultBranchBankAccount(
+        client,
+        accountId,
+        branchId
+    ) {
+        const result = await client.query(
+            `
+        SELECT *
+        FROM financial_accounts
+        WHERE account_id = $1
+          AND branch_id = $2
+          AND type = 'bank'
+          AND status = 'active'
+          AND is_default = true
+        LIMIT 1
+        `,
+            [accountId, branchId]
         );
 
         return result.rows[0] ?? null;

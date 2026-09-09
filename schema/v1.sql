@@ -606,6 +606,7 @@ COMMIT;
 ALTER TABLE branches
 ADD CONSTRAINT uq_branches_id_account UNIQUE (id, account_id);
 
+--
 
 -- ============================================================
 -- FINANCIAL ACCOUNTS
@@ -1277,3 +1278,28 @@ CREATE INDEX idx_branch_settlements_created_at
     ON branch_settlements(created_at);
 
 
+-- Add default-bank flag
+ALTER TABLE financial_accounts
+ADD COLUMN is_default BOOLEAN NOT NULL DEFAULT false;
+
+-- Only bank accounts can be default
+ALTER TABLE financial_accounts
+ADD CONSTRAINT chk_financial_accounts_default_bank
+CHECK (
+    is_default = false
+    OR type = 'bank'
+);
+
+-- Make sure the branch belongs to the same account
+ALTER TABLE financial_accounts
+ADD CONSTRAINT fk_financial_accounts_branch_account
+FOREIGN KEY (branch_id, account_id)
+REFERENCES branches(id, account_id);
+
+-- Only one active default bank per branch
+CREATE UNIQUE INDEX uq_financial_accounts_default_bank_per_account_branch
+ON financial_accounts (account_id, branch_id)
+WHERE branch_id IS NOT NULL
+  AND type = 'bank'
+  AND status = 'active'
+  AND is_default = true;

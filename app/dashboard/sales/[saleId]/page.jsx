@@ -8,6 +8,11 @@ import Link from "next/link";
 import { ArrowLeft, ShoppingCart, AlertCircle, Loader2 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 
+// Import Day.js and the relativeTime plugin
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime);
+
 export default function SaleDetailPage() {
     const params = useParams();
     const saleId = params.saleId;
@@ -56,6 +61,13 @@ export default function SaleDetailPage() {
     }
 
     const items = sale.items || [];
+    const paymentStatus = sale.paymentStatus || sale.payment_status;
+    const paymentMethod = sale.paymentMethod || sale.payment_method;
+    const paidAmount = sale.paidAmount ?? sale.paid_amount;
+    const totalAmount = Number(sale.totalAmount || sale.total_amount || 0);
+    const remainingAmount = sale.remainingAmount ?? sale.remaining_amount ?? Math.max(0, totalAmount - Number(paidAmount || 0));
+
+    const rawDate = sale.createdAt || sale.created_at;
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-16">
@@ -66,19 +78,53 @@ export default function SaleDetailPage() {
                     </Link>
                     <div>
                         <h1 className="text-xl font-bold tracking-tight">Sale Receipt #{sale.id?.slice(0, 8)}</h1>
-                        <p className="text-xs font-mono text-(--muted-foreground)">Branch: {sale.branchName || sale.branch_name || "N/A"} • {new Date(sale.createdAt || sale.created_at).toLocaleString()}</p>
+                        <p className="text-xs font-mono text-(--muted-foreground)">
+                            Branch: {sale.branchName || sale.branch_name || "N/A"} • {dayjs(rawDate).fromNow()} ({dayjs(rawDate).format("MMM D, YYYY h:mm A")})
+                        </p>
                     </div>
                 </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full uppercase ${sale.paymentStatus === 'paid' || sale.payment_status === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                    {sale.paymentStatus || sale.payment_status}
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full uppercase ${paymentStatus === 'paid' ? 'bg-emerald-500/10 text-emerald-500' : paymentStatus === 'partial' ? 'bg-amber-500/10 text-amber-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                    {paymentStatus}
                 </span>
             </div>
 
             <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-6 shadow-xs">
-                <div>
-                    <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Customer</h3>
-                    <p className="text-base font-medium mt-0.5">{sale.customerName || sale.customer_name || "Walk-in Customer"}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Customer</h3>
+                        <p className="text-base font-medium mt-0.5">{sale.customerName || sale.customer_name || "Walk-in Customer"}</p>
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Created By</h3>
+                        <p className="text-base font-medium mt-0.5">{sale.employeeName || sale.employee_name || "N/A"}</p>
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Payment Method</h3>
+                        <p className="text-base font-medium mt-0.5 capitalize">{paymentMethod || "N/A"}</p>
+                    </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-(--border)">
+                    <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Paid Amount</h3>
+                        <p className="text-base font-mono font-medium mt-0.5 text-emerald-600">
+                            {paidAmount !== undefined && paidAmount !== null ? `${Number(paidAmount).toLocaleString()} birr` : "N/A"}
+                        </p>
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Remaining Balance</h3>
+                        <p className="text-base font-mono font-medium mt-0.5 text-amber-600">
+                            {remainingAmount !== undefined && remainingAmount !== null ? `${Number(remainingAmount).toLocaleString()} birr` : "N/A"}
+                        </p>
+                    </div>
+                </div>
+
+                {sale.notes && (
+                    <div className="pt-4 border-t border-(--border)">
+                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Notes</h3>
+                        <p className="text-sm mt-0.5 text-(--muted-foreground)">{sale.notes}</p>
+                    </div>
+                )}
 
                 <div className="space-y-3 pt-4 border-t border-(--border)">
                     <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Purchased Items</h3>
@@ -97,7 +143,7 @@ export default function SaleDetailPage() {
 
                 <div className="pt-4 border-t border-(--border) flex items-center justify-between">
                     <span className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Total Amount</span>
-                    <span className="text-2xl font-mono font-bold text-(--primary)">{Number(sale.totalAmount || sale.total_amount || 0).toLocaleString()} birr</span>
+                    <span className="text-2xl font-mono font-bold text-(--primary)">{totalAmount.toLocaleString()} birr</span>
                 </div>
             </div>
         </div>

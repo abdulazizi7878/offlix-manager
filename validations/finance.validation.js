@@ -11,7 +11,6 @@ const moneySchema = z
                 "Amount must have at most 2 decimal places.",
         }
     );
-
 export const createFinancialAccountSchema =
     z.object({
         branchId: z
@@ -44,6 +43,10 @@ export const createFinancialAccountSchema =
             .max(150)
             .nullable()
             .optional(),
+
+        isDefault: z
+            .boolean()
+            .default(false),
     })
         .superRefine((data, ctx) => {
             if (
@@ -67,6 +70,30 @@ export const createFinancialAccountSchema =
                     path: ["bankName"],
                     message:
                         "Cash accounts cannot have a bank name.",
+                });
+            }
+
+            if (
+                data.type === "cash" &&
+                data.isDefault
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["isDefault"],
+                    message:
+                        "Cash accounts cannot be default accounts.",
+                });
+            }
+
+            if (
+                data.isDefault &&
+                !data.branchId
+            ) {
+                ctx.addIssue({
+                    code: "custom",
+                    path: ["branchId"],
+                    message:
+                        "Default bank accounts must belong to a branch.",
                 });
             }
         });
@@ -102,7 +129,6 @@ export const createReceivablePaymentSchema =
     z.object({
         amount: moneySchema,
         paymentMethod: z.enum(["cash", "bank"]),
-        financialAccountId: z.string().uuid(),
     });
 
 export const createPayableSchema = z.object({

@@ -1,3 +1,6 @@
+
+// file: app/api/v1/dashboard/money/payables/route.js
+
 import { NextResponse } from "next/server";
 
 import FinanceService from "@/services/finance.service";

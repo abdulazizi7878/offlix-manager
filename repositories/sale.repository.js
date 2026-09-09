@@ -1,3 +1,6 @@
+
+// file: repositories/sale.repository.js
+
 import pool from "@/lib/database";
 
 const SaleRepository = {
@@ -125,42 +128,61 @@ const SaleRepository = {
         return result.rows[0] ?? null;
     },
 
-    async getSaleById(
-        client,
-        saleId,
-        accountId
-    ) {
+    async getSaleById(client, saleId, accountId) {
         const result = await client.query(
             `
-            SELECT
-                s.*,
-                COALESCE(
-                    json_agg(
-                        json_build_object(
-                            'id', si.id,
-                            'productId', si.product_id,
-                            'productName', si.product_name,
-                            'quantity', si.quantity,
-                            'pricePerItem', si.price_per_item,
-                            'totalAmount', si.total_amount
-                        )
-                        ORDER BY si.created_at
-                    ) FILTER (WHERE si.id IS NOT NULL),
-                    '[]'
-                ) AS items
-            FROM sales s
-            LEFT JOIN sale_items si
-                ON si.sale_id = s.id
-            WHERE s.id = $1
-              AND s.account_id = $2
-            GROUP BY s.id
-            `,
+        SELECT
+            s.*,
+            b.name AS branch_name,
+            u.name AS employee_name,
+
+            COALESCE(
+                (
+                    SELECT SUM(p.amount)
+                    FROM payments p
+                    WHERE p.sale_id = s.id
+                      AND p.payment_type = 'sale_payment'
+                ),
+                0
+            ) AS paid_amount,
+
+            COALESCE(
+                json_agg(
+                    json_build_object(
+                        'id', si.id,
+                        'productId', si.product_id,
+                        'productName', si.product_name,
+                        'quantity', si.quantity,
+                        'pricePerItem', si.price_per_item,
+                        'totalAmount', si.total_amount
+                    )
+                    ORDER BY si.created_at
+                ) FILTER (WHERE si.id IS NOT NULL),
+                '[]'
+            ) AS items
+
+        FROM sales s
+
+        INNER JOIN branches b
+            ON b.id = s.branch_id
+           AND b.account_id = s.account_id
+
+        INNER JOIN users u
+            ON u.id = s.created_by_user_id
+
+        LEFT JOIN sale_items si
+            ON si.sale_id = s.id
+
+        WHERE s.id = $1
+          AND s.account_id = $2
+
+        GROUP BY s.id, b.name, u.name
+        `,
             [saleId, accountId]
         );
 
         return result.rows[0] ?? null;
     },
-
     async getSales(
         client,
         {
@@ -168,8 +190,11 @@ const SaleRepository = {
             userId,
             isCreator,
             branchId,
+            employeeId,
             paymentStatus,
             search,
+            dateFrom,
+            dateTo,
             page,
             limit,
         }
@@ -177,20 +202,52 @@ const SaleRepository = {
         const offset = (page - 1) * limit;
 
         const params = [
-            accountId,
-            isCreator,
-            userId,
-            branchId ?? null,
-            paymentStatus ?? null,
-            search ? `%${search}%` : null,
-            limit,
-            offset,
+            accountId,                    // $1
+            isCreator,                    // $2
+            userId,                       // $3
+            branchId ?? null,             // $4
+            employeeId ?? null,           // $5
+            paymentStatus ?? null,        // $6
+            search ? `%${search}%` : null, // $7
+            dateFrom ?? null,             // $8
+            dateTo ?? null,               // $9
+            limit,                        // $10
+            offset,                       // $11
         ];
 
         const result = await client.query(
             `
         SELECT
             s.*,
+
+            b.name AS branch_name,
+
+            u.name AS employee_name,
+
+            COALESCE(
+                (
+                    SELECT SUM(p.amount)
+                    FROM payments p
+                    WHERE p.sale_id = s.id
+                      AND p.payment_type = 'sale_payment'
+                ),
+                0
+            ) AS paid_amount,
+
+            GREATEST(
+                s.total_amount -
+                COALESCE(
+                    (
+                        SELECT SUM(p.amount)
+                        FROM payments p
+                        WHERE p.sale_id = s.id
+                          AND p.payment_type = 'sale_payment'
+                    ),
+                    0
+                ),
+                0
+            ) AS remaining_amount,
+
             COALESCE(
                 (
                     SELECT SUM(si.quantity)
@@ -199,8 +256,18 @@ const SaleRepository = {
                 ),
                 0
             ) AS item_count
+
         FROM sales s
+
+        INNER JOIN branches b
+            ON b.id = s.branch_id
+           AND b.account_id = s.account_id
+
+        INNER JOIN users u
+            ON u.id = s.created_by_user_id
+
         WHERE s.account_id = $1
+
           AND (
                 $2::boolean = TRUE
                 OR EXISTS (
@@ -216,25 +283,47 @@ const SaleRepository = {
                       AND p.key = 'sales.view'
                 )
           )
+
           AND ($4::uuid IS NULL OR s.branch_id = $4)
+
           AND (
-                $5::varchar IS NULL
-                OR s.payment_status = $5
+                $5::uuid IS NULL
+                OR s.created_by_user_id = $5
           )
+
           AND (
                 $6::varchar IS NULL
-                OR s.customer_name ILIKE $6
-                OR s.notes ILIKE $6
+                OR s.payment_status = $6
+          )
+
+          AND (
+                $7::varchar IS NULL
+                OR s.customer_name ILIKE $7
+                OR s.notes ILIKE $7
+                OR b.name ILIKE $7
+                OR u.name ILIKE $7
                 OR EXISTS (
                     SELECT 1
                     FROM sale_items si
                     WHERE si.sale_id = s.id
-                      AND si.product_name ILIKE $6
+                      AND si.product_name ILIKE $7
                 )
           )
+
+          AND (
+                $8::timestamptz IS NULL
+                OR s.created_at >= $8
+          )
+
+          AND (
+                $9::timestamptz IS NULL
+                OR s.created_at < ($9::timestamptz + INTERVAL '1 day')
+          )
+
         ORDER BY s.created_at DESC
-        LIMIT $7
-        OFFSET $8
+
+        LIMIT $10
+        OFFSET $11
         `,
             params
         );
@@ -249,15 +338,28 @@ const SaleRepository = {
             userId,
             isCreator,
             branchId,
+            employeeId,
             paymentStatus,
             search,
+            dateFrom,
+            dateTo,
         }
     ) {
         const result = await client.query(
             `
         SELECT COUNT(*)::integer AS count
+
         FROM sales s
+
+        INNER JOIN branches b
+            ON b.id = s.branch_id
+           AND b.account_id = s.account_id
+
+        INNER JOIN users u
+            ON u.id = s.created_by_user_id
+
         WHERE s.account_id = $1
+
           AND (
                 $2::boolean = TRUE
                 OR EXISTS (
@@ -273,21 +375,41 @@ const SaleRepository = {
                       AND p.key = 'sales.view'
                 )
           )
+
           AND ($4::uuid IS NULL OR s.branch_id = $4)
+
           AND (
-                $5::varchar IS NULL
-                OR s.payment_status = $5
+                $5::uuid IS NULL
+                OR s.created_by_user_id = $5
           )
+
           AND (
                 $6::varchar IS NULL
-                OR s.customer_name ILIKE $6
-                OR s.notes ILIKE $6
+                OR s.payment_status = $6
+          )
+
+          AND (
+                $7::varchar IS NULL
+                OR s.customer_name ILIKE $7
+                OR s.notes ILIKE $7
+                OR b.name ILIKE $7
+                OR u.name ILIKE $7
                 OR EXISTS (
                     SELECT 1
                     FROM sale_items si
                     WHERE si.sale_id = s.id
-                      AND si.product_name ILIKE $6
+                      AND si.product_name ILIKE $7
                 )
+          )
+
+          AND (
+                $8::timestamptz IS NULL
+                OR s.created_at >= $8
+          )
+
+          AND (
+                $9::timestamptz IS NULL
+                OR s.created_at < ($9::timestamptz + INTERVAL '1 day')
           )
         `,
             [
@@ -295,8 +417,11 @@ const SaleRepository = {
                 isCreator,
                 userId,
                 branchId ?? null,
+                employeeId ?? null,
                 paymentStatus ?? null,
                 search ? `%${search}%` : null,
+                dateFrom ?? null,
+                dateTo ?? null,
             ]
         );
 

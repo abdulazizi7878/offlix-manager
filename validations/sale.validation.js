@@ -16,6 +16,7 @@ export const saleItemSchema = z.object({
     productId: z.string().uuid(
         "Invalid product ID."
     ),
+
     quantity: z
         .number()
         .int(
@@ -24,6 +25,8 @@ export const saleItemSchema = z.object({
         .positive(
             "Quantity must be greater than zero."
         ),
+
+    pricePerItem: moneySchema,
 });
 
 export const createSaleSchema = z
@@ -74,11 +77,6 @@ export const createSaleSchema = z
             })
             .optional(),
 
-        financialAccountId:
-            z.string().uuid(
-                "Invalid financial account ID."
-            ).optional(),
-
         paidAmount: moneySchema
             .optional()
             .default(0),
@@ -100,17 +98,6 @@ export const createSaleSchema = z
                     path: ["paymentMethod"],
                     message:
                         "Payment method is required.",
-                });
-            }
-
-            if (!data.financialAccountId) {
-                ctx.addIssue({
-                    code: "custom",
-                    path: [
-                        "financialAccountId",
-                    ],
-                    message:
-                        "Financial account is required.",
                 });
             }
 

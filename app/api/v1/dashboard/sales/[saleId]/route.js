@@ -1,3 +1,6 @@
+
+// file: app/api/v1/dashboard/sales/[saleId]/route.js
+
 import { NextResponse } from "next/server";
 
 import SaleService from "@/services/sale.service";
