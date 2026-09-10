@@ -773,3 +773,530 @@ CREATE INDEX idx_sale_settlements_status
     ON sale_settlements(status);
 
 COMMIT;
+
+
+
+
+-----
+
+-- ============================================================
+-- OFFLIX MONEY MANAGEMENT
+-- ============================================================
+
+BEGIN;
+
+
+-- ============================================================
+-- MONEY ACCOUNTS
+-- ============================================================
+
+CREATE TABLE money_accounts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    name VARCHAR(150) NOT NULL,
+
+    type VARCHAR(30) NOT NULL,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (length(trim(name)) > 0),
+
+    CHECK (
+        type IN (
+            'cash',
+            'bank',
+            'mobile_money'
+        )
+    ),
+
+    CHECK (
+        status IN (
+            'active',
+            'inactive'
+        )
+    ),
+
+    -- Required because other tables reference
+    -- (id, account_id) as a composite foreign key.
+    CONSTRAINT uq_money_accounts_id_account
+        UNIQUE (id, account_id)
+);
+
+
+CREATE INDEX idx_money_accounts_account_id
+    ON money_accounts(account_id);
+
+CREATE INDEX idx_money_accounts_account_type
+    ON money_accounts(account_id, type);
+
+CREATE INDEX idx_money_accounts_account_status
+    ON money_accounts(account_id, status);
+
+
+-- ============================================================
+-- MONEY TRANSACTIONS
+-- ============================================================
+
+CREATE TABLE money_transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    money_account_id UUID NOT NULL,
+
+    type VARCHAR(30) NOT NULL,
+
+    direction VARCHAR(10) NOT NULL,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    description TEXT,
+
+    created_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (amount > 0),
+
+    CHECK (
+        type IN (
+            'income',
+            'expense',
+            'deposit',
+            'withdrawal',
+            'payment',
+            'settlement',
+            'other'
+        )
+    ),
+
+    CHECK (
+        direction IN (
+            'in',
+            'out'
+        )
+    ),
+
+    CONSTRAINT fk_money_transactions_account
+        FOREIGN KEY (
+            money_account_id,
+            account_id
+        )
+        REFERENCES money_accounts (
+            id,
+            account_id
+        )
+);
+
+
+CREATE INDEX idx_money_transactions_account_id
+    ON money_transactions(account_id);
+
+CREATE INDEX idx_money_transactions_money_account_id
+    ON money_transactions(money_account_id);
+
+CREATE INDEX idx_money_transactions_account_type
+    ON money_transactions(account_id, type);
+
+CREATE INDEX idx_money_transactions_account_created_at
+    ON money_transactions(account_id, created_at);
+
+CREATE INDEX idx_money_transactions_created_by_user_id
+    ON money_transactions(created_by_user_id);
+
+
+-- ============================================================
+-- MONEY TRANSFERS
+-- ============================================================
+-- Internal movement between the business's own money accounts.
+--
+-- Example:
+-- CBE -> Main Cash
+--
+-- Transfers do not change total business money.
+-- ============================================================
+
+CREATE TABLE money_transfers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    from_money_account_id UUID NOT NULL,
+
+    to_money_account_id UUID NOT NULL,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    notes TEXT,
+
+    created_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (amount > 0),
+
+    CHECK (
+        from_money_account_id <> to_money_account_id
+    ),
+
+    CONSTRAINT fk_money_transfers_from_account
+        FOREIGN KEY (
+            from_money_account_id,
+            account_id
+        )
+        REFERENCES money_accounts (
+            id,
+            account_id
+        ),
+
+    CONSTRAINT fk_money_transfers_to_account
+        FOREIGN KEY (
+            to_money_account_id,
+            account_id
+        )
+        REFERENCES money_accounts (
+            id,
+            account_id
+        )
+);
+
+
+CREATE INDEX idx_money_transfers_account_id
+    ON money_transfers(account_id);
+
+CREATE INDEX idx_money_transfers_from_account
+    ON money_transfers(from_money_account_id);
+
+CREATE INDEX idx_money_transfers_to_account
+    ON money_transfers(to_money_account_id);
+
+CREATE INDEX idx_money_transfers_created_at
+    ON money_transfers(created_at);
+
+
+-- ============================================================
+-- SALE SETTLEMENT ACCEPTANCES
+-- ============================================================
+-- Connects the existing sale_settlements system
+-- to the Money Management system.
+--
+-- The original sale_settlements.amount is NOT changed.
+--
+-- Example:
+--
+-- Original settlement: 50,000
+--
+-- Acceptance 1:
+--   20,000 -> CBE
+--
+-- Acceptance 2:
+--   15,000 -> Main Cash
+--
+-- Acceptance 3:
+--   15,000 -> Telebirr
+--
+-- Total accepted: 50,000
+-- Remaining: 0
+-- ============================================================
+
+CREATE TABLE sale_settlement_acceptances (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    sale_settlement_id UUID NOT NULL,
+
+    money_account_id UUID NOT NULL,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    accepted_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    accepted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    notes TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (amount > 0),
+
+    CONSTRAINT fk_settlement_acceptance_settlement
+        FOREIGN KEY (sale_settlement_id)
+        REFERENCES sale_settlements(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_settlement_acceptance_money_account
+        FOREIGN KEY (
+            money_account_id,
+            account_id
+        )
+        REFERENCES money_accounts (
+            id,
+            account_id
+        )
+);
+
+
+CREATE INDEX idx_settlement_acceptances_account_id
+    ON sale_settlement_acceptances(account_id);
+
+CREATE INDEX idx_settlement_acceptances_settlement_id
+    ON sale_settlement_acceptances(sale_settlement_id);
+
+CREATE INDEX idx_settlement_acceptances_money_account_id
+    ON sale_settlement_acceptances(money_account_id);
+
+CREATE INDEX idx_settlement_acceptances_accepted_at
+    ON sale_settlement_acceptances(accepted_at);
+
+
+-- ============================================================
+-- PAYABLES
+-- ============================================================
+-- Money the business owes someone else.
+-- ============================================================
+
+CREATE TABLE payables (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    name VARCHAR(150) NOT NULL,
+
+    description TEXT,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    due_date DATE,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+
+    created_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (length(trim(name)) > 0),
+
+    CHECK (amount > 0),
+
+    CHECK (
+        status IN (
+            'pending',
+            'partial',
+            'paid',
+            'cancelled'
+        )
+    )
+);
+
+
+CREATE INDEX idx_payables_account_id
+    ON payables(account_id);
+
+CREATE INDEX idx_payables_account_status
+    ON payables(account_id, status);
+
+CREATE INDEX idx_payables_due_date
+    ON payables(account_id, due_date);
+
+
+-- ============================================================
+-- PAYABLE PAYMENTS
+-- ============================================================
+-- Actual payments made against a payable.
+-- ============================================================
+
+CREATE TABLE payable_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    payable_id UUID NOT NULL,
+
+    money_account_id UUID NOT NULL,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    paid_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    notes TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (amount > 0),
+
+    CONSTRAINT fk_payable_payment_payable
+        FOREIGN KEY (payable_id)
+        REFERENCES payables(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_payable_payment_money_account
+        FOREIGN KEY (
+            money_account_id,
+            account_id
+        )
+        REFERENCES money_accounts (
+            id,
+            account_id
+        )
+);
+
+
+CREATE INDEX idx_payable_payments_account_id
+    ON payable_payments(account_id);
+
+CREATE INDEX idx_payable_payments_payable_id
+    ON payable_payments(payable_id);
+
+CREATE INDEX idx_payable_payments_money_account_id
+    ON payable_payments(money_account_id);
+
+CREATE INDEX idx_payable_payments_paid_at
+    ON payable_payments(paid_at);
+
+
+-- ============================================================
+-- CREDITS
+-- ============================================================
+-- Money owed to the business.
+--
+-- UI can call this "Credit".
+-- ============================================================
+
+CREATE TABLE credits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    name VARCHAR(150) NOT NULL,
+
+    description TEXT,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    due_date DATE,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+
+    created_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (length(trim(name)) > 0),
+
+    CHECK (amount > 0),
+
+    CHECK (
+        status IN (
+            'pending',
+            'partial',
+            'paid',
+            'cancelled'
+        )
+    )
+);
+
+
+CREATE INDEX idx_credits_account_id
+    ON credits(account_id);
+
+CREATE INDEX idx_credits_account_status
+    ON credits(account_id, status);
+
+CREATE INDEX idx_credits_due_date
+    ON credits(account_id, due_date);
+
+
+-- ============================================================
+-- CREDIT PAYMENTS
+-- ============================================================
+-- Actual money received against a credit.
+-- ============================================================
+
+CREATE TABLE credit_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    credit_id UUID NOT NULL,
+
+    money_account_id UUID NOT NULL,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    received_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    notes TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (amount > 0),
+
+    CONSTRAINT fk_credit_payment_credit
+        FOREIGN KEY (credit_id)
+        REFERENCES credits(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_credit_payment_money_account
+        FOREIGN KEY (
+            money_account_id,
+            account_id
+        )
+        REFERENCES money_accounts (
+            id,
+            account_id
+        )
+);
+
+
+CREATE INDEX idx_credit_payments_account_id
+    ON credit_payments(account_id);
+
+CREATE INDEX idx_credit_payments_credit_id
+    ON credit_payments(credit_id);
+
+CREATE INDEX idx_credit_payments_money_account_id
+    ON credit_payments(money_account_id);
+
+CREATE INDEX idx_credit_payments_received_at
+    ON credit_payments(received_at);
+
+
+COMMIT;

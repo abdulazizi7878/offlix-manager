@@ -5,170 +5,307 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-    Wallet, Landmark, ArrowLeftRight, CircleDollarSign,
-    CreditCard, ArrowDownToLine, HandCoins, PieChart,
-    TrendingUp, Plus, ArrowUpRight, AlertCircle, Loader2
+    Wallet,
+    ArrowUpRight,
+    ArrowDownLeft,
+    RefreshCw,
+    Landmark,
+    Smartphone,
+    CreditCard,
+    ArrowRightLeft,
+    FileText,
+    Building2,
+    AlertCircle,
+    TrendingUp,
+    TrendingDown,
+    Plus,
+    CheckCircle2
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
+import { toast } from "sonner";
 
 export default function MoneyOverviewPage() {
-    const [overview, setOverview] = useState(null);
+    const [totalMoney, setTotalMoney] = useState(null);
+    const [accounts, setAccounts] = useState([]);
+    const [transactions, setTransactions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        async function loadMoneyOverview() {
-            try {
-                const res = await fetchApi("/api/v1/dashboard/money/overview");
-                setOverview(res.data || res);
-            } catch (err) {
-                setError(err.message || "Failed to load financial overview.");
-            } finally {
-                setIsLoading(false);
-            }
+    const loadOverviewData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const [totalRes, accountsRes, transactionsRes] = await Promise.all([
+                fetchApi("/api/v1/dashboard/money/total-money"),
+                fetchApi("/api/v1/dashboard/money/accounts?limit=5"),
+                fetchApi("/api/v1/dashboard/money/transactions?limit=5")
+            ]);
+
+            setTotalMoney(totalRes.data || totalRes);
+            setAccounts(accountsRes.data?.data ?? []);
+            setTransactions(transactionsRes.data?.data ?? []);
+        } catch (err) {
+            setError(err.message || "Failed to load financial overview.");
+            toast.error("Failed to load financial overview");
+        } finally {
+            setIsLoading(false);
         }
-        loadMoneyOverview();
+    };
+
+    useEffect(() => {
+        loadOverviewData();
     }, []);
+
+    const getTypeIcon = (type) => {
+        switch (type) {
+            case "cash":
+                return <Wallet className="w-5 h-5" />;
+            case "bank":
+                return <Landmark className="w-5 h-5" />;
+            case "mobile_money":
+                return <Smartphone className="w-5 h-5" />;
+            default:
+                return <CreditCard className="w-5 h-5" />;
+        }
+    };
 
     if (isLoading) {
         return (
-            <div className="max-w-7xl mx-auto space-y-6 pb-16 animate-pulse">
-                <div className="h-8 w-48 bg-(--muted) rounded-md" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="h-32 bg-(--muted) rounded-xl" />
-                    <div className="h-32 bg-(--muted) rounded-xl" />
-                    <div className="h-32 bg-(--muted) rounded-xl" />
+            <div className="space-y-6 animate-pulse">
+                <div className="flex items-center justify-between pb-6 border-b border-(--border)">
+                    <div className="space-y-2">
+                        <div className="h-8 w-48 bg-(--muted) rounded-lg" />
+                        <div className="h-4 w-72 bg-(--muted) rounded-md" />
+                    </div>
+                    <div className="h-10 w-32 bg-(--muted) rounded-lg" />
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-32 bg-(--card) border border-(--border) rounded-xl p-6 space-y-3" />
+                    ))}
+                </div>
+                <div className="h-64 bg-(--card) border border-(--border) rounded-xl p-6" />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="max-w-7xl mx-auto p-6">
-                <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center gap-3 text-(--destructive)">
-                    <AlertCircle className="w-5 h-5 shrink-0" />
-                    <p className="text-sm font-semibold">{error}</p>
+            <div className="p-8 text-center bg-(--card) border border-(--border) rounded-xl space-y-4">
+                <div className="mx-auto w-12 h-12 bg-(--destructive)/10 text-(--destructive) rounded-full flex items-center justify-center">
+                    <AlertCircle className="w-6 h-6" />
                 </div>
+                <div className="space-y-1">
+                    <h2 className="text-lg font-semibold">Unable to load dashboard</h2>
+                    <p className="text-xs text-(--muted-foreground)">{error}</p>
+                </div>
+                <button
+                    onClick={loadOverviewData}
+                    className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Try again</span>
+                </button>
             </div>
         );
     }
 
-    const { totalMoney = 0, cash = 0, bank = 0, receivables = 0, payables = 0, recentActivity = [] } = overview || {};
+    const totalAmount = totalMoney?.total ?? 0;
+
+    const byType = (totalMoney?.byType ?? []).reduce((acc, item) => {
+        acc[item.type] = Number(item.total_amount || 0);
+        return acc;
+    }, {});
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6 pb-16">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-(--border)">
-                <div>
-                    <h1 className="text-xl font-bold tracking-tight">Money Control Center</h1>
-                    <p className="text-xs text-(--muted-foreground)">Manage accounts, cash flow, receivables, and payables.</p>
+        <div className="space-y-6">
+            {/* Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border)">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl">
+                        <Wallet className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Money Management</h1>
+                        <p className="text-sm text-(--muted-foreground) mt-0.5">
+                            Overview of business liquidity, accounts, transactions, and cashflow.
+                        </p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <Link
-                        href="/dashboard/money/transfers"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-(--border) hover:bg-(--muted) rounded-lg text-xs font-medium transition-colors"
+                        href="/dashboard/money/transactions"
+                        className="inline-flex items-center justify-center gap-2 bg-(--secondary) text-(--secondary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-90 transition-opacity"
                     >
-                        <ArrowLeftRight className="w-3.5 h-3.5" />
-                        <span>Transfer</span>
+                        <ArrowRightLeft className="w-4 h-4" />
+                        <span>Transactions</span>
                     </Link>
                     <Link
-                        href="/dashboard/money/withdrawals"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-(--primary) text-(--primary-foreground) hover:opacity-90 rounded-lg text-xs font-medium transition-colors"
+                        href="/dashboard/money/accounts"
+                        className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                     >
-                        <ArrowDownToLine className="w-3.5 h-3.5" />
-                        <span>Withdrawal</span>
+                        <Plus className="w-4 h-4" />
+                        <span>Manage Accounts</span>
                     </Link>
                 </div>
             </div>
 
-            {/* Financial Snapshot Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                <div className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-2 shadow-xs">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground) flex items-center gap-1.5">
-                        <Wallet className="w-4 h-4 text-(--primary)" /> Total Money
-                    </span>
-                    <p className="text-2xl font-mono font-bold tracking-tight">{Number(totalMoney).toLocaleString()} birr</p>
+            {/* Total Money Hero Card */}
+            <div className="bg-gradient-to-br from-(--primary)/15 via-(--card) to-(--card) border border-(--border) rounded-2xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
+                <div className="absolute right-6 top-6 opacity-10 text-(--primary)">
+                    <Wallet className="w-32 h-32" />
                 </div>
-                <div className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-2 shadow-xs">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground) flex items-center gap-1.5">
-                        <Wallet className="w-4 h-4" /> Cash
-                    </span>
-                    <p className="text-2xl font-mono font-bold tracking-tight">{Number(cash).toLocaleString()} birr</p>
-                </div>
-                <div className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-2 shadow-xs">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground) flex items-center gap-1.5">
-                        <Landmark className="w-4 h-4" /> Bank Money
-                    </span>
-                    <p className="text-2xl font-mono font-bold tracking-tight">{Number(bank).toLocaleString()} birr</p>
-                </div>
-                <div className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-2 shadow-xs">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground) flex items-center gap-1.5">
-                        <CircleDollarSign className="w-4 h-4 text-amber-500" /> Customers Owe
-                    </span>
-                    <p className="text-2xl font-mono font-bold tracking-tight text-amber-500">{Number(receivables).toLocaleString()} birr</p>
-                </div>
-                <div className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-2 shadow-xs">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground) flex items-center gap-1.5">
-                        <CreditCard className="w-4 h-4 text-rose-500" /> Business Owes
-                    </span>
-                    <p className="text-2xl font-mono font-bold tracking-tight text-rose-500">{Number(payables).toLocaleString()} birr</p>
+                <div className="relative z-10 space-y-4">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Total Business Liquid Money</p>
+                        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mt-1 text-(--foreground)">
+                            {Number(totalAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-lg font-normal text-(--muted-foreground)">ETB</span>
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-(--border)/60">
+                        <div className="space-y-1">
+                            <span className="text-xs text-(--muted-foreground)">Cash</span>
+                            <p className="text-lg font-semibold">
+                                {Number(byType.cash || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                            </p>
+                        </div>
+                        <div className="space-y-1">
+                            <span className="text-xs text-(--muted-foreground)">Bank Accounts</span>
+                            <p className="text-lg font-semibold">
+                                {Number(byType.bank || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                            </p>
+                        </div>
+                        <div className="space-y-1 col-span-2 sm:col-span-1">
+                            <span className="text-xs text-(--muted-foreground)">Mobile Money</span>
+                            <p className="text-lg font-semibold">
+                                {Number(byType.mobile_money || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Quick Navigation Cards / Drilldowns */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Link href="/dashboard/money/accounts" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all flex items-center justify-between group">
-                    <div>
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Financial Accounts</h3>
-                        <p className="text-sm font-medium mt-1">View all accounts</p>
+            {/* Quick Links / Modules Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                <Link href="/dashboard/money/accounts" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all space-y-2 group text-center flex flex-col items-center justify-center">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl group-hover:scale-110 transition-transform">
+                        <Wallet className="w-5 h-5" />
                     </div>
-                    <Landmark className="w-5 h-5 text-(--muted-foreground) group-hover:text-(--primary) transition-colors" />
+                    <span className="text-xs font-semibold">Accounts</span>
                 </Link>
-                <Link href="/dashboard/money/transactions" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all flex items-center justify-between group">
-                    <div>
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Transactions</h3>
-                        <p className="text-sm font-medium mt-1">Audit money trail</p>
+                <Link href="/dashboard/money/transactions" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all space-y-2 group text-center flex flex-col items-center justify-center">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl group-hover:scale-110 transition-transform">
+                        <ArrowRightLeft className="w-5 h-5" />
                     </div>
-                    <ArrowLeftRight className="w-5 h-5 text-(--muted-foreground) group-hover:text-(--primary) transition-colors" />
+                    <span className="text-xs font-semibold">Transactions</span>
                 </Link>
-                <Link href="/dashboard/money/receivables" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all flex items-center justify-between group">
-                    <div>
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Receivables</h3>
-                        <p className="text-sm font-medium mt-1">Customer credits</p>
+                <Link href="/dashboard/money/transfers" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all space-y-2 group text-center flex flex-col items-center justify-center">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl group-hover:scale-110 transition-transform">
+                        <RefreshCw className="w-5 h-5" />
                     </div>
-                    <CircleDollarSign className="w-5 h-5 text-(--muted-foreground) group-hover:text-(--primary) transition-colors" />
+                    <span className="text-xs font-semibold">Transfers</span>
                 </Link>
-                <Link href="/dashboard/money/settlements" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all flex items-center justify-between group">
-                    <div>
-                        <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Settlements</h3>
-                        <p className="text-sm font-medium mt-1">Branch remittances</p>
+                <Link href="/dashboard/money/settlements" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all space-y-2 group text-center flex flex-col items-center justify-center">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl group-hover:scale-110 transition-transform">
+                        <Building2 className="w-5 h-5" />
                     </div>
-                    <HandCoins className="w-5 h-5 text-(--muted-foreground) group-hover:text-(--primary) transition-colors" />
+                    <span className="text-xs font-semibold">Settlements</span>
+                </Link>
+                <Link href="/dashboard/money/payables" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all space-y-2 group text-center flex flex-col items-center justify-center">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl group-hover:scale-110 transition-transform">
+                        <TrendingDown className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold">Payables</span>
+                </Link>
+                <Link href="/dashboard/money/credits" className="p-4 bg-(--card) border border-(--border) rounded-xl hover:border-(--primary) transition-all space-y-2 group text-center flex flex-col items-center justify-center">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl group-hover:scale-110 transition-transform">
+                        <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold">Credits</span>
                 </Link>
             </div>
 
-            {/* Recent Money Activity */}
-            <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Recent Money Activity</h2>
-                {recentActivity.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-(--muted-foreground)">
-                        No recent money movements recorded.
+            {/* Split Section: Accounts & Recent Transactions */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Active Money Accounts Preview */}
+                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-base font-semibold">Money Accounts</h3>
+                        <Link href="/dashboard/money/accounts" className="text-xs text-(--primary) font-medium hover:underline">
+                            View all →
+                        </Link>
                     </div>
-                ) : (
-                    <div className="divide-y divide-(--border)">
-                        {recentActivity.map((activity) => (
-                            <div key={activity.id} className="py-3 flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <p className="text-sm font-medium">{activity.description || activity.type}</p>
-                                    <p className="text-xs font-mono text-(--muted-foreground)">{new Date(activity.createdAt).toLocaleString()}</p>
+
+                    <div className="space-y-3">
+                        {accounts.length === 0 ? (
+                            <p className="text-xs text-(--muted-foreground) py-6 text-center">No money accounts created yet.</p>
+                        ) : (
+                            accounts.map((acc) => (
+                                <div key={acc.id} className="flex items-center justify-between p-3 rounded-lg border border-(--border) hover:bg-(--muted)/30 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-(--primary)/10 text-(--primary) rounded-lg">
+                                            {getTypeIcon(acc.type)}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium">{acc.name}</p>
+                                            <p className="text-xs text-(--muted-foreground) capitalize">{acc.type.replace("_", " ")}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-semibold">
+                                            {Number(acc.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                                        </p>
+                                        <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${acc.status === "active" !== false ? "bg-(--success)/10 text-(--success)" : "bg-(--muted) text-(--muted-foreground)"}`}>
+                                            {acc.status === "active" !== false ? "Active" : "Inactive"}
+                                        </span>
+                                    </div>
                                 </div>
-                                <span className={`text-sm font-mono font-semibold ${activity.direction === 'in' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                    {activity.direction === 'in' ? '+' : '-'}{Number(activity.amount).toLocaleString()} birr
-                                </span>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
-                )}
+                </div>
+
+                {/* Recent Transactions Preview */}
+                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-base font-semibold">Recent Transactions</h3>
+                        <Link href="/dashboard/money/transactions" className="text-xs text-(--primary) font-medium hover:underline">
+                            View all →
+                        </Link>
+                    </div>
+
+                    <div className="space-y-3">
+                        {transactions.length === 0 ? (
+                            <p className="text-xs text-(--muted-foreground) py-6 text-center">No transactions recorded yet.</p>
+                        ) : (
+                            transactions.map((tx) => {
+                                const isIn = tx.direction === "in" || tx.type === "income" || tx.type === "deposit";
+                                return (
+                                    <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg border border-(--border) hover:bg-(--muted)/30 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg ${isIn ? "bg-(--success)/10 text-(--success)" : "bg-(--destructive)/10 text-(--destructive)"}`}>
+                                                {isIn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-medium">{tx.description || tx.type}</p>
+                                                <p className="text-xs text-(--muted-foreground)">
+                                                    {tx.money_account_name || "Account"} • {new Date(tx.created_at || tx.date).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`text-sm font-semibold ${isIn ? "text-(--success)" : "text-(--destructive)"}`}>
+                                                {isIn ? "+" : "-"}{Number(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">ETB</span>
+                                            </p>
+                                            <span className="text-[10px] text-(--muted-foreground) uppercase">{tx.type}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

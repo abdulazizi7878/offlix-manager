@@ -1,3 +1,7 @@
+
+// validations/sale.validation.js
+
+
 import { z } from "zod";
 
 const moneySchema = z

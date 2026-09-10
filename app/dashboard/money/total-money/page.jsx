@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Wallet, Landmark, Building2, AlertCircle, Loader2 } from "lucide-react";
+import { Wallet, Landmark, AlertCircle } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 
 export default function TotalMoneyPage() {
@@ -15,7 +15,7 @@ export default function TotalMoneyPage() {
         async function loadTotalMoney() {
             try {
                 const res = await fetchApi("/api/v1/dashboard/money/total-money");
-                setData(res.data || res);
+                setData(res.data?.data ?? res.data ?? res);
             } catch (err) {
                 setError(err.message || "Failed to load total money details.");
             } finally {
@@ -45,7 +45,11 @@ export default function TotalMoneyPage() {
         );
     }
 
-    const { totalBalance = 0, cashBalances = [], bankBalances = [], branchBalances = [], accountBreakdown = [] } = data || {};
+    const totalBalance = data?.total ?? 0;
+    const accounts = Array.isArray(data?.accounts) ? data.accounts : (Array.isArray(data?.data?.accounts) ? data.data.accounts : []);
+
+    const cashBalances = accounts.filter(acc => acc.type === "cash");
+    const bankBalances = accounts.filter(acc => acc.type === "bank");
 
     return (
         <div className="max-w-5xl mx-auto space-y-6 pb-16">
@@ -72,7 +76,7 @@ export default function TotalMoneyPage() {
                     ) : (
                         <div className="divide-y divide-(--border)">
                             {cashBalances.map((acc, idx) => (
-                                <div key={idx} className="py-2.5 flex items-center justify-between text-sm">
+                                <div key={acc.id || idx} className="py-2.5 flex items-center justify-between text-sm">
                                     <span>{acc.name}</span>
                                     <span className="font-mono font-semibold">{Number(acc.balance).toLocaleString()} birr</span>
                                 </div>
@@ -90,7 +94,7 @@ export default function TotalMoneyPage() {
                     ) : (
                         <div className="divide-y divide-(--border)">
                             {bankBalances.map((acc, idx) => (
-                                <div key={idx} className="py-2.5 flex items-center justify-between text-sm">
+                                <div key={acc.id || idx} className="py-2.5 flex items-center justify-between text-sm">
                                     <span>{acc.name}</span>
                                     <span className="font-mono font-semibold">{Number(acc.balance).toLocaleString()} birr</span>
                                 </div>
@@ -103,17 +107,21 @@ export default function TotalMoneyPage() {
             {/* Account By Account Breakdown */}
             <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                 <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Account-by-Account Details</h2>
-                <div className="divide-y divide-(--border)">
-                    {(accountBreakdown || []).map((acc) => (
-                        <div key={acc.id} className="py-3 flex items-center justify-between">
-                            <div className="space-y-0.5">
-                                <p className="text-sm font-medium">{acc.name}</p>
-                                <p className="text-xs text-(--muted-foreground) uppercase">{acc.type} • {acc.branchName || "Owner Account"}</p>
+                {accounts.length === 0 ? (
+                    <p className="text-xs text-(--muted-foreground)">No accounts found.</p>
+                ) : (
+                    <div className="divide-y divide-(--border)">
+                        {accounts.map((acc) => (
+                            <div key={acc.id} className="py-3 flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <p className="text-sm font-medium">{acc.name}</p>
+                                    <p className="text-xs text-(--muted-foreground) uppercase">{acc.type} • {acc.branchName || "Owner Account"}</p>
+                                </div>
+                                <span className="text-sm font-mono font-semibold">{Number(acc.balance).toLocaleString()} birr</span>
                             </div>
-                            <span className="text-sm font-mono font-semibold">{Number(acc.balance).toLocaleString()} birr</span>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

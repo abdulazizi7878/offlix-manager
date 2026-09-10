@@ -287,7 +287,7 @@ export default function DashboardLayout({ children }) {
             )}
           </div>
 
-          {/* Money Group */}
+          {/* Money Group - Updated matching exact required routes */}
           <div className="space-y-1">
             <button
               onClick={() => setIsMoneyOpen(!isMoneyOpen)}
@@ -332,13 +332,22 @@ export default function DashboardLayout({ children }) {
                   Transactions
                 </Link>
                 <Link
-                  href="/dashboard/money/receivables"
-                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/receivables")
+                  href="/dashboard/money/transfers"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/transfers")
                     ? "bg-(--primary) text-(--primary-foreground) font-semibold"
                     : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
                     }`}
                 >
-                  Receivables
+                  Transfers
+                </Link>
+                <Link
+                  href="/dashboard/money/settlements"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/settlements")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Settlements
                 </Link>
                 <Link
                   href="/dashboard/money/payables"
@@ -350,31 +359,13 @@ export default function DashboardLayout({ children }) {
                   Payables
                 </Link>
                 <Link
-                  href="/dashboard/money/transfers"
-                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/transfers")
+                  href="/dashboard/money/credits"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/credits")
                     ? "bg-(--primary) text-(--primary-foreground) font-semibold"
                     : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
                     }`}
                 >
-                  Transfers
-                </Link>
-                <Link
-                  href="/dashboard/money/withdrawals"
-                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/withdrawals")
-                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }`}
-                >
-                  Withdrawals
-                </Link>
-                <Link
-                  href="/dashboard/money/settlements"
-                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/money/settlements")
-                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }`}
-                >
-                  Settlements
+                  Credit
                 </Link>
                 <Link
                   href="/dashboard/money/total-money"

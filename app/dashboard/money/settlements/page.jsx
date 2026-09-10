@@ -3,162 +3,142 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { HandCoins, AlertCircle, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Building2, Search, AlertCircle, CheckCircle2 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
 export default function SettlementsPage() {
     const [settlements, setSettlements] = useState([]);
-    const [ownerAccounts, setOwnerAccounts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [selectedSettlementId, setSelectedSettlementId] = useState("");
-    const [receivingAccountId, setReceivingAccountId] = useState("");
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    useEffect(() => {
-        async function loadData() {
-            try {
-                const [setRes, accRes] = await Promise.all([
-                    fetchApi("/api/v1/dashboard/money/settlements"),
-                    fetchApi("/api/v1/dashboard/money/accounts")
-                ]);
-                setSettlements(setRes.data?.settlements || setRes.data || setRes);
-                // Filter or show owner accounts for receiving settlement
-                const accs = accRes.data?.accounts || accRes.data || accRes;
-                setOwnerAccounts(accs);
-            } catch (err) {
-                setError(err.message || "Failed to load settlements data.");
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        loadData();
-    }, []);
-
-    const handleReceiveSettlement = async (e) => {
-        e.preventDefault();
-        if (!selectedSettlementId || !receivingAccountId) {
-            toast.error("Please select a settlement and receiving owner account.");
-            return;
-        }
-        setIsSubmitting(true);
+    const loadSettlements = async () => {
+        setIsLoading(true);
+        setError(null);
         try {
-            await fetchApi(`/api/v1/dashboard/money/settlements/${selectedSettlementId}/receive`, {
-                method: "POST",
-                body: JSON.stringify({ receivingAccountId }),
-            });
-            toast.success("Settlement received successfully");
-            setSelectedSettlementId("");
-            setReceivingAccountId("");
             const res = await fetchApi("/api/v1/dashboard/money/settlements");
-            setSettlements(res.data?.settlements || res.data || res);
+
+            // Handle pagination and nested data structure: { success: true, data: { data: [], pagination: {} } }
+            const responseData = res.data?.data ?? res.data ?? {};
+            const settlementsList = Array.isArray(responseData)
+                ? responseData
+                : (responseData.data ?? res.data?.settlements ?? []);
+
+            setSettlements(settlementsList);
         } catch (err) {
-            toast.error(err.message || "Failed to receive settlement.");
+            setError(err.message || "Failed to load settlements.");
+            toast.error("Failed to load settlements");
         } finally {
-            setIsSubmitting(false);
+            setIsLoading(false);
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="max-w-4xl mx-auto space-y-6 pb-16 animate-pulse">
-                <div className="h-8 w-48 bg-(--muted) rounded-md" />
-                <div className="h-64 bg-(--muted) rounded-xl" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="max-w-4xl mx-auto p-6">
-                <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center gap-3 text-(--destructive)">
-                    <AlertCircle className="w-5 h-5 shrink-0" />
-                    <p className="text-sm font-semibold">{error}</p>
-                </div>
-            </div>
-        );
-    }
+    useEffect(() => {
+        loadSettlements();
+    }, []);
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 pb-16">
-            <div className="pb-4 border-b border-(--border)">
-                <h1 className="text-xl font-bold tracking-tight">Branch Settlements</h1>
-                <p className="text-xs text-(--muted-foreground)">Manage money transfers from branches to the owner.</p>
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border)">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-(--primary)/10 text-(--primary) rounded-xl">
+                        <Building2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">Branch Settlements</h1>
+                        <p className="text-sm text-(--muted-foreground) mt-0.5">
+                            Manage revenue settlements requested by branches into central money systems.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            {/* Receive Settlement Form */}
-            <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Receive Pending Settlement</h2>
-                <form onSubmit={handleReceiveSettlement} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium text-(--muted-foreground)">Pending Settlement</label>
-                            <select
-                                value={selectedSettlementId}
-                                onChange={(e) => setSelectedSettlementId(e.target.value)}
-                                className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                required
-                            >
-                                <option value="">Select pending settlement</option>
-                                {settlements.filter(s => s.status === 'pending').map(s => (
-                                    <option key={s.id} value={s.id}>{s.branchName || "Branch"} - {Number(s.amount).toLocaleString()} birr</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium text-(--muted-foreground)">To Owner Account</label>
-                            <select
-                                value={receivingAccountId}
-                                onChange={(e) => setReceivingAccountId(e.target.value)}
-                                className="w-full px-3 py-2 border border-(--border) rounded-lg text-sm bg-transparent"
-                                required
-                            >
-                                <option value="">Select owner receiving account</option>
-                                {ownerAccounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center gap-2"
-                    >
-                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <HandCoins className="w-4 h-4" />}
-                        <span>Receive Settlement</span>
-                    </button>
-                </form>
-            </div>
+            {error && (
+                <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
+                    <span className="text-sm font-medium">{error}</span>
+                    <button onClick={loadSettlements} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">Retry</button>
+                </div>
+            )}
 
-            {/* Settlements List */}
-            <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">All Settlements</h2>
-                {settlements.length === 0 ? (
-                    <div className="text-center py-8 text-sm text-(--muted-foreground)">
-                        No settlements recorded yet.
+            {isLoading && (
+                <div className="space-y-4 animate-pulse">
+                    <div className="h-64 bg-(--card) border border-(--border) rounded-xl" />
+                </div>
+            )}
+
+            {!isLoading && !error && settlements.length === 0 && (
+                <div className="p-12 text-center bg-(--card) border border-(--border) rounded-xl space-y-4">
+                    <div className="mx-auto w-12 h-12 bg-(--muted) text-(--muted-foreground) rounded-full flex items-center justify-center">
+                        <Building2 className="w-6 h-6" />
                     </div>
-                ) : (
-                    <div className="divide-y divide-(--border)">
-                        {settlements.map((s) => (
-                            <div key={s.id} className="py-3 flex items-center justify-between">
-                                <div className="space-y-0.5">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-medium">{s.branchName || "Branch Settlement"}</span>
-                                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${s.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                                            {s.status}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs font-mono text-(--muted-foreground)">{new Date(s.createdAt).toLocaleString()}</p>
-                                </div>
-                                <span className="text-sm font-mono font-semibold">{Number(s.amount).toLocaleString()} birr</span>
-                            </div>
-                        ))}
+                    <div className="max-w-sm mx-auto space-y-1">
+                        <h2 className="text-lg font-semibold">No settlements found</h2>
+                        <p className="text-xs text-(--muted-foreground)">Branch settlements will appear here when requested.</p>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {!isLoading && !error && settlements.length > 0 && (
+                <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
+                                <tr>
+                                    <th className="px-6 py-3.5">Branch</th>
+                                    <th className="px-6 py-3.5">Original</th>
+                                    <th className="px-6 py-3.5">Accepted</th>
+                                    <th className="px-6 py-3.5">Remaining</th>
+                                    <th className="px-6 py-3.5">Status</th>
+                                    <th className="px-6 py-3.5">Requested</th>
+                                    <th className="px-6 py-3.5 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-(--border)">
+                                {settlements.map((st) => {
+                                    const orig = Number(st.original_amount || st.amount || 0);
+                                    const rem = Number(st.remaining_amount ?? orig);
+                                    const acc = orig - rem;
+                                    const isDone = rem <= 0 || st.status === "received" || st.status === "completed";
+
+                                    return (
+                                        <tr key={st.id} className="hover:bg-(--muted)/30 transition-colors">
+                                            <td className="px-6 py-4 font-medium">
+                                                {st.branch?.name || st.branch_name || "Branch"}
+                                            </td>
+                                            <td className="px-6 py-4 font-semibold">
+                                                {orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-(--success) font-semibold">
+                                                {acc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">ETB</span>
+                                            </td>
+                                            <td className="px-6 py-4 font-semibold text-(--destructive)">
+                                                {rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">ETB</span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase ${isDone ? "bg-(--success)/10 text-(--success)" : "bg-(--primary)/10 text-(--primary)"}`}>
+                                                    {isDone ? "Received" : (st.status || "Pending")}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">
+                                                {new Date(st.created_at || st.date).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Link
+                                                    href={`/dashboard/money/settlements/${st.id}`}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors"
+                                                >
+                                                    {isDone ? "View History" : "Accept Funds"}
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
