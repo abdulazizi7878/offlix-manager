@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, Store } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { UserMenu } from "./UserMenu";
 
@@ -25,12 +26,17 @@ export function Header({ user = null }) {
         <div className="flex items-center gap-8">
           <Link
             href={isAuthenticated ? "/dashboard" : "/"}
-            className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] rounded-lg p-1"
+            className="flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] rounded-lg p-1"
           >
-            <div className="bg-[var(--primary)] text-[var(--primary-foreground)] p-1.5 rounded-md">
-              <Store className="w-5 h-5" />
+            <div className="relative w-7 h-7 rounded-md overflow-hidden flex items-center justify-center bg-[var(--primary)]/10">
+              <Image
+                src="/images/logo.png"
+                alt="Offlix Manager Logo"
+                fill
+                className="object-cover"
+              />
             </div>
-            <span className="font-bold text-lg tracking-tight">Offlix</span>
+            <span className="font-bold text-lg tracking-tight">Offlix Manager</span>
           </Link>
 
           {/* Desktop Navigation */}
