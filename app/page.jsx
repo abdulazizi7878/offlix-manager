@@ -710,7 +710,7 @@ function MoneyMockup() {
             >
               <div className="flex items-center gap-3">
                 <div className="h-2 w-2 rounded-full bg-[var(--primary)]" />
-                <span className="text-xs font-medium">
+                <span className="text-xs font-medium text-[var(--muted-foreground)]">
                   {label}
                 </span>
               </div>
@@ -873,7 +873,7 @@ export default function HomePage() {
                 className="mt-7 flex flex-col gap-3 sm:flex-row"
               >
                 <Link
-                  href="/signup"
+                  href="/register"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-[var(--primary-foreground)] transition-transform hover:-translate-y-0.5"
                 >
                   Create your account
@@ -1661,7 +1661,7 @@ export default function HomePage() {
               className="mt-7 flex flex-col justify-center gap-3 sm:flex-row"
             >
               <Link
-                href="/signup"
+                href="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-[var(--primary-foreground)] transition-transform hover:-translate-y-0.5"
               >
                 Create your account
