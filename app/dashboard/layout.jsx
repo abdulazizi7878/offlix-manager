@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -120,6 +121,18 @@ export default function DashboardLayout({ children }) {
   const isExactActive = (path) => pathname === path;
   const isSubActive = (prefix) => pathname.startsWith(prefix);
 
+  // Generate dynamic breadcrumbs based on pathname (e.g. dashboard -> users -> create)
+  const getBreadcrumbs = () => {
+    const segments = pathname.split("/").filter(Boolean);
+    return segments.map((segment, index) => {
+      const href = "/" + segments.slice(0, index + 1).join("/");
+      const label = segment.charAt(0).toUpperCase() + segment.slice(1);
+      return { href, label };
+    });
+  };
+
+  const breadcrumbs = getBreadcrumbs();
+
   return (
     <div className="h-screen bg-(--background) text-(--foreground) flex overflow-hidden antialiased selection:bg-(--primary) selection:text-(--primary-foreground)">
 
@@ -142,10 +155,10 @@ export default function DashboardLayout({ children }) {
         {/* Brand Header */}
         <div className="h-16 px-6 border-b border-(--border) flex items-center justify-between shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5 rounded-lg p-1 -ml-1">
-            <div className="bg-(--primary) text-(--primary-foreground) p-1.5 rounded-lg shadow-xs">
-              <Store className="w-5 h-5" />
+            <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs">
+              <Image src={"/images/logo.jfif"} width={36} height={36} alt="Offlix Manager Logo" className="rounded-md" />
             </div>
-            <span className="font-bold text-lg tracking-tight">Offlix Manager</span>
+            <span className="font-bold text-md tracking-tight">Offlix Manager</span>
           </Link>
           <button
             onClick={() => setIsSidebarOpen(false)}
@@ -287,7 +300,7 @@ export default function DashboardLayout({ children }) {
             )}
           </div>
 
-          {/* Money Group - Updated matching exact required routes */}
+          {/* Money Group */}
           <div className="space-y-1">
             <button
               onClick={() => setIsMoneyOpen(!isMoneyOpen)}
@@ -468,8 +481,8 @@ export default function DashboardLayout({ children }) {
       {/* Main Content Wrapper */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
 
-        {/* Top Bar Header */}
-        <header className="h-16 px-6 bg-(--card) border-b border-(--border) flex items-center justify-between shrink-0 z-30">
+        {/* Top Bar Header (Fixed on all screens via sticky/fixed behavior matching container) */}
+        <header className="h-16 px-6 bg-(--card) border-b border-(--border) flex items-center justify-between shrink-0 z-30 sticky top-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -478,11 +491,38 @@ export default function DashboardLayout({ children }) {
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="text-base font-semibold tracking-tight">Offlix Manager</h1>
+
+            {/* Brand Title on Mobile / Hidden Breadcrumbs on Small Screens, Dynamic Breadcrumbs on Medium+ Screens */}
+            <h1 className="text-base font-semibold tracking-tight md:hidden">Offlix Manager</h1>
+
+            {/* Breadcrumbs shown only on desktop (hidden on small screens using hidden md:flex) */}
+            <nav className="hidden md:flex items-center space-x-2 text-sm font-medium">
+              {breadcrumbs.map((crumb, index) => {
+                const isLast = index === breadcrumbs.length - 1;
+                return (
+                  <div key={crumb.href} className="flex items-center space-x-2">
+                    {index > 0 && <ChevronRight className="w-4 h-4 text-(--muted-foreground)" />}
+                    {isLast ? (
+                      <span className="text-(--foreground) font-semibold">{crumb.label}</span>
+                    ) : (
+                      <Link href={crumb.href} className="text-(--muted-foreground) hover:text-(--foreground) transition-colors">
+                        {crumb.label}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
           </div>
 
           <div className="flex items-center gap-3">
             <ThemeSwitcher />
+            {/* User Profile Avatar shown in small/mobile screens right after the theme changer */}
+            <div className="flex md:hidden items-center">
+              <div className="w-8 h-8 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-xs shrink-0 border border-(--border)">
+                {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
+              </div>
+            </div>
           </div>
         </header>
 

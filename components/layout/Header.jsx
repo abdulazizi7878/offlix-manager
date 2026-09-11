@@ -20,7 +20,7 @@ export function Header({ user = null }) {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 mx-3 mt-2 md:mt-2 md:mx-6 max-w-7xl xl:mx-auto">
-      <div className="bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-2xl shadow-sm px-4 py-2 flex items-center justify-between">
+      <div className="bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-2xl shadow-sm px-4 py-1.5 flex items-center justify-between">
 
         {/* Left Side: Brand & Desktop Nav */}
         <div className="flex items-center gap-8">
@@ -28,9 +28,9 @@ export function Header({ user = null }) {
             href={isAuthenticated ? "/dashboard" : "/"}
             className="flex items-center gap-2.5 focus:outline-none focus:ring-2 focus:ring-[var(--ring)] rounded-lg p-1"
           >
-            <div className="relative size-8 rounded-md overflow-hidden flex items-center justify-center bg-[var(--primary)]/10">
+            <div className="relative size-10 rounded-md overflow-hidden flex items-center justify-center bg-[var(--primary)]/10">
               <Image
-                src="/images/logo2.jfif"
+                src="/images/logo.jfif"
                 alt="Offlix Manager Logo"
                 fill
                 className="object-cover"
