@@ -156,7 +156,7 @@ export default function DashboardLayout({ children }) {
         <div className="h-16 px-6 border-b border-(--border) flex items-center justify-between shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5 rounded-lg p-1 -ml-1">
             <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs">
-              <Image src={"/images/logo.jfif"} width={36} height={36} alt="Offlix Manager Logo" className="rounded-md" />
+              <Image src={"/images/logo.png"} width={36} height={36} alt="Offlix Manager Logo" className="rounded-md" />
             </div>
             <span className="font-bold text-md tracking-tight">Offlix Manager</span>
           </Link>

@@ -30,7 +30,7 @@ export function Header({ user = null }) {
           >
             <div className="relative size-10 rounded-md overflow-hidden flex items-center justify-center bg-[var(--primary)]/10">
               <Image
-                src="/images/logo.jfif"
+                src="/images/logo.png"
                 alt="Offlix Manager Logo"
                 fill
                 className="object-cover"
