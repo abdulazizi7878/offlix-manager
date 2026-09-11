@@ -5,9 +5,13 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Building2, ArrowLeft, CheckCircle2, AlertCircle, Wallet } from "lucide-react";
+import { Building2, ArrowLeft, CheckCircle2, AlertCircle, User, Calendar } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function SettlementDetailsPage() {
     const params = useParams();
@@ -33,9 +37,17 @@ export default function SettlementDetailsPage() {
                 fetchApi(`/api/v1/dashboard/money/settlements/${settlementId}`),
                 fetchApi("/api/v1/dashboard/money/accounts")
             ]);
-            const sData = setRes.data || setRes;
+
+            const sData = setRes.data?.data ?? setRes.data ?? setRes;
             setSettlement(sData);
-            setAccounts(accRes.data?.accounts || accRes.data || []);
+
+            const accRaw = accRes.data?.data ?? accRes.data ?? {};
+            const accList = Array.isArray(accRaw)
+                ? accRaw
+                : (Array.isArray(accRaw.data) ? accRaw.data : (accRes.data?.accounts ?? []));
+
+            setAccounts(accList);
+
             const rem = Number(sData.remaining_amount ?? (sData.original_amount || sData.amount || 0));
             setAmount(rem.toString());
         } catch (err) {
@@ -81,7 +93,7 @@ export default function SettlementDetailsPage() {
             await fetchApi(`/api/v1/dashboard/money/settlements/${settlementId}/accept`, {
                 method: "POST",
                 body: JSON.stringify({
-                    money_account_id: moneyAccountId,
+                    moneyAccountId,
                     amount: targetAmount,
                     notes
                 })
@@ -129,6 +141,44 @@ export default function SettlementDetailsPage() {
                 </div>
             </div>
 
+            {/* Info Meta Card (Branch, Requester, Date) */}
+            <div className="bg-(--card) border border-(--border) rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-(--primary)/10 text-(--primary) rounded-lg">
+                        <Building2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <span className="text-(--muted-foreground) block">Branch Name</span>
+                        <span className="font-semibold text-sm">{settlement.branch_name || "N/A"}</span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-(--primary)/10 text-(--primary) rounded-lg">
+                        <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <span className="text-(--muted-foreground) block">Requested By</span>
+                        <span className="font-semibold text-sm">{settlement.requested_by_name || "N/A"}</span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-(--primary)/10 text-(--primary) rounded-lg">
+                        <Calendar className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <span className="text-(--muted-foreground) block">Requested Date</span>
+                        <span className="font-semibold text-sm">
+                            {settlement.requested_at ? dayjs(settlement.requested_at).format("DD/MM/YYYY") : "N/A"}
+                        </span>
+                        <span className="text-[10px] text-(--muted-foreground) block">
+                            {settlement.requested_at ? `(${dayjs(settlement.requested_at).fromNow()})` : ""}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-1">
@@ -159,8 +209,8 @@ export default function SettlementDetailsPage() {
                                 className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                             >
                                 <option value="">Select Destination Account</option>
-                                {accounts.map(acc => (
-                                    <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
+                                {accounts.map(accItem => (
+                                    <option key={accItem.id} value={accItem.id}>{accItem.name} ({accItem.type})</option>
                                 ))}
                             </select>
                         </div>
@@ -222,17 +272,22 @@ export default function SettlementDetailsPage() {
                     <p className="text-xs text-(--muted-foreground) py-4 text-center">No acceptance records yet for this settlement.</p>
                 ) : (
                     <div className="space-y-3">
-                        {(settlement.history || settlement.acceptances || settlement.payments || []).map((h, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-(--border) bg-(--muted)/20">
-                                <div>
-                                    <p className="text-sm font-medium">
-                                        {Number(h.amount).toLocaleString()} ETB → <span className="text-(--primary)">{h.money_account?.name || h.account_name || "Account"}</span>
-                                    </p>
-                                    <p className="text-xs text-(--muted-foreground)">{h.notes || "No notes"} • {new Date(h.created_at || h.date).toLocaleDateString()}</p>
+                        {(settlement.history || settlement.acceptances || settlement.payments || []).map((h, i) => {
+                            const hDate = h.created_at || h.date;
+                            return (
+                                <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-(--border) bg-(--muted)/20">
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            {Number(h.amount).toLocaleString()} ETB → <span className="text-(--primary)">{h.money_account?.name || h.account_name || "Account"}</span>
+                                        </p>
+                                        <p className="text-xs text-(--muted-foreground)">
+                                            {h.notes || "No notes"} • {hDate ? `${dayjs(hDate).format("DD/MM/YYYY")} (${dayjs(hDate).fromNow()})` : ""}
+                                        </p>
+                                    </div>
+                                    <CheckCircle2 className="w-5 h-5 text-(--success)" />
                                 </div>
-                                <CheckCircle2 className="w-5 h-5 text-(--success)" />
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

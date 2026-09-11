@@ -1233,31 +1233,26 @@ const MoneyRepository = {
     ) {
         const result = await client.query(
             `
-            UPDATE sale_settlements
-            SET
-                status = $3,
-
-                received_by_user_id =
-                    CASE
-                        WHEN $3 = 'received'
-                        THEN $4
-                        ELSE received_by_user_id
-                    END,
-
-                received_at =
-                    CASE
-                        WHEN $3 = 'received'
-                        THEN NOW()
-                        ELSE received_at
-                    END,
-
-                updated_at = NOW()
-
-            WHERE id = $1
-              AND account_id = $2
-
-            RETURNING *
-            `,
+        UPDATE sale_settlements
+        SET
+            status = $3::varchar,
+            received_by_user_id =
+                CASE
+                    WHEN $3::varchar = 'received'
+                    THEN $4
+                    ELSE received_by_user_id
+                END,
+            received_at =
+                CASE
+                    WHEN $3::varchar = 'received'
+                    THEN NOW()
+                    ELSE received_at
+                END,
+            updated_at = NOW()
+        WHERE id = $1
+          AND account_id = $2
+        RETURNING *
+        `,
             [
                 settlementId,
                 accountId,
@@ -1268,8 +1263,6 @@ const MoneyRepository = {
 
         return result.rows[0] ?? null;
     },
-
-
     // =========================================================
     // PAYABLES
     // =========================================================
@@ -2001,6 +1994,7 @@ const MoneyRepository = {
                 id,
                 account_id,
                 amount,
+                name,
                 status
             FROM credits
             WHERE id = $1

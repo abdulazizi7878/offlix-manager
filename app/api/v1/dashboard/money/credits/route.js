@@ -1,3 +1,6 @@
+
+// file: app/api/v1/dashboard/money/credits/route.js
+
 import { NextResponse } from "next/server";
 
 import MoneyService from "@/services/money.service";

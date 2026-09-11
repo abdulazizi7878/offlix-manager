@@ -1,3 +1,5 @@
+// file: app/api/v1/dashboard/money/accounts/[moneyAccountId]/route.js
+
 import { NextResponse } from "next/server";
 
 import MoneyService from "@/services/money.service";
@@ -8,13 +10,14 @@ import {
 } from "@/validations/money.validation";
 
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+
 import AppError from "@/lib/errors/AppError";
+
 import { withErrorHandling } from "@/lib/api/with-error-handling";
 
 export const GET = withErrorHandling(
-    async (request, { params }) => {
-        const currentUser =
-            await getCurrentUser();
+    async (request, context) => {
+        const currentUser = await getCurrentUser();
 
         if (!currentUser) {
             throw new AppError(
@@ -26,16 +29,19 @@ export const GET = withErrorHandling(
 
         const { user } = currentUser;
 
+        const resolvedParams = await context.params;
+
         const moneyAccountId =
-            moneyAccountIdSchema.parse(
-                params.moneyAccountId
-            );
+            resolvedParams?.moneyAccountId;
+
+        const validatedMoneyAccountId =
+            moneyAccountIdSchema.parse(moneyAccountId);
 
         const moneyAccount =
             await MoneyService.getMoneyAccount(
                 user.id,
                 user.accountId,
-                moneyAccountId
+                validatedMoneyAccountId
             );
 
         return NextResponse.json({
@@ -46,9 +52,8 @@ export const GET = withErrorHandling(
 );
 
 export const PATCH = withErrorHandling(
-    async (request, { params }) => {
-        const currentUser =
-            await getCurrentUser();
+    async (request, context) => {
+        const currentUser = await getCurrentUser();
 
         if (!currentUser) {
             throw new AppError(
@@ -60,13 +65,15 @@ export const PATCH = withErrorHandling(
 
         const { user } = currentUser;
 
-        const moneyAccountId =
-            moneyAccountIdSchema.parse(
-                params.moneyAccountId
-            );
+        const resolvedParams = await context.params;
 
-        const body =
-            await request.json();
+        const moneyAccountId =
+            resolvedParams?.moneyAccountId;
+
+        const validatedMoneyAccountId =
+            moneyAccountIdSchema.parse(moneyAccountId);
+
+        const body = await request.json();
 
         const validatedData =
             updateMoneyAccountSchema.parse(body);
@@ -75,7 +82,7 @@ export const PATCH = withErrorHandling(
             await MoneyService.updateMoneyAccount(
                 user.id,
                 user.accountId,
-                moneyAccountId,
+                validatedMoneyAccountId,
                 validatedData
             );
 

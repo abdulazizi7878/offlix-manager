@@ -25,16 +25,16 @@ export const GET = withErrorHandling(
 
         const { user } = currentUser;
 
-        const settlementId =
-            settlementIdSchema.parse(
-                params.settlementId
-            );
+        const { settlementId } = await params;
+
+        const validatedSettlementId =
+            settlementIdSchema.parse(settlementId);
 
         const settlement =
             await MoneyService.getSettlement(
                 user.id,
                 user.accountId,
-                settlementId
+                validatedSettlementId
             );
 
         return NextResponse.json({

@@ -128,6 +128,7 @@ export const createTransactionSchema = z.object({
             "deposit",
             "withdrawal",
             "payment",
+            "credit",
             "settlement",
             "other",
         ],
@@ -495,6 +496,7 @@ export const payPayableSchema = z
 // CREDITS
 // ============================================================
 
+
 export const createCreditSchema = z.object({
     name: z
         .string()
@@ -516,6 +518,10 @@ export const createCreditSchema = z.object({
         .nullable(),
 
     amount: moneySchema,
+
+    moneyAccountId: z
+        .string()
+        .uuid("Invalid money account ID."),
 
     dueDate: z
         .coerce

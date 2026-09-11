@@ -273,6 +273,7 @@ const MoneyService = {
                 "expense",
                 "deposit",
                 "withdrawal",
+                "credit",   
                 "payment",
                 "settlement",
                 "other",
@@ -1261,7 +1262,38 @@ const MoneyService = {
                 );
             }
 
-            return MoneyRepository.createCredit(client, {
+            const moneyAccount =
+                await MoneyRepository.getMoneyAccountForUpdate(
+                    client,
+                    data.moneyAccountId,
+                    accountId
+                );
+
+            if (!moneyAccount) {
+                throw new AppError(
+                    "Active money account not found.",
+                    404,
+                    "MONEY_ACCOUNT_NOT_FOUND"
+                );
+            }
+
+            const balance = Number(
+                await MoneyRepository.getMoneyAccountBalance(
+                    client,
+                    data.moneyAccountId,
+                    accountId
+                )
+            );
+
+            if (balance < amount) {
+                throw new AppError(
+                    "Insufficient money account balance.",
+                    400,
+                    "INSUFFICIENT_BALANCE"
+                );
+            }
+
+            const credit = await MoneyRepository.createCredit(client, {
                 accountId,
                 name,
                 description:
@@ -1270,6 +1302,20 @@ const MoneyService = {
                 dueDate: data.dueDate ?? null,
                 createdByUserId: userId,
             });
+
+            await MoneyRepository.createTransaction(client, {
+                accountId,
+                moneyAccountId: data.moneyAccountId,
+                type: "credit",
+                direction: "out",
+                amount,
+                description:
+                    data.description?.trim() ||
+                    `Money given as credit: ${name}`,
+                createdByUserId: userId,
+            });
+
+            return credit;
         });
     },
 
@@ -1467,7 +1513,7 @@ const MoneyService = {
                 accountId,
                 moneyAccountId:
                     data.moneyAccountId,
-                type: "income",
+                type: "credit",
                 direction: "in",
                 amount,
                 description:

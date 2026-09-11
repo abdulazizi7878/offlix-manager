@@ -4,14 +4,22 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Building2, Search, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Building2, Search, AlertCircle, Filter } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function SettlementsPage() {
     const [settlements, setSettlements] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Filtering states
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
 
     const loadSettlements = async () => {
         setIsLoading(true);
@@ -19,7 +27,6 @@ export default function SettlementsPage() {
         try {
             const res = await fetchApi("/api/v1/dashboard/money/settlements");
 
-            // Handle pagination and nested data structure: { success: true, data: { data: [], pagination: {} } }
             const responseData = res.data?.data ?? res.data ?? {};
             const settlementsList = Array.isArray(responseData)
                 ? responseData
@@ -38,6 +45,24 @@ export default function SettlementsPage() {
         loadSettlements();
     }, []);
 
+    // Filter settlements based on branch name, requester, and status
+    const filteredSettlements = settlements.filter((st) => {
+        const branchName = (st.branch?.name || st.branch_name || "").toLowerCase();
+        const requester = (st.requested_by_name || "").toLowerCase();
+        const receiver = (st.received_by_name || "").toLowerCase();
+        const query = searchQuery.toLowerCase();
+
+        const matchesSearch = branchName.includes(query) || requester.includes(query) || receiver.includes(query);
+
+        const rem = Number(st.remaining_amount ?? (st.original_amount || st.amount || 0));
+        const isDone = rem <= 0 || st.status === "received" || st.status === "completed";
+        const currentStatus = isDone ? "received" : (st.status || "pending");
+
+        const matchesStatus = statusFilter === "all" || currentStatus === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border)">
@@ -54,6 +79,35 @@ export default function SettlementsPage() {
                 </div>
             </div>
 
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-(--card) border border-(--border) p-4 rounded-xl shadow-xs">
+                <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
+                    <input
+                        type="text"
+                        placeholder="Search by branch or user..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border border-(--border) rounded-lg text-sm bg-transparent focus:outline-none focus:border-(--primary)"
+                    />
+                </div>
+
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-2 text-xs text-(--muted-foreground)">
+                        <Filter className="w-3.5 h-3.5" /> Filter Status:
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="px-3 py-2 border border-(--border) rounded-lg text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
+                    >
+                        <option value="all">All Statuses</option>
+                        <option value="requested">Requested / Pending</option>
+                        <option value="received">Received</option>
+                    </select>
+                </div>
+            </div>
+
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
                     <span className="text-sm font-medium">{error}</span>
@@ -67,19 +121,19 @@ export default function SettlementsPage() {
                 </div>
             )}
 
-            {!isLoading && !error && settlements.length === 0 && (
+            {!isLoading && !error && filteredSettlements.length === 0 && (
                 <div className="p-12 text-center bg-(--card) border border-(--border) rounded-xl space-y-4">
                     <div className="mx-auto w-12 h-12 bg-(--muted) text-(--muted-foreground) rounded-full flex items-center justify-center">
                         <Building2 className="w-6 h-6" />
                     </div>
                     <div className="max-w-sm mx-auto space-y-1">
                         <h2 className="text-lg font-semibold">No settlements found</h2>
-                        <p className="text-xs text-(--muted-foreground)">Branch settlements will appear here when requested.</p>
+                        <p className="text-xs text-(--muted-foreground)">Try adjusting your search or filter options.</p>
                     </div>
                 </div>
             )}
 
-            {!isLoading && !error && settlements.length > 0 && (
+            {!isLoading && !error && filteredSettlements.length > 0 && (
                 <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
@@ -90,16 +144,19 @@ export default function SettlementsPage() {
                                     <th className="px-6 py-3.5">Accepted</th>
                                     <th className="px-6 py-3.5">Remaining</th>
                                     <th className="px-6 py-3.5">Status</th>
-                                    <th className="px-6 py-3.5">Requested</th>
+                                    <th className="px-6 py-3.5">Requested By</th>
+                                    <th className="px-6 py-3.5">Receiver</th>
+                                    <th className="px-6 py-3.5">Requested Date</th>
                                     <th className="px-6 py-3.5 text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border)">
-                                {settlements.map((st) => {
+                                {filteredSettlements.map((st) => {
                                     const orig = Number(st.original_amount || st.amount || 0);
                                     const rem = Number(st.remaining_amount ?? orig);
                                     const acc = orig - rem;
                                     const isDone = rem <= 0 || st.status === "received" || st.status === "completed";
+                                    const reqDate = st.requested_at || st.created_at || st.date;
 
                                     return (
                                         <tr key={st.id} className="hover:bg-(--muted)/30 transition-colors">
@@ -120,8 +177,15 @@ export default function SettlementsPage() {
                                                     {isDone ? "Received" : (st.status || "Pending")}
                                                 </span>
                                             </td>
+                                            <td className="px-6 py-4 text-xs font-medium">
+                                                {st.requested_by_name || "N/A"}
+                                            </td>
+                                            <td className="px-6 py-4 text-xs font-medium">
+                                                {st.received_by_name || "N/A"}
+                                            </td>
                                             <td className="px-6 py-4 text-xs text-(--muted-foreground)">
-                                                {new Date(st.created_at || st.date).toLocaleDateString()}
+                                                <div>{reqDate ? dayjs(reqDate).format("DD/MM/YYYY") : "N/A"}</div>
+                                                <div className="text-[10px]">{reqDate ? `(${dayjs(reqDate).fromNow()})` : ""}</div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <Link

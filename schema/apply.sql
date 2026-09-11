@@ -85,3 +85,27 @@ VALUES
         'Confirm branch settlement receipt.'
     )
 ON CONFLICT (key) DO NOTHING;
+
+
+
+BEGIN;
+
+ALTER TABLE money_transactions
+DROP CONSTRAINT IF EXISTS money_transactions_type_check;
+
+ALTER TABLE money_transactions
+ADD CONSTRAINT money_transactions_type_check
+CHECK (
+    type IN (
+        'income',
+        'expense',
+        'deposit',
+        'withdrawal',
+        'payment',
+        'credit',
+        'settlement',
+        'other'
+    )
+);
+
+COMMIT;

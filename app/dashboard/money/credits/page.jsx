@@ -7,6 +7,10 @@ import Link from "next/link";
 import { TrendingUp, Plus, Search, AlertCircle } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function CreditsPage() {
     const [credits, setCredits] = useState([]);
@@ -23,6 +27,7 @@ export default function CreditsPage() {
     const [formData, setFormData] = useState({
         customer_name: "",
         amount: "",
+        moneyAccountId: "",
         due_date: "",
         notes: ""
     });
@@ -75,6 +80,10 @@ export default function CreditsPage() {
             toast.error("Customer name is required");
             return;
         }
+        if (!formData.moneyAccountId) {
+            toast.error("Please select a money account");
+            return;
+        }
         if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) {
             toast.error("Please enter a valid amount");
             return;
@@ -92,6 +101,7 @@ export default function CreditsPage() {
                 method: "POST",
                 body: JSON.stringify({
                     name: formData.customer_name.trim(),
+                    moneyAccountId: formData.moneyAccountId,
                     description: formData.notes.trim() || null,
                     amount: Number(formData.amount),
                     dueDate: formData.due_date || null
@@ -100,7 +110,7 @@ export default function CreditsPage() {
 
             toast.success("Credit recorded successfully");
             setIsCreateModalOpen(false);
-            setFormData({ customer_name: "", amount: "", due_date: "", notes: "" });
+            setFormData({ customer_name: "", amount: "", moneyAccountId: "", due_date: "", notes: "" });
             loadData();
         } catch (err) {
             toast.error(err.message || "Failed to record credit");
@@ -204,6 +214,7 @@ export default function CreditsPage() {
                                 {credits.map((c) => {
                                     const orig = Number(c.amount || 0);
                                     const rem = Number(c.remaining_amount ?? orig);
+                                    const dueDate = c.due_date;
                                     return (
                                         <tr key={c.id} className="hover:bg-(--muted)/30 transition-colors">
                                             <td className="px-6 py-4 font-medium">{c.customer_name || c.name}</td>
@@ -214,7 +225,10 @@ export default function CreditsPage() {
                                                     {c.status || "pending"}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">{c.due_date ? new Date(c.due_date).toLocaleDateString() : "No due date"}</td>
+                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">
+                                                <div>{dueDate ? dayjs(dueDate).format("DD/MM/YYYY") : "No due date"}</div>
+                                                <div className="text-[10px]">{dueDate ? `(${dayjs(dueDate).fromNow()})` : ""}</div>
+                                            </td>
                                             <td className="px-6 py-4 text-right">
                                                 <Link href={`/dashboard/money/credits/${c.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors">
                                                     View / Receive
@@ -247,6 +261,20 @@ export default function CreditsPage() {
                                     required
                                     className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                                 />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Money Account</label>
+                                <select
+                                    value={formData.moneyAccountId}
+                                    onChange={(e) => setFormData({ ...formData, moneyAccountId: e.target.value })}
+                                    required
+                                    className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
+                                >
+                                    <option value="">Select Account</option>
+                                    {accounts.map(acc => (
+                                        <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
+                                    ))}
+                                </select>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Amount (ETB)</label>

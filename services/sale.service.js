@@ -296,6 +296,22 @@ const SaleService = {
                             userId,
                     }
                 );
+
+                // Automatically make the actual received revenue
+                // available for settlement. The employee does not
+                // need to request a settlement manually.
+                if (paidAmount > 0) {
+                    await SaleRepository.createSettlement(
+                        client,
+                        {
+                            accountId,
+                            branchId: data.branchId,
+                            amount: paidAmount,
+                            notes: `Automatically generated from sale ${sale.id}.`,
+                            requestedByUserId: userId,
+                        }
+                    );
+                }
             }
 
             await client.query("COMMIT");

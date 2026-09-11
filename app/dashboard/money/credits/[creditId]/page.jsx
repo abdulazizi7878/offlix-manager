@@ -5,9 +5,13 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { TrendingUp, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { TrendingUp, ArrowLeft, CheckCircle2, AlertCircle, Calendar, User, FileText, Clock } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function CreditDetailsPage() {
     const params = useParams();
@@ -122,6 +126,9 @@ export default function CreditDetailsPage() {
     const rem = Number(credit.remaining_amount ?? orig);
     const received = orig - rem;
     const isPaid = rem <= 0 || credit.status === "paid";
+    const dueDate = credit.due_date;
+    const createdAt = credit.created_at;
+    const updatedAt = credit.updated_at;
 
     return (
         <div className="space-y-6 max-w-3xl mx-auto">
@@ -131,10 +138,66 @@ export default function CreditDetailsPage() {
                         <ArrowLeft className="w-4 h-4" />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Credit Details</h1>
-                        <p className="text-sm text-(--muted-foreground)">Customer: {credit.customer_name || credit.name}</p>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-bold tracking-tight">{credit.customer_name || credit.name}</h1>
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase ${isPaid ? "bg-(--success)/10 text-(--success)" : "bg-(--primary)/10 text-(--primary)"}`}>
+                                {credit.status || "pending"}
+                            </span>
+                        </div>
+                        <p className="text-sm text-(--muted-foreground) mt-0.5">Credit Details & Payment Management</p>
                     </div>
                 </div>
+            </div>
+
+            {/* Additional Info Meta Box */}
+            <div className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-4 shadow-xs">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Credit Information</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-start gap-2.5">
+                        <User className="w-4 h-4 text-(--muted-foreground) mt-0.5" />
+                        <div>
+                            <span className="text-xs text-(--muted-foreground) block">Created By</span>
+                            <span className="font-medium">{credit.created_by_name || "System User"}</span>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                        <Calendar className="w-4 h-4 text-(--muted-foreground) mt-0.5" />
+                        <div>
+                            <span className="text-xs text-(--muted-foreground) block">Due Date</span>
+                            <span className="font-medium">
+                                {dueDate ? `${dayjs(dueDate).format("DD/MM/YYYY")} (${dayjs(dueDate).fromNow()})` : "No due date"}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                        <Clock className="w-4 h-4 text-(--muted-foreground) mt-0.5" />
+                        <div>
+                            <span className="text-xs text-(--muted-foreground) block">Created At</span>
+                            <span className="font-medium">
+                                {createdAt ? `${dayjs(createdAt).format("DD/MM/YYYY HH:mm")} (${dayjs(createdAt).fromNow()})` : "N/A"}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                        <Clock className="w-4 h-4 text-(--muted-foreground) mt-0.5" />
+                        <div>
+                            <span className="text-xs text-(--muted-foreground) block">Last Updated</span>
+                            <span className="font-medium">
+                                {updatedAt ? `${dayjs(updatedAt).format("DD/MM/YYYY HH:mm")} (${dayjs(updatedAt).fromNow()})` : "N/A"}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {credit.description && (
+                    <div className="pt-3 border-t border-(--border) flex items-start gap-2.5">
+                        <FileText className="w-4 h-4 text-(--muted-foreground) mt-0.5" />
+                        <div>
+                            <span className="text-xs text-(--muted-foreground) block">Description / Notes</span>
+                            <p className="text-sm text-(--foreground) mt-0.5">{credit.description}</p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -227,17 +290,22 @@ export default function CreditDetailsPage() {
                     <p className="text-xs text-(--muted-foreground) py-4 text-center">No payment records yet.</p>
                 ) : (
                     <div className="space-y-3">
-                        {(credit.payments || credit.history || []).map((pay, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-(--border) bg-(--muted)/20">
-                                <div>
-                                    <p className="text-sm font-medium">
-                                        {Number(pay.amount).toLocaleString()} ETB to <span className="text-(--primary)">{pay.money_account?.name || "Account"}</span>
-                                    </p>
-                                    <p className="text-xs text-(--muted-foreground)">{pay.notes || "No notes"} • {new Date(pay.created_at || pay.date).toLocaleDateString()}</p>
+                        {(credit.payments || credit.history || []).map((pay, i) => {
+                            const payDate = pay.created_at || pay.date;
+                            return (
+                                <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-(--border) bg-(--muted)/20">
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            {Number(pay.amount).toLocaleString()} ETB to <span className="text-(--primary)">{pay.money_account?.name || "Account"}</span>
+                                        </p>
+                                        <p className="text-xs text-(--muted-foreground)">
+                                            {pay.notes || "No notes"} • {payDate ? `${dayjs(payDate).format("DD/MM/YYYY")} (${dayjs(payDate).fromNow()})` : ""}
+                                        </p>
+                                    </div>
+                                    <CheckCircle2 className="w-5 h-5 text-(--success)" />
                                 </div>
-                                <CheckCircle2 className="w-5 h-5 text-(--success)" />
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

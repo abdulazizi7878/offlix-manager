@@ -26,10 +26,10 @@ export const POST = withErrorHandling(
 
         const { user } = currentUser;
 
-        const settlementId =
-            settlementIdSchema.parse(
-                params.settlementId
-            );
+        const { settlementId } = await params;
+
+        const validatedSettlementId =
+            settlementIdSchema.parse(settlementId);
 
         const body =
             await request.json();
@@ -41,7 +41,7 @@ export const POST = withErrorHandling(
             await MoneyService.acceptSettlement(
                 user.id,
                 user.accountId,
-                settlementId,
+                validatedSettlementId,
                 validatedData
             );
 

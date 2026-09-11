@@ -1,4 +1,5 @@
 
+// file: repositories/sale.repository.js
 
 import pool from "@/lib/database";
 
