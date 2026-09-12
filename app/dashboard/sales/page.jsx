@@ -247,11 +247,11 @@ export default function SalesOverviewPage() {
                             setBranchId(e.target.value);
                             setPage(1);
                         }}
-                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
+                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--background) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="" className="bg-slate-900 text-slate-100 py-2">All Branches</option>
+                        <option value="">All Branches</option>
                         {branches.map((b) => (
-                            <option key={b.id} value={b.id} className="bg-slate-900 text-slate-100 py-2">
+                            <option key={b.id} value={b.id}>
                                 {b.name}
                             </option>
                         ))}
@@ -263,11 +263,11 @@ export default function SalesOverviewPage() {
                             setEmployeeId(e.target.value);
                             setPage(1);
                         }}
-                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
+                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--background) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="" className="bg-slate-900 text-slate-100 py-2">All Employees</option>
+                        <option value="">All Employees</option>
                         {employees.map((emp) => (
-                            <option key={emp.id} value={emp.id} className="bg-slate-900 text-slate-100 py-2">
+                            <option key={emp.id} value={emp.id}>
                                 {emp.name || emp.username}
                             </option>
                         ))}
@@ -279,12 +279,12 @@ export default function SalesOverviewPage() {
                             setPaymentStatus(e.target.value);
                             setPage(1);
                         }}
-                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-slate-900 text-slate-100 focus:outline-none focus:border-(--primary)"
+                        className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--background) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="" className="bg-slate-900 text-slate-100 py-2">All Payment Statuses</option>
-                        <option value="paid" className="bg-slate-900 text-slate-100 py-2">Paid</option>
-                        <option value="partial" className="bg-slate-900 text-slate-100 py-2">Partial</option>
-                        <option value="credit" className="bg-slate-900 text-slate-100 py-2">Credit</option>
+                        <option value="">All Payment Statuses</option>
+                        <option value="paid">Paid</option>
+                        <option value="partial">Partial</option>
+                        <option value="credit">Credit</option>
                     </select>
 
                     <div className="flex items-center gap-2">

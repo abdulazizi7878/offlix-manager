@@ -9,7 +9,6 @@ import {
     RefreshCcw, ChevronLeft, ChevronRight, Clock, X
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
-import { toast } from "sonner";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
@@ -33,9 +32,6 @@ export default function PurchasesPage() {
     const [search, setSearch] = useState("");
     const [branchId, setBranchId] = useState("");
     const [productId, setProductId] = useState("");
-    const [paymentSource, setPaymentSource] = useState("");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
 
     // Load Filter Metadata (Branches and Products for dropdowns)
     const loadFilterOptions = async () => {
@@ -64,9 +60,6 @@ export default function PurchasesPage() {
             if (search.trim()) queryParams.append("search", search.trim());
             if (branchId) queryParams.append("branchId", branchId);
             if (productId) queryParams.append("productId", productId);
-            if (paymentSource) queryParams.append("paymentSource", paymentSource);
-            if (dateFrom) queryParams.append("from", dateFrom);
-            if (dateTo) queryParams.append("to", dateTo);
 
             const res = await fetchApi(`/api/v1/dashboard/products/purchases?${queryParams.toString()}`);
 
@@ -97,7 +90,7 @@ export default function PurchasesPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page, limit, search, branchId, productId, paymentSource, dateFrom, dateTo]);
+    }, [page, limit, search, branchId, productId]);
 
     useEffect(() => {
         loadFilterOptions();
@@ -117,13 +110,10 @@ export default function PurchasesPage() {
         setSearch("");
         setBranchId("");
         setProductId("");
-        setPaymentSource("");
-        setDateFrom("");
-        setDateTo("");
         setPage(1);
     };
 
-    const hasActiveFilters = Boolean(search || branchId || productId || paymentSource || dateFrom || dateTo);
+    const hasActiveFilters = Boolean(search || branchId || productId);
 
     const summaryMetrics = useMemo(() => {
         const totalCount = totalPurchasesCount;
@@ -203,7 +193,7 @@ export default function PurchasesPage() {
                     )}
                 </form>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 border-t border-(--border)">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-(--border)">
                     <select
                         value={branchId}
                         onChange={(e) => { setBranchId(e.target.value); setPage(1); }}
@@ -225,30 +215,6 @@ export default function PurchasesPage() {
                             <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                     </select>
-
-                    <input
-                        type="text"
-                        placeholder="Payment Source"
-                        value={paymentSource}
-                        onChange={(e) => { setPaymentSource(e.target.value); setPage(1); }}
-                        className="px-3 py-1.5 bg-(--background) border border-(--border) rounded-lg text-xs text-(--foreground) focus:outline-none"
-                    />
-
-                    <input
-                        type="date"
-                        placeholder="From Date"
-                        value={dateFrom}
-                        onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-                        className="px-3 py-1.5 bg-(--background) border border-(--border) rounded-lg text-xs text-(--foreground) focus:outline-none"
-                    />
-
-                    <input
-                        type="date"
-                        placeholder="To Date"
-                        value={dateTo}
-                        onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-                        className="px-3 py-1.5 bg-(--background) border border-(--border) rounded-lg text-xs text-(--foreground) focus:outline-none"
-                    />
                 </div>
             </div>
 
