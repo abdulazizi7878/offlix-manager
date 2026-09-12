@@ -2126,26 +2126,33 @@ const MoneyRepository = {
 
     async updateCreditStatus(
         client,
-        {
-            creditId,
-            accountId,
-            status,
-        }
+        creditId,
+        accountId,
+        status
     ) {
         const result = await client.query(
             `
-            UPDATE credits
-            SET
-                status = $3,
-                updated_at = NOW()
-            WHERE id = $1
-              AND account_id = $2
-            RETURNING *
-            `,
+        UPDATE credits
+        SET
+            status = $1,
+            updated_at = NOW()
+        WHERE id = $2
+          AND account_id = $3
+        RETURNING
+            id,
+            account_id,
+            name,
+            amount,
+            direction,
+            status,
+            due_date,
+            created_at,
+            updated_at
+        `,
             [
+                status,
                 creditId,
                 accountId,
-                status,
             ]
         );
 

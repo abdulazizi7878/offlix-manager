@@ -83,19 +83,22 @@ export default function CreditsPage() {
                     ),
                 ]);
 
-            const credResponseData =
-                credRes.data?.data ??
-                credRes.data ??
-                {};
+            const responseBody = credRes.data;
 
-            const credList =
-                Array.isArray(credResponseData)
-                    ? credResponseData
-                    : (
-                        credResponseData.data ??
-                        credRes.data?.credits ??
-                        []
-                    );
+            let credList = Array.isArray(responseBody?.data)
+                ? responseBody.data
+                : Array.isArray(responseBody?.data?.data)
+                    ? responseBody.data.data
+                    : Array.isArray(responseBody)
+                        ? responseBody
+                        : [];
+
+            // Backend ራሱ ኳሪውን ችላ ቢለውም ፊት ለፊት በደህንነት በኩል እናጣራዋለን
+            if (directionFilter) {
+                credList = credList.filter(
+                    (c) => c.direction === directionFilter
+                );
+            }
 
             const accResponseData =
                 accRes.data?.data ??
@@ -437,8 +440,6 @@ export default function CreditsPage() {
                                             Due Date
                                         </th>
 
-
-
                                         <th className="px-6 py-3.5 text-right">
                                             Action
                                         </th>
@@ -525,7 +526,6 @@ export default function CreditsPage() {
                                                     </span>
                                                 </td>
 
-                                                
                                                 {/* Created At Column */}
                                                 <td className="px-6 py-4 text-xs text-(--muted-foreground)">
                                                     <div>
@@ -547,19 +547,26 @@ export default function CreditsPage() {
                                                     </div>
                                                 </td>
 
-
                                                 {/* Due Date Column */}
                                                 <td className="px-6 py-4 text-xs text-(--muted-foreground)">
-                                                    {dueDate
-                                                        ? dayjs(
-                                                            dueDate
-                                                        ).tz("Africa/Addis_Ababa").format(
-                                                            "DD/MM/YYYY"
-                                                        )
-                                                        : "—"}
+                                                    <div>
+                                                        {dueDate
+                                                            ? dayjs(
+                                                                dueDate
+                                                            ).tz("Africa/Addis_Ababa").format(
+                                                                "DD/MM/YYYY"
+                                                            )
+                                                            : "—"}
+                                                    </div>
+
+                                                    <div className="text-[10px]">
+                                                        {dueDate
+                                                            ? `(${dayjs(
+                                                                dueDate
+                                                            ).tz("Africa/Addis_Ababa").fromNow()})`
+                                                            : ""}
+                                                    </div>
                                                 </td>
-
-
 
                                                 <td className="px-6 py-4 text-right">
                                                     <Link

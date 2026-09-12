@@ -1524,13 +1524,16 @@ const MoneyService = {
             );
 
             const newReceivedAmount =
-                receivedAmount + amount;
+                Number(receivedAmount) + Number(amount);
 
-            const newStatus =
-                newReceivedAmount >=
-                    Number(credit.amount)
-                    ? "paid"
-                    : "partial";
+            const creditAmount =
+                Number(credit.amount);
+
+            let newStatus = "partial";
+
+            if (newReceivedAmount >= creditAmount) {
+                newStatus = "paid";
+            }
 
             await MoneyRepository.updateCreditStatus(
                 client,
