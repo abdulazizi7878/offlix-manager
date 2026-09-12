@@ -1,3 +1,5 @@
+// file: app/dashboard/settings/components/settings-page-client.jsx
+
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
@@ -37,8 +39,8 @@ export default function SettingsPageClient() {
 
             {/* Main Settings Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-                {/* Navigation Sidebar */}
-                <div className="lg:col-span-1 bg-(--card) border border-(--border) rounded-2xl p-3 shadow-xs sticky top-6">
+                {/* Navigation Sidebar - Fixed floating bug on small screens by changing sticky to lg:sticky */}
+                <div className="lg:col-span-1 bg-(--card) border border-(--border) rounded-2xl p-3 shadow-xs lg:sticky lg:top-6">
                     <SettingsNavigation
                         activeTab={currentTab}
                         onTabChange={handleTabChange}
