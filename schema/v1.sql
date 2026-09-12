@@ -322,37 +322,6 @@ CREATE INDEX idx_invitation_permissions_permission_id
     ON invitation_permissions(permission_id);
 
 
-INSERT INTO permissions (key, name, description)
-VALUES
-    ('branches.view', 'View branches', 'View branch information.'),
-    ('branches.create', 'Create branches', 'Create new branches.'),
-    ('branches.update', 'Update branches', 'Update branch information and status.'),
-
-    ('users.view', 'View users', 'View employees and users.'),
-    ('users.add', 'Add users', 'Add employees to a branch.'),
-    ('users.remove', 'Remove users', 'Remove employees from a branch.'),
-    ('users.update', 'Update users', 'Update employee branch membership and permissions.'),
-
-    ('products.view', 'View products', 'View products.'),
-    ('products.create', 'Create products', 'Create new products.'),
-    ('products.update', 'Update products', 'Update product information.'),
-    ('products.delete', 'Delete products', 'Delete products where permitted.'),
-
-    ('inventory.view', 'View inventory', 'View inventory information.'),
-    ('inventory.adjust', 'Adjust inventory', 'Make inventory adjustments.'),
-
-    ('sales.view', 'View sales', 'View sales records.'),
-    ('sales.create', 'Create sales', 'Create new sales.'),
-
-    ('expenses.view', 'View expenses', 'View expense records.'),
-    ('expenses.create', 'Create expenses', 'Create new expenses.'),
-
-    ('finance.view', 'View finance', 'View financial information.'),
-    ('finance.create', 'Create financial records', 'Create financial records.'),
-
-    ('reports.view', 'View reports', 'View business reports.')
-ON CONFLICT (key) DO NOTHING;
-
 -- ============================================================
 -- OFFLIX PRODUCT SYSTEM
 -- Categories + Products + Product Photos
@@ -537,6 +506,8 @@ CREATE INDEX idx_products_branch_stock
     ON products(branch_id, stock);
 
 
+
+
 -- ============================================================
 -- 3. PRODUCT PHOTOS
 -- ============================================================
@@ -605,6 +576,52 @@ COMMIT;
 
 ALTER TABLE branches
 ADD CONSTRAINT uq_branches_id_account UNIQUE (id, account_id);
+
+CREATE TABLE branch_purchases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id),
+
+    branch_id UUID NOT NULL,
+
+    product_id UUID
+        REFERENCES products(id)
+        ON DELETE SET NULL,
+
+    product_name VARCHAR(150) NOT NULL,
+
+    created_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    quantity INTEGER NOT NULL,
+
+    cost_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+
+    payment_source VARCHAR(30) NOT NULL
+        DEFAULT 'employee_personal',
+
+    notes TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (quantity > 0),
+
+    CHECK (cost_price >= 0),
+
+    CHECK (
+        payment_source IN (
+            'employee_personal',
+            'supplier_credit',
+            'other'
+        )
+    ),
+
+    CONSTRAINT fk_branch_purchases_branch_account
+        FOREIGN KEY (branch_id, account_id)
+        REFERENCES branches(id, account_id)
+);
 
 BEGIN;
 

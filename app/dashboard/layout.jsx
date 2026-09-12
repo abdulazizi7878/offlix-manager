@@ -1,4 +1,4 @@
-// file: app/dashboard/layout.jsx
+// File: app/dashboard/layout.jsx
 
 "use client";
 
@@ -256,6 +256,16 @@ export default function DashboardLayout({ children }) {
                     }`}
                 >
                   Create
+                </Link>
+                {/* Purchases Sub-link added here */}
+                <Link
+                  href="/dashboard/products/purchases"
+                  className={`block px-3 py-2 rounded-lg text-xs transition-colors outline-none border-0 ${isExactActive("/dashboard/products/purchases") || pathname.includes("/dashboard/products/purchases")
+                    ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                    : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }`}
+                >
+                  Purchases
                 </Link>
               </div>
             )}

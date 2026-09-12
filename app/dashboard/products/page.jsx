@@ -1,5 +1,3 @@
-// file: app/dashboard/products/page.jsx
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -7,10 +5,21 @@ import Link from "next/link";
 import {
     Package, Plus, Search, Filter, MoreHorizontal, Eye,
     Pencil, Trash2, CheckCircle2, XCircle, AlertCircle,
-    ChevronLeft, ChevronRight, RefreshCcw, Loader2
+    ChevronLeft, ChevronRight, RefreshCcw, Loader2, Clock
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+// Dayjs relativeTime plugin ማቀናጀት
+dayjs.extend(relativeTime);
+
+// የ dayjs አንፃራዊ ሰዓት (Relative Time) ማስያ
+function getRelativeTime(dateString) {
+    if (!dateString) return "";
+    return dayjs(dateString).fromNow();
+}
 
 export default function ProductsPage() {
     const [products, setProducts] = useState([]);
@@ -67,7 +76,6 @@ export default function ProductsPage() {
 
             const rawProducts = res.data?.products || res.data?.data || res.data || [];
 
-            // Map snake_case response fields and handle stock fields mapping
             const productData = (Array.isArray(rawProducts) ? rawProducts : []).map(product => ({
                 ...product,
                 accountId: product.account_id ?? product.accountId,
@@ -268,6 +276,7 @@ export default function ProductsPage() {
                                     <th className="py-3 px-4">Pricing</th>
                                     <th className="py-3 px-4">Stock</th>
                                     <th className="py-3 px-4">Type</th>
+                                    <th className="py-3 px-4">Created Date</th>
                                     <th className="py-3 px-4">Status</th>
                                     <th className="py-3 px-4 text-right">Actions</th>
                                 </tr>
@@ -291,7 +300,6 @@ export default function ProductsPage() {
                                                         <Link href={`/dashboard/products/${product.id}`} className="font-semibold text-(--foreground) hover:underline">
                                                             {product.name}
                                                         </Link>
-                                                        <p className="text-xs font-mono text-(--muted-foreground)">{product.slug}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -326,6 +334,16 @@ export default function ProductsPage() {
                                                     }`}>
                                                     {product.type}
                                                 </span>
+                                            </td>
+                                            {/* Created Date & Dayjs Relative Time Column */}
+                                            <td className="py-3 px-4 text-xs">
+                                                <div className="font-medium text-(--foreground)">
+                                                    {product.createdAt ? dayjs(product.createdAt).format("YYYY-MM-DD") : "N/A"}
+                                                </div>
+                                                <div className="text-[10px] text-(--muted-foreground) flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    <span>{getRelativeTime(product.createdAt)}</span>
+                                                </div>
                                             </td>
                                             <td className="py-3 px-4">
                                                 <button
@@ -380,17 +398,6 @@ export default function ProductsPage() {
                                 ? "Try changing your search or filters."
                                 : "Create your first product to start managing your inventory."}
                         </p>
-                        {!search && !branchId && !categoryId && !status && !type && (
-                            <div className="pt-2">
-                                <Link
-                                    href="/dashboard/products/create"
-                                    className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg text-xs font-medium"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span>Add Product</span>
-                                </Link>
-                            </div>
-                        )}
                     </div>
                 )}
 

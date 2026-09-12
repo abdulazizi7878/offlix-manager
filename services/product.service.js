@@ -2,6 +2,7 @@
 
 import pool from "@/lib/database";
 import AppError from "@/lib/errors/AppError";
+import BranchRepository from "@/repositories/branch.repository";
 import ProductRepository from "@/repositories/product.repository";
 import AuthorizationService from "@/services/authorization.service";
 import Storage from "@/lib/storage";
@@ -11,25 +12,53 @@ const DEFAULT_PAGE_SIZE = 20;
 const MAX_PRODUCT_PHOTOS = 6;
 
 const ProductService = {
+
+    async generateUniqueSlug(
+        client,
+        name,
+        excludeProductId = null
+    ) {
+        const baseSlug =
+            name
+                .trim()
+                .normalize("NFKD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "") || "product";
+
+        let slug = baseSlug;
+        let counter = 2;
+
+        while (
+            await ProductRepository.slugExists(
+                client,
+                slug,
+                excludeProductId
+            )
+        ) {
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+        }
+
+        return slug;
+    },
+
     async createProduct(userId, accountId, data) {
-        const client = await pool.connect();
-        const uploadedPhotos = [];
+        let client;
+        const uploadedPhotosForCleanup = [];
 
         try {
             /*
-             * -------------------------------------------------------
-             * 1. Authorization
-             * -------------------------------------------------------
+             * 1. Get database client
              */
+            client = await pool.connect();
 
-            await AuthorizationService.assertAccountMember(
-                client,
-                userId,
-                accountId
-            );
-
+            /*
+             * 2. Validate branch
+             */
             const branch =
-                await ProductRepository.getBranchForAccount(
+                await BranchRepository.getBranchById(
                     client,
                     data.branchId,
                     accountId
@@ -43,22 +72,11 @@ const ProductService = {
                 );
             }
 
-            await AuthorizationService.assertBranchPermission(
-                client,
-                userId,
-                accountId,
-                data.branchId,
-                "products.create"
-            );
-
             /*
-             * -------------------------------------------------------
-             * 2. Category validation
-             * -------------------------------------------------------
+             * 3. Validate category
              */
-
             const category =
-                await ProductRepository.getCategoryForAccount(
+                await ProductRepository.getCategoryById(
                     client,
                     data.categoryId,
                     accountId
@@ -73,107 +91,145 @@ const ProductService = {
             }
 
             /*
-             * -------------------------------------------------------
-             * 3. Slug validation
-             * -------------------------------------------------------
+             * 4. Validate photos
              */
-
-            const existingProduct =
-                await ProductRepository.getProductBySlug(
-                    client,
-                    data.slug
-                );
-
-            if (existingProduct) {
-                throw new AppError(
-                    "A product with this slug already exists.",
-                    409,
-                    "PRODUCT_SLUG_ALREADY_EXISTS"
-                );
-            }
-
-            /*
-             * -------------------------------------------------------
-             * 4. Photo validation
-             * -------------------------------------------------------
-             */
-
-            const photos = data.photos ?? [];
-
-            if (photos.length > MAX_PRODUCT_PHOTOS) {
+            if (
+                data.photos &&
+                data.photos.length > MAX_PRODUCT_PHOTOS
+            ) {
                 throw new AppError(
                     `A product can have a maximum of ${MAX_PRODUCT_PHOTOS} photos.`,
                     400,
-                    "PRODUCT_PHOTO_LIMIT_EXCEEDED"
-                );
-            }
-
-            if (
-                data.type === "public" &&
-                photos.length < 1
-            ) {
-                throw new AppError(
-                    "Public products must have at least one photo.",
-                    400,
-                    "PUBLIC_PRODUCT_PHOTO_REQUIRED"
+                    "TOO_MANY_PRODUCT_PHOTOS"
                 );
             }
 
             /*
-             * -------------------------------------------------------
-             * 5. Upload photos
-             *
-             * Storage decides whether the configured provider
-             * is Cloudinary or Cloudflare R2.
-             * -------------------------------------------------------
+             * 5. Upload photos before transaction
              */
+            const uploadedPhotos = [];
 
-            for (const file of photos) {
-                const uploadedPhoto =
-                    await Storage.upload(file);
+            if (data.photos?.length) {
+                for (
+                    let index = 0;
+                    index < data.photos.length;
+                    index++
+                ) {
+                    const photo = data.photos[index];
 
-                uploadedPhotos.push(uploadedPhoto);
+                    const uploaded =
+                        await Storage.upload(photo);
+
+                    uploadedPhotos.push({
+                        provider: uploaded.provider,
+                        objectKey: uploaded.objectKey,
+                        url: uploaded.url,
+                        position: index + 1,
+                    });
+
+                    uploadedPhotosForCleanup.push({
+                        provider: uploaded.provider,
+                        objectKey: uploaded.objectKey,
+                    });
+                }
             }
 
             /*
-             * -------------------------------------------------------
-             * 6. Database transaction
-             * -------------------------------------------------------
+             * 6. Start transaction
              */
-
             await client.query("BEGIN");
 
-            const product =
-                await ProductRepository.createProduct(
+            /*
+             * 7. Create product with
+             *    concurrency-safe slug generation
+             */
+            let product = null;
+
+            for (let attempt = 0; attempt < 20; attempt++) {
+                const slug =
+                    await this.generateUniqueSlug(
+                        client,
+                        data.name
+                    );
+
+                await client.query(
+                    "SAVEPOINT product_slug_attempt"
+                );
+
+                try {
+                    product =
+                        await ProductRepository.createProduct(
+                            client,
+                            {
+                                accountId,
+                                branchId: data.branchId,
+                                categoryId: data.categoryId,
+                                name: data.name,
+                                slug,
+                                description: data.description,
+                                type: data.type,
+                                costPrice: data.costPrice,
+                                sellingPrice: data.sellingPrice,
+                                stock: data.stock,
+                                lowStockThreshold:
+                                    data.lowStockThreshold,
+                                status: data.status,
+                            }
+                        );
+
+                    await client.query(
+                        "RELEASE SAVEPOINT product_slug_attempt"
+                    );
+
+                    break;
+                } catch (error) {
+                    if (
+                        error.code !== "23505" ||
+                        error.constraint !==
+                        "products_slug_key"
+                    ) {
+                        throw error;
+                    }
+
+                    await client.query(
+                        "ROLLBACK TO SAVEPOINT product_slug_attempt"
+                    );
+                }
+            }
+
+            if (!product) {
+                throw new AppError(
+                    "Could not generate a unique product slug. Please try again.",
+                    409,
+                    "PRODUCT_SLUG_GENERATION_FAILED"
+                );
+            }
+
+            /*
+             * 8. Create branch purchase
+             */
+            if (data.purchase) {
+                await ProductRepository.createBranchPurchase(
                     client,
                     {
                         accountId,
                         branchId: data.branchId,
-                        categoryId: data.categoryId,
-                        name: data.name,
-                        slug: data.slug,
-                        description: data.description,
-                        type: data.type,
+                        createdByUserId: userId,
+                        productId: product.id,
+                        productName: product.name,
+                        quantity: data.stock,
                         costPrice: data.costPrice,
-                        sellingPrice: data.sellingPrice,
-
-                        // Stock
-                        stock: data.stock,
-                        lowStockThreshold:
-                            data.lowStockThreshold,
-
-                        status: data.status,
+                        paymentSource:
+                            data.purchase.paymentSource,
+                        notes: data.purchase.notes ?? null,
                     }
                 );
+            }
 
-            for (
-                let index = 0;
-                index < uploadedPhotos.length;
-                index++
-            ) {
-                const photo =
-                    uploadedPhotos[index];
-
+            /*
+             * 9. Create product photos
+             */
+            for (const photo of uploadedPhotos) {
                 await ProductRepository.createProductPhoto(
                     client,
                     {
@@ -181,75 +237,71 @@ const ProductService = {
                         provider: photo.provider,
                         objectKey: photo.objectKey,
                         url: photo.url,
-                        position: index + 1,
+                        position: photo.position,
                     }
                 );
             }
 
-            const productPhotos =
-                await ProductRepository.getProductPhotos(
-                    client,
-                    product.id
-                );
-
+            /*
+             * 10. Commit
+             */
             await client.query("COMMIT");
 
-            return {
-                ...product,
-                photos: productPhotos,
-            };
+            return product;
         } catch (error) {
-            try {
-                await client.query("ROLLBACK");
-            } catch (rollbackError) {
-                console.error(
-                    "ProductService.createProduct rollback:",
-                    rollbackError
-                );
+            if (client) {
+                try {
+                    await client.query("ROLLBACK");
+                } catch (rollbackError) {
+                    console.error(
+                        "ProductService.createProduct rollback:",
+                        rollbackError
+                    );
+                }
             }
 
             /*
-             * Storage is outside PostgreSQL transactions.
-             *
-             * If database creation fails after uploading files,
-             * clean those files from their actual providers.
+             * Delete uploaded photos if database operation failed
              */
-
-            await Promise.allSettled(
-                uploadedPhotos.map((photo) =>
-                    Storage.delete({
-                        provider: photo.provider,
-                        objectKey: photo.objectKey,
-                    })
-                )
-            );
+            for (
+                const uploadedPhoto
+                of uploadedPhotosForCleanup
+            ) {
+                try {
+                    await Storage.delete(
+                        uploadedPhoto
+                    );
+                } catch (cleanupError) {
+                    console.error(
+                        "Failed to delete uploaded product photo:",
+                        cleanupError
+                    );
+                }
+            }
 
             if (error instanceof AppError) {
                 throw error;
             }
 
-            if (error.code === "23505") {
+            if (
+                error.code === "23505" &&
+                error.constraint ===
+                "products_slug_key"
+            ) {
                 throw new AppError(
-                    "A product with this information already exists.",
+                    "Could not generate a unique product slug. Please try again.",
                     409,
-                    "PRODUCT_ALREADY_EXISTS"
+                    "PRODUCT_SLUG_GENERATION_FAILED"
                 );
             }
 
-            console.error(
-                "ProductService.createProduct:",
-                error
-            );
-
-            throw new AppError(
-                "Failed to create product.",
-                500,
-                "PRODUCT_CREATE_FAILED"
-            );
+            throw error;
         } finally {
-            client.release();
+            if (client) {
+                client.release();
+            }
         }
-    },
+    }, 
 
     async getProducts(
         userId,
@@ -476,16 +528,14 @@ const ProductService = {
         productId,
         data
     ) {
-        const client = await pool.connect();
-        const uploadedPhotos = [];
+        let client;
 
         try {
-            /*
-             * -------------------------------------------------------
-             * 1. Get current product
-             * -------------------------------------------------------
-             */
+            client = await pool.connect();
 
+            /*
+             * 1. Get existing product
+             */
             const product =
                 await ProductRepository.getProductByIdForAccount(
                     client,
@@ -501,323 +551,133 @@ const ProductService = {
                 );
             }
 
-            await AuthorizationService.assertBranchPermission(
-                client,
-                userId,
-                accountId,
-                product.branch_id,
-                "products.update"
-            );
+            /*
+             * 2. Build update data
+             *
+             * Slug must NEVER come from the client.
+             */
+            const updateData = {
+                ...data,
+            };
+
+            delete updateData.slug;
 
             /*
-             * -------------------------------------------------------
-             * 2. Validate branch change
-             * -------------------------------------------------------
+             * 3. Determine whether product name changed
              */
-
-            if (data.branchId) {
-                const branch =
-                    await ProductRepository.getBranchForAccount(
-                        client,
-                        data.branchId,
-                        accountId
-                    );
-
-                if (!branch) {
-                    throw new AppError(
-                        "Branch not found.",
-                        404,
-                        "BRANCH_NOT_FOUND"
-                    );
-                }
-
-                await AuthorizationService.assertBranchPermission(
-                    client,
-                    userId,
-                    accountId,
-                    data.branchId,
-                    "products.update"
-                );
-            }
+            const nameChanged =
+                data.name !== undefined &&
+                data.name.trim() !== product.name;
 
             /*
-             * -------------------------------------------------------
-             * 3. Validate category change
-             * -------------------------------------------------------
+             * 4. Start transaction
              */
-
-            if (data.categoryId) {
-                const category =
-                    await ProductRepository.getCategoryForAccount(
-                        client,
-                        data.categoryId,
-                        accountId
-                    );
-
-                if (!category) {
-                    throw new AppError(
-                        "Category not found.",
-                        404,
-                        "CATEGORY_NOT_FOUND"
-                    );
-                }
-            }
-
-            /*
-             * -------------------------------------------------------
-             * 4. Validate slug change
-             * -------------------------------------------------------
-             */
-
-            if (
-                data.slug &&
-                data.slug !== product.slug
-            ) {
-                const existingProduct =
-                    await ProductRepository.getProductBySlug(
-                        client,
-                        data.slug
-                    );
-
-                if (
-                    existingProduct &&
-                    existingProduct.id !== product.id
-                ) {
-                    throw new AppError(
-                        "A product with this slug already exists.",
-                        409,
-                        "PRODUCT_SLUG_ALREADY_EXISTS"
-                    );
-                }
-            }
-
-            /*
-             * -------------------------------------------------------
-             * 5. Validate photo replacement
-             * -------------------------------------------------------
-             */
-
-            if (data.photos) {
-                if (
-                    data.photos.length >
-                    MAX_PRODUCT_PHOTOS
-                ) {
-                    throw new AppError(
-                        `A product can have a maximum of ${MAX_PRODUCT_PHOTOS} photos.`,
-                        400,
-                        "PRODUCT_PHOTO_LIMIT_EXCEEDED"
-                    );
-                }
-
-                const resultingType =
-                    data.type ?? product.type;
-
-                if (
-                    resultingType === "public" &&
-                    data.photos.length < 1
-                ) {
-                    throw new AppError(
-                        "Public products must have at least one photo.",
-                        400,
-                        "PUBLIC_PRODUCT_PHOTO_REQUIRED"
-                    );
-                }
-            } else if (
-                data.type === "public" &&
-                product.type !== "public"
-            ) {
-                const photoCount =
-                    await ProductRepository.getProductPhotoCount(
-                        client,
-                        product.id
-                    );
-
-                if (photoCount < 1) {
-                    throw new AppError(
-                        "Public products must have at least one photo.",
-                        400,
-                        "PUBLIC_PRODUCT_PHOTO_REQUIRED"
-                    );
-                }
-            }
-
-            /*
-             * -------------------------------------------------------
-             * 6. Upload replacement photos
-             * -------------------------------------------------------
-             */
-
-            if (data.photos) {
-                for (const file of data.photos) {
-                    const uploadedPhoto =
-                        await Storage.upload(file);
-
-                    uploadedPhotos.push(
-                        uploadedPhoto
-                    );
-                }
-            }
-
-            /*
-             * -------------------------------------------------------
-             * 7. Database transaction
-             * -------------------------------------------------------
-             */
-
             await client.query("BEGIN");
 
-            const updatedProduct =
-                await ProductRepository.updateProduct(
-                    client,
-                    product.id,
-                    data
+            /*
+             * 5. Update product
+             *
+             * If the name changed:
+             *     generate a new unique slug.
+             *
+             * If the name did not change:
+             *     keep the existing slug.
+             */
+            let updatedProduct = null;
+
+            for (let attempt = 0; attempt < 20; attempt++) {
+                const currentUpdateData = {
+                    ...updateData,
+                };
+
+                if (nameChanged) {
+                    currentUpdateData.slug =
+                        await this.generateUniqueSlug(
+                            client,
+                            data.name,
+                            product.id
+                        );
+                }
+
+                await client.query(
+                    "SAVEPOINT product_slug_attempt"
                 );
+
+                try {
+                    updatedProduct =
+                        await ProductRepository.updateProduct(
+                            client,
+                            product.id,
+                            currentUpdateData
+                        );
+
+                    await client.query(
+                        "RELEASE SAVEPOINT product_slug_attempt"
+                    );
+
+                    break;
+                } catch (error) {
+                    if (
+                        error.code !== "23505" ||
+                        error.constraint !==
+                        "products_slug_key"
+                    ) {
+                        throw error;
+                    }
+
+                    await client.query(
+                        "ROLLBACK TO SAVEPOINT product_slug_attempt"
+                    );
+                }
+            }
 
             if (!updatedProduct) {
                 throw new AppError(
-                    "Product could not be updated.",
-                    404,
-                    "PRODUCT_UPDATE_FAILED"
+                    "Could not generate a unique product slug. Please try again.",
+                    409,
+                    "PRODUCT_SLUG_GENERATION_FAILED"
                 );
-            }
-
-            let photos;
-
-            if (data.photos) {
-                /*
-                 * Capture old photos before removing DB rows.
-                 */
-
-                const oldPhotos =
-                    await ProductRepository.getProductPhotos(
-                        client,
-                        product.id
-                    );
-
-                await ProductRepository.deleteProductPhotos(
-                    client,
-                    product.id
-                );
-
-                for (
-                    let index = 0;
-                    index < uploadedPhotos.length;
-                    index++
-                ) {
-                    const photo =
-                        uploadedPhotos[index];
-
-                    await ProductRepository.createProductPhoto(
-                        client,
-                        {
-                            productId:
-                                product.id,
-                            provider:
-                                photo.provider,
-                            objectKey:
-                                photo.objectKey,
-                            url: photo.url,
-                            position:
-                                index + 1,
-                        }
-                    );
-                }
-
-                photos =
-                    await ProductRepository.getProductPhotos(
-                        client,
-                        product.id
-                    );
-
-                await client.query("COMMIT");
-
-                /*
-                 * Delete old objects only after DB commit.
-                 */
-
-                await Promise.allSettled(
-                    oldPhotos.map((oldPhoto) =>
-                        Storage.delete({
-                            provider:
-                                oldPhoto.provider,
-                            objectKey:
-                                oldPhoto.object_key,
-                        })
-                    )
-                );
-
-                return {
-                    ...updatedProduct,
-                    photos,
-                };
             }
 
             /*
-             * No photo replacement.
+             * 6. Commit
              */
-
-            photos =
-                await ProductRepository.getProductPhotos(
-                    client,
-                    product.id
-                );
-
             await client.query("COMMIT");
 
-            return {
-                ...updatedProduct,
-                photos,
-            };
+            return updatedProduct;
         } catch (error) {
-            try {
-                await client.query("ROLLBACK");
-            } catch (rollbackError) {
-                console.error(
-                    "ProductService.updateProduct rollback:",
-                    rollbackError
-                );
+            if (client) {
+                try {
+                    await client.query("ROLLBACK");
+                } catch (rollbackError) {
+                    console.error(
+                        "ProductService.updateProduct rollback:",
+                        rollbackError
+                    );
+                }
             }
-
-            /*
-             * Clean up newly uploaded files when
-             * the database operation fails.
-             */
-
-            await Promise.allSettled(
-                uploadedPhotos.map((photo) =>
-                    Storage.delete({
-                        provider:
-                            photo.provider,
-                        objectKey:
-                            photo.objectKey,
-                    })
-                )
-            );
 
             if (error instanceof AppError) {
                 throw error;
             }
 
-            if (error.code === "23505") {
+            if (
+                error.code === "23505" &&
+                error.constraint ===
+                "products_slug_key"
+            ) {
                 throw new AppError(
-                    "A product with this information already exists.",
+                    "Could not generate a unique product slug. Please try again.",
                     409,
-                    "PRODUCT_ALREADY_EXISTS"
+                    "PRODUCT_SLUG_GENERATION_FAILED"
                 );
             }
 
-            console.error(
-                "ProductService.updateProduct:",
-                error
-            );
-
-            throw new AppError(
-                "Failed to update product.",
-                500,
-                "PRODUCT_UPDATE_FAILED"
-            );
+            throw error;
         } finally {
-            client.release();
+            if (client) {
+                client.release();
+            }
         }
     },
 

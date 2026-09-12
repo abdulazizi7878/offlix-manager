@@ -1,5 +1,3 @@
-// file: app/dashboard/products/create/page.jsx
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -19,7 +17,6 @@ export default function CreateProductPage() {
     const [error, setError] = useState(null);
 
     const [name, setName] = useState("");
-    const [slug, setSlug] = useState("");
     const [description, setDescription] = useState("");
     const [branchId, setBranchId] = useState("");
     const [categoryId, setCategoryId] = useState("");
@@ -29,6 +26,10 @@ export default function CreateProductPage() {
     const [status, setStatus] = useState("active");
     const [stock, setStock] = useState("0");
     const [lowStockThreshold, setLowStockThreshold] = useState("5");
+
+    const [isPurchased, setIsPurchased] = useState(false);
+    const [paymentSource, setPaymentSource] = useState("employee_personal");
+    const [purchaseNotes, setPurchaseNotes] = useState("");
 
     const [files, setFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
@@ -106,7 +107,6 @@ export default function CreateProductPage() {
         try {
             const formData = new FormData();
             formData.append("name", name);
-            formData.append("slug", slug);
             formData.append("description", description);
             formData.append("branchId", branchId);
             formData.append("categoryId", categoryId);
@@ -116,6 +116,16 @@ export default function CreateProductPage() {
             formData.append("status", status);
             formData.append("stock", stock !== "" ? stock : "0");
             formData.append("lowStockThreshold", lowStockThreshold !== "" ? lowStockThreshold : "5");
+
+            if (isPurchased) {
+                formData.append(
+                    "purchase",
+                    JSON.stringify({
+                        paymentSource,
+                        notes: purchaseNotes || null,
+                    })
+                );
+            }
 
             files.forEach((file) => {
                 formData.append("photos", file);
@@ -168,7 +178,7 @@ export default function CreateProductPage() {
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">General Information</h2>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-(--foreground)">Product Name *</label>
                             <input
@@ -178,18 +188,6 @@ export default function CreateProductPage() {
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="e.g. Wireless Mouse"
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Slug *</label>
-                            <input
-                                type="text"
-                                required
-                                value={slug}
-                                onChange={(e) => setSlug(e.target.value)}
-                                placeholder="e.g. wireless-mouse"
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono text-xs focus:outline-none"
                             />
                         </div>
                     </div>
@@ -255,7 +253,7 @@ export default function CreateProductPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Cost Price ($)</label>
+                            <label className="text-xs font-medium text-(--foreground)">Cost Price (ETB)</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -269,7 +267,7 @@ export default function CreateProductPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Selling Price ($) *</label>
+                            <label className="text-xs font-medium text-(--foreground)">Selling Price (ETB) *</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -334,6 +332,88 @@ export default function CreateProductPage() {
                 </div>
 
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
+                    <div>
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Product Acquisition</h2>
+                        <p className="text-xs text-(--muted-foreground) mt-0.5">Record how this branch obtained the product.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <label
+                            onClick={() => setIsPurchased(false)}
+                            className={`flex flex-col p-3.5 rounded-lg border cursor-pointer transition-colors ${!isPurchased
+                                ? "border-(--primary) bg-(--primary)/5"
+                                : "border-(--border) hover:bg-(--muted)/50"
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="radio"
+                                    name="acquisition_type"
+                                    checked={!isPurchased}
+                                    onChange={() => setIsPurchased(false)}
+                                    className="accent-[var(--primary)]"
+                                />
+                                <span className="text-xs font-semibold text-(--foreground)">Added to catalog only</span>
+                            </div>
+                            <span className="text-[11px] text-(--muted-foreground) mt-1 pl-5">
+                                The product is being added without recording an acquisition.
+                            </span>
+                        </label>
+
+                        <label
+                            onClick={() => setIsPurchased(true)}
+                            className={`flex flex-col p-3.5 rounded-lg border cursor-pointer transition-colors ${isPurchased
+                                ? "border-(--primary) bg-(--primary)/5"
+                                : "border-(--border) hover:bg-(--muted)/50"
+                                }`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="radio"
+                                    name="acquisition_type"
+                                    checked={isPurchased}
+                                    onChange={() => setIsPurchased(true)}
+                                    className="accent-[var(--primary)]"
+                                />
+                                <span className="text-xs font-semibold text-(--foreground)">Purchased for this branch</span>
+                            </div>
+                            <span className="text-[11px] text-(--muted-foreground) mt-1 pl-5">
+                                Record this inventory acquisition without changing business money.
+                            </span>
+                        </label>
+                    </div>
+
+                    {isPurchased && (
+                        <div className="space-y-4 pt-3 border-t border-(--border) animate-in fade-in duration-200">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-(--foreground)">Payment Source *</label>
+                                <select
+                                    value={paymentSource}
+                                    onChange={(e) => setPaymentSource(e.target.value)}
+                                    required
+                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                                >
+                                    <option value="employee_personal">Employee personally</option>
+                                    <option value="supplier_credit">Supplier credit</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-(--foreground)">Purchase Notes</label>
+                                <textarea
+                                    rows={2}
+                                    value={purchaseNotes}
+                                    onChange={(e) => setPurchaseNotes(e.target.value)}
+                                    placeholder="Optional notes about this acquisition..."
+                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Photos</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                         {previews.map((src, idx) => (
@@ -391,4 +471,3 @@ export default function CreateProductPage() {
         </div>
     );
 }
-

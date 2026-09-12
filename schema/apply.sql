@@ -1,6 +1,36 @@
 ALTER TABLE branches
 ADD CONSTRAINT uq_branches_id_account
 UNIQUE (id, account_id);
+INSERT INTO permissions (key, name, description)
+VALUES
+    ('branches.view', 'View branches', 'View branch information.'),
+    ('branches.create', 'Create branches', 'Create new branches.'),
+    ('branches.update', 'Update branches', 'Update branch information and status.'),
+
+    ('users.view', 'View users', 'View employees and users.'),
+    ('users.add', 'Add users', 'Add employees to a branch.'),
+    ('users.remove', 'Remove users', 'Remove employees from a branch.'),
+    ('users.update', 'Update users', 'Update employee branch membership and permissions.'),
+
+    ('products.view', 'View products', 'View products.'),
+    ('products.create', 'Create products', 'Create new products.'),
+    ('products.update', 'Update products', 'Update product information.'),
+    ('products.delete', 'Delete products', 'Delete products where permitted.'),
+
+    ('inventory.view', 'View inventory', 'View inventory information.'),
+    ('inventory.adjust', 'Adjust inventory', 'Make inventory adjustments.'),
+
+    ('sales.view', 'View sales', 'View sales records.'),
+    ('sales.create', 'Create sales', 'Create new sales.'),
+
+    ('expenses.view', 'View expenses', 'View expense records.'),
+    ('expenses.create', 'Create expenses', 'Create new expenses.'),
+
+    ('finance.view', 'View finance', 'View financial information.'),
+    ('finance.create', 'Create financial records', 'Create financial records.'),
+
+    ('reports.view', 'View reports', 'View business reports.')
+ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO permissions (key, name, description)
 VALUES

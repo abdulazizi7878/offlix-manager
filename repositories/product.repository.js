@@ -54,6 +54,67 @@ const ProductRepository = {
         return result.rows[0];
     },
 
+    async createBranchPurchase(client, data) {
+        const result = await client.query(
+            `
+        INSERT INTO branch_purchases (
+            account_id,
+            branch_id,
+            created_by_user_id,
+            product_id,
+            product_name,
+            quantity,
+            cost_price,
+            payment_source,
+            notes
+        )
+        VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9
+        )
+        RETURNING *
+        `,
+            [
+                data.accountId,
+                data.branchId,
+                data.createdByUserId,
+                data.productId,
+                data.productName,
+                data.quantity,
+                data.costPrice,
+                data.paymentSource,
+                data.notes ?? null,
+            ]
+        );
+
+        return result.rows[0];
+    },
+    
+    async slugExists(client, slug, excludeProductId = null) {
+        const result = await client.query(
+            `
+        SELECT 1
+        FROM products
+        WHERE slug = $1
+          AND (
+              $2::UUID IS NULL
+              OR id <> $2
+          )
+        LIMIT 1
+        `,
+            [slug, excludeProductId]
+        );
+
+        return result.rowCount > 0;
+    },
+
     async getProductById(client, productId) {
         const result = await client.query(
             `

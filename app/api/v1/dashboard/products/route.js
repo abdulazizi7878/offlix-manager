@@ -32,7 +32,9 @@ export const POST = withErrorHandling(async (request) => {
 
     const photos = formData
         .getAll("photos")
-        .filter((value) => value instanceof File);
+        .filter(
+            (value) => value instanceof File
+        );
 
     const rawData = {
         branchId: formData.get("branchId"),
@@ -41,8 +43,6 @@ export const POST = withErrorHandling(async (request) => {
 
         name: formData.get("name"),
 
-        slug: formData.get("slug"),
-
         description:
             formData.get("description") || null,
 
@@ -50,7 +50,9 @@ export const POST = withErrorHandling(async (request) => {
             formData.get("type") || "private",
 
         costPrice:
-            Number(formData.get("costPrice") || 0),
+            Number(
+                formData.get("costPrice") || 0
+            ),
 
         sellingPrice:
             Number(
@@ -58,17 +60,27 @@ export const POST = withErrorHandling(async (request) => {
             ),
 
         stock:
-            Number(formData.get("stock") || 0),
+            Number(
+                formData.get("stock") || 0
+            ),
 
         lowStockThreshold:
             Number(
-                formData.get("lowStockThreshold") || 5
+                formData.get(
+                    "lowStockThreshold"
+                ) || 5
             ),
 
         status:
             formData.get("status") || "active",
 
         photos,
+
+        purchase: formData.get("purchase")
+            ? JSON.parse(
+                  formData.get("purchase")
+              )
+            : undefined,
     };
 
     const validatedData =

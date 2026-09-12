@@ -40,7 +40,7 @@ function getNumberFormValue(formData, key) {
 
     if (!Number.isFinite(number)) {
         throw new AppError(
-            `${key} must be a valid number.`,
+            `${ key } must be a valid number.`,
             400,
             "VALIDATION_ERROR"
         );
@@ -90,16 +90,6 @@ function buildUpdateData(formData) {
 
     if (name !== undefined) {
         data.name = name;
-    }
-
-    const slug =
-        getOptionalFormValue(
-            formData,
-            "slug"
-        );
-
-    if (slug !== undefined) {
-        data.slug = slug;
     }
 
     const description =
@@ -176,13 +166,11 @@ function buildUpdateData(formData) {
     /*
      * Important:
      *
-     * We need to distinguish:
-     *
      * photos field absent
-     *      => don't modify photos
+     *     => don't modify photos
      *
      * photos field present but empty
-     *      => replace photos with zero photos
+     *     => replace photos with zero photos
      *
      * Since multipart FormData doesn't give us a
      * reliable "array field exists" primitive, we use

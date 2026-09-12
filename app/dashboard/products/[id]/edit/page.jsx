@@ -1,5 +1,3 @@
-// file: app/dashboard/products/[id]/edit/page.jsx
-
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -24,7 +22,6 @@ export default function EditProductPage() {
     const [initialState, setInitialState] = useState(null);
 
     const [name, setName] = useState("");
-    const [slug, setSlug] = useState("");
     const [description, setDescription] = useState("");
     const [branchId, setBranchId] = useState("");
     const [categoryId, setCategoryId] = useState("");
@@ -59,7 +56,6 @@ export default function EditProductPage() {
             const rawPhotos = productRes.data?.photos || p.photos || [];
 
             const fetchedName = p.name || "";
-            const fetchedSlug = p.slug || "";
             const fetchedDescription = p.description || "";
             const fetchedBranchId = String(p.branch_id ?? p.branchId ?? "");
             const fetchedCategoryId = String(p.category_id ?? p.categoryId ?? "");
@@ -71,7 +67,6 @@ export default function EditProductPage() {
             const fetchedLowStockThreshold = String(p.low_stock_threshold ?? p.lowStockThreshold ?? "5");
 
             setName(fetchedName);
-            setSlug(fetchedSlug);
             setDescription(fetchedDescription);
             setBranchId(fetchedBranchId);
             setCategoryId(fetchedCategoryId);
@@ -95,7 +90,6 @@ export default function EditProductPage() {
 
             setInitialState({
                 name: fetchedName,
-                slug: fetchedSlug,
                 description: fetchedDescription,
                 branchId: fetchedBranchId,
                 categoryId: fetchedCategoryId,
@@ -128,7 +122,6 @@ export default function EditProductPage() {
 
         const fieldsChanged =
             name !== initialState.name ||
-            slug !== initialState.slug ||
             description !== initialState.description ||
             branchId !== initialState.branchId ||
             categoryId !== initialState.categoryId ||
@@ -140,7 +133,7 @@ export default function EditProductPage() {
             lowStockThreshold !== initialState.lowStockThreshold;
 
         return fieldsChanged || photosChanged;
-    }, [initialState, name, slug, description, branchId, categoryId, type, costPrice, sellingPrice, status, stock, lowStockThreshold, existingPhotos, newFiles]);
+    }, [initialState, name, description, branchId, categoryId, type, costPrice, sellingPrice, status, stock, lowStockThreshold, existingPhotos, newFiles]);
 
     const handleNewFilesChange = (e) => {
         const files = Array.from(e.target.files || []);
@@ -223,7 +216,6 @@ export default function EditProductPage() {
             const formData = new FormData();
 
             formData.append("name", name);
-            formData.append("slug", slug);
             formData.append("description", description);
             formData.append("branchId", branchId);
             formData.append("categoryId", categoryId);
@@ -349,7 +341,7 @@ export default function EditProductPage() {
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">General Information</h2>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-(--foreground)">Product Name *</label>
                             <input
@@ -358,17 +350,6 @@ export default function EditProductPage() {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
-                            />
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Slug *</label>
-                            <input
-                                type="text"
-                                required
-                                value={slug}
-                                onChange={(e) => setSlug(e.target.value)}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono text-xs focus:outline-none"
                             />
                         </div>
                     </div>
@@ -471,7 +452,6 @@ export default function EditProductPage() {
                     </div>
                 </div>
 
-                {/* Inventory Section */}
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Inventory</h2>
 

@@ -1,4 +1,4 @@
-// file: validations/product.schema.js
+// file: validations/product.validation.js
 
 import { z } from "zod";
 
@@ -45,28 +45,11 @@ const productPriceSchema = z
     .finite("Price must be a valid number.")
     .nonnegative("Price cannot be negative.")
     .refine(
-        (value) =>
-            Number.isInteger(value * 100),
+        (value) => Number.isInteger(value * 100),
         {
             message:
                 "Price must have at most 2 decimal places.",
         }
-    );
-
-const productSlugSchema = z
-    .string()
-    .trim()
-    .min(
-        2,
-        "Product slug must be at least 2 characters."
-    )
-    .max(
-        180,
-        "Product slug must not exceed 180 characters."
-    )
-    .regex(
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Product slug must contain only lowercase letters, numbers, and hyphens."
     );
 
 const productFileSchema = z
@@ -74,16 +57,14 @@ const productFileSchema = z
         message: "Invalid product image.",
     })
     .refine(
-        (file) =>
-            file.type.startsWith("image/"),
+        (file) => file.type.startsWith("image/"),
         {
             message:
                 "Product photos must be image files.",
         }
     )
     .refine(
-        (file) =>
-            file.size <= 5 * 1024 * 1024,
+        (file) => file.size <= 5 * 1024 * 1024,
         {
             message:
                 "Each product photo must not exceed 5MB.",
@@ -112,45 +93,80 @@ export const productPhotosSchema = z
     )
     .default([]);
 
-export const createProductSchema = z.object({
-    branchId: z.string().uuid(
-        "Invalid branch ID."
-    ),
-
-    categoryId: z.string().uuid(
-        "Invalid category ID."
-    ),
-
-    name: productNameSchema,
-
-    slug: productSlugSchema,
-
-    description:
-        productDescriptionSchema,
-
-    type: productTypeSchema.default(
-        "private"
-    ),
-
-    costPrice:
-        productPriceSchema.default(0),
-
-    sellingPrice:
-        productPriceSchema.default(0),
-
-    stock:
-        productStockSchema.default(0),
-
-    lowStockThreshold:
-        productLowStockThresholdSchema.default(5),
-
-    status:
-        productStatusSchema.default(
-            "active"
+export const createProductSchema = z
+    .object({
+        branchId: z.string().uuid(
+            "Invalid branch ID."
         ),
 
-    photos: productPhotosSchema,
-});
+        categoryId: z.string().uuid(
+            "Invalid category ID."
+        ),
+
+        name: productNameSchema,
+
+        description:
+            productDescriptionSchema,
+
+        type: productTypeSchema.default(
+            "private"
+        ),
+
+        costPrice:
+            productPriceSchema.default(0),
+
+        sellingPrice:
+            productPriceSchema.default(0),
+
+        stock:
+            productStockSchema.default(0),
+
+        lowStockThreshold:
+            productLowStockThresholdSchema.default(5),
+
+        status:
+            productStatusSchema.default(
+                "active"
+            ),
+
+        photos: productPhotosSchema,
+
+        purchase: z
+            .object({
+                paymentSource: z.enum(
+                    [
+                        "employee_personal",
+                        "supplier_credit",
+                        "other",
+                    ],
+                    {
+                        message:
+                            "Invalid purchase payment source.",
+                    }
+                ),
+
+                notes: z
+                    .string()
+                    .trim()
+                    .max(
+                        1000,
+                        "Purchase notes must not exceed 1000 characters."
+                    )
+                    .optional()
+                    .nullable(),
+            })
+            .optional(),
+    })
+    .refine(
+        (data) =>
+            data.purchase === undefined ||
+            data.stock > 0,
+        {
+            message:
+                "Purchased product quantity must be greater than zero.",
+            path: ["stock"],
+        }
+    );
 
 export const updateProductSchema = z
     .object({
@@ -166,9 +182,6 @@ export const updateProductSchema = z
 
         name:
             productNameSchema.optional(),
-
-        slug:
-            productSlugSchema.optional(),
 
         description:
             productDescriptionSchema,
@@ -204,7 +217,6 @@ export const updateProductSchema = z
             data.branchId !== undefined ||
             data.categoryId !== undefined ||
             data.name !== undefined ||
-            data.slug !== undefined ||
             data.description !== undefined ||
             data.type !== undefined ||
             data.costPrice !== undefined ||
