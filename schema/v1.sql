@@ -1238,6 +1238,8 @@ CREATE TABLE credits (
 
     amount NUMERIC(12,2) NOT NULL,
 
+    direction VARCHAR(10) NOT NULL DEFAULT 'out',
+
     due_date DATE,
 
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
@@ -1252,6 +1254,13 @@ CREATE TABLE credits (
     CHECK (length(trim(name)) > 0),
 
     CHECK (amount > 0),
+
+    CHECK (
+        direction IN (
+            'in',
+            'out'
+        )
+    ),
 
     CHECK (
         status IN (

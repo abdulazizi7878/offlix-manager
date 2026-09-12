@@ -1715,6 +1715,7 @@ const MoneyRepository = {
     // CREDITS
     // =========================================================
 
+
     async createCredit(
         client,
         {
@@ -1723,37 +1724,41 @@ const MoneyRepository = {
             description,
             amount,
             dueDate,
+            direction,
             createdByUserId,
         }
     ) {
         const result = await client.query(
             `
-            INSERT INTO credits (
+            INSERT INTO credits(
                 account_id,
                 name,
                 description,
                 amount,
                 due_date,
+                direction,
                 status,
                 created_by_user_id
             )
-            VALUES (
-                $1,
-                $2,
-                $3,
-                $4,
-                $5,
-                'pending',
-                $6
-            )
-            RETURNING *
-            `,
+    VALUES(
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        'pending',
+        $7
+    )
+    RETURNING *
+        `,
             [
                 accountId,
                 name,
                 description ?? null,
                 amount,
                 dueDate ?? null,
+                direction,
                 createdByUserId,
             ]
         );
@@ -1761,162 +1766,153 @@ const MoneyRepository = {
         return result.rows[0];
     },
 
-    async getCreditById(
-        client,
-        creditId,
-        accountId
-    ) {
-        const result = await client.query(
-            `
-            SELECT
-                c.id,
-                c.account_id,
-                c.name,
-                c.description,
-                c.amount,
-                c.due_date,
-                c.status,
-                c.created_by_user_id,
-                c.created_at,
-                c.updated_at,
-
-                u.name AS created_by_name,
-
-                COALESCE(
-                    payment_summary.received_amount,
-                    0
-                ) AS received_amount,
-
-                GREATEST(
-                    c.amount -
-                    COALESCE(
-                        payment_summary.received_amount,
+        async getCreditById(
+            client,
+            creditId,
+            accountId
+        ) {
+            const result = await client.query(
+                `
+        SELECT
+        c.id,
+            c.account_id,
+            c.name,
+            c.description,
+            c.amount,
+            c.due_date,
+            c.direction,
+            c.status,
+            c.created_by_user_id,
+            c.created_at,
+            c.updated_at,
+            u.name AS created_by_name,
+                COALESCE(payment_summary.received_amount, 0) AS received_amount,
+                    GREATEST(
+                        c.amount - COALESCE(payment_summary.received_amount, 0),
                         0
-                    ),
-                    0
-                ) AS remaining_amount
-
-            FROM credits c
-
-            INNER JOIN users u
-                ON u.id = c.created_by_user_id
-
-            LEFT JOIN LATERAL (
-                SELECT
-                    SUM(cp.amount) AS received_amount
-                FROM credit_payments cp
-                WHERE cp.credit_id = c.id
-                  AND cp.account_id = c.account_id
-            ) payment_summary
-                ON TRUE
-
-            WHERE c.id = $1
-              AND c.account_id = $2
+                    ) AS remaining_amount
+                FROM credits c
+                LEFT JOIN users u
+                    ON u.id = c.created_by_user_id
+                LEFT JOIN LATERAL(
+                        SELECT
+                        SUM(cp.amount) AS received_amount
+                    FROM credit_payments cp
+                    WHERE cp.credit_id = c.id
+                    ) payment_summary
+                    ON TRUE
+                WHERE c.id = $1
+                AND c.account_id = $2
             `,
-            [
-                creditId,
-                accountId,
-            ]
-        );
+                [
+                    creditId,
+                    accountId,
+                ]
+            );
 
-        return result.rows[0] ?? null;
-    },
+            return result.rows[0] ?? null;
+        },
+
+
 
     async getCredits(
         client,
         {
             accountId,
             status,
+            direction,
             search,
-            dateFrom,
-            dateTo,
             page,
             limit,
+            startDate,
+            endDate,
         }
     ) {
         const offset = (page - 1) * limit;
 
         const result = await client.query(
             `
-            SELECT
-                c.id,
-                c.account_id,
-                c.name,
-                c.description,
-                c.amount,
-                c.due_date,
-                c.status,
-                c.created_by_user_id,
-                c.created_at,
-                c.updated_at,
+        SELECT
+            c.id,
+            c.account_id,
+            c.name,
+            c.description,
+            c.amount,
+            c.due_date,
+            c.direction,
+            c.status,
+            c.created_by_user_id,
+            c.created_at,
+            c.updated_at,
+            u.name AS created_by_name,
 
-                u.name AS created_by_name,
+            COALESCE(
+                payment_summary.received_amount,
+                0
+            ) AS received_amount,
 
+            GREATEST(
+                c.amount -
                 COALESCE(
                     payment_summary.received_amount,
                     0
-                ) AS received_amount,
+                ),
+                0
+            ) AS remaining_amount
 
-                GREATEST(
-                    c.amount -
-                    COALESCE(
-                        payment_summary.received_amount,
-                        0
-                    ),
-                    0
-                ) AS remaining_amount
+        FROM credits c
 
-            FROM credits c
+        LEFT JOIN users u
+            ON u.id = c.created_by_user_id
 
-            INNER JOIN users u
-                ON u.id = c.created_by_user_id
+        LEFT JOIN LATERAL (
+            SELECT
+                SUM(cp.amount) AS received_amount
+            FROM credit_payments cp
+            WHERE cp.credit_id = c.id
+        ) payment_summary
+            ON TRUE
 
-            LEFT JOIN LATERAL (
-                SELECT
-                    SUM(cp.amount) AS received_amount
-                FROM credit_payments cp
-                WHERE cp.credit_id = c.id
-                  AND cp.account_id = c.account_id
-            ) payment_summary
-                ON TRUE
+        WHERE c.account_id = $1
 
-            WHERE c.account_id = $1
+        AND (
+            $2::varchar IS NULL
+            OR c.status = $2
+        )
 
-              AND (
-                    $2::varchar IS NULL
-                    OR c.status = $2
-              )
+        AND (
+            $3::varchar IS NULL
+            OR c.direction = $3
+        )
 
-              AND (
-                    $3::varchar IS NULL
-                    OR c.name ILIKE $3
-                    OR c.description ILIKE $3
-                    OR u.name ILIKE $3
-              )
+        AND (
+            $4::varchar IS NULL
+            OR c.name ILIKE $4
+            OR c.description ILIKE $4
+        )
 
-              AND (
-                    $4::timestamptz IS NULL
-                    OR c.created_at >= $4
-              )
+        AND (
+            $5::date IS NULL
+            OR c.due_date >= $5
+        )
 
-              AND (
-                    $5::timestamptz IS NULL
-                    OR c.created_at < $5
-              )
+        AND (
+            $6::date IS NULL
+            OR c.due_date <= $6
+        )
 
-            ORDER BY c.created_at DESC
+        ORDER BY c.created_at DESC
 
-            LIMIT $6
-            OFFSET $7
-            `,
+        LIMIT $7
+        OFFSET $8
+        `,
             [
                 accountId,
                 status ?? null,
-                search
-                    ? `%${search}%`
-                    : null,
-                dateFrom ?? null,
-                dateTo ?? null,
+                direction ?? null,
+                search ? `%${search}%` : null,
+                startDate ?? null,
+                endDate ?? null,
                 limit,
                 offset,
             ]
@@ -1924,7 +1920,6 @@ const MoneyRepository = {
 
         return result.rows;
     },
-
     async countCredits(
         client,
         {
@@ -1990,21 +1985,19 @@ const MoneyRepository = {
     ) {
         const result = await client.query(
             `
-            SELECT
-                id,
-                account_id,
-                amount,
-                name,
-                status
+    SELECT
+    id,
+        account_id,
+        amount,
+        name,
+        direction,
+        status
             FROM credits
             WHERE id = $1
-              AND account_id = $2
-              AND status IN (
-                  'pending',
-                  'partial'
-              )
+            AND account_id = $2
+            AND status IN('pending', 'partial')
             FOR UPDATE
-            `,
+        `,
             [
                 creditId,
                 accountId,

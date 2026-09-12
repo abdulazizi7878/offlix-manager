@@ -1,4 +1,3 @@
-
 // file: app/api/v1/dashboard/money/credits/route.js
 
 import { NextResponse } from "next/server";
@@ -11,7 +10,9 @@ import {
 } from "@/validations/money.validation";
 
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+
 import AppError from "@/lib/errors/AppError";
+
 import { withErrorHandling } from "@/lib/api/with-error-handling";
 
 export const POST = withErrorHandling(
@@ -84,6 +85,10 @@ export const GET = withErrorHandling(
 
                 status:
                     searchParams.get("status") ??
+                    undefined,
+
+                direction:
+                    searchParams.get("direction") ??
                     undefined,
 
                 search:

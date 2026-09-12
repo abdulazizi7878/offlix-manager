@@ -1243,82 +1243,44 @@ const MoneyService = {
                 "finance.create"
             );
 
-            const name = data.name?.trim();
-            const amount = Number(data.amount);
-
-            if (!name) {
-                throw new AppError(
-                    "Credit name is required.",
-                    400,
-                    "INVALID_CREDIT_NAME"
-                );
-            }
-
-            if (!Number.isFinite(amount) || amount <= 0) {
-                throw new AppError(
-                    "Credit amount must be greater than zero.",
-                    400,
-                    "INVALID_AMOUNT"
-                );
-            }
-
-            const moneyAccount =
-                await MoneyRepository.getMoneyAccountForUpdate(
+            const credit =
+                await MoneyRepository.createCredit(
                     client,
-                    data.moneyAccountId,
-                    accountId
+                    {
+                        accountId,
+                        name: data.name,
+                        amount: data.amount,
+                        direction: data.direction,
+                        dueDate: data.dueDate,
+                        notes: data.notes,
+                        createdByUserId: userId,
+                    }
                 );
 
-            if (!moneyAccount) {
-                throw new AppError(
-                    "Active money account not found.",
-                    404,
-                    "MONEY_ACCOUNT_NOT_FOUND"
-                );
-            }
+            const direction =
+                data.direction === "in"
+                    ? "in"
+                    : "out";
 
-            const balance = Number(
-                await MoneyRepository.getMoneyAccountBalance(
-                    client,
-                    data.moneyAccountId,
-                    accountId
-                )
+            await MoneyRepository.createTransaction(
+                client,
+                {
+                    accountId,
+                    moneyAccountId:
+                        data.moneyAccountId,
+                    type: "credit",
+                    direction,
+                    amount: data.amount,
+                    description:
+                        data.notes?.trim() ||
+                        `Credit: ${data.name}`,
+                    createdByUserId: userId,
+                }
             );
-
-            if (balance < amount) {
-                throw new AppError(
-                    "Insufficient money account balance.",
-                    400,
-                    "INSUFFICIENT_BALANCE"
-                );
-            }
-
-            const credit = await MoneyRepository.createCredit(client, {
-                accountId,
-                name,
-                description:
-                    data.description?.trim() || null,
-                amount,
-                dueDate: data.dueDate ?? null,
-                createdByUserId: userId,
-            });
-
-            await MoneyRepository.createTransaction(client, {
-                accountId,
-                moneyAccountId: data.moneyAccountId,
-                type: "credit",
-                direction: "out",
-                amount,
-                description:
-                    data.description?.trim() ||
-                    `Money given as credit: ${name}`,
-                createdByUserId: userId,
-            });
 
             return credit;
         });
     },
-
     async getCredit(userId, accountId, creditId) {
         return withClient(async (client) => {
             await AuthorizationService.assertPermission(
@@ -1428,13 +1390,11 @@ const MoneyService = {
 
             if (!credit) {
                 throw new AppError(
-                    "Credit not found or is already closed.",
+                    "Credit not found or is no longer payable.",
                     404,
                     "CREDIT_NOT_FOUND"
                 );
             }
-
-            const originalAmount = Number(credit.amount);
 
             const receivedAmount = Number(
                 await MoneyRepository.getCreditReceivedAmount(
@@ -1444,8 +1404,10 @@ const MoneyService = {
                 )
             );
 
-            const remainingAmount =
-                originalAmount - receivedAmount;
+            const remainingAmount = Math.max(
+                Number(credit.amount) - receivedAmount,
+                0
+            );
 
             if (remainingAmount <= 0) {
                 throw new AppError(
@@ -1464,7 +1426,7 @@ const MoneyService = {
 
                 if (!Number.isFinite(amount) || amount <= 0) {
                     throw new AppError(
-                        "Received amount must be greater than zero.",
+                        "Payment amount must be greater than zero.",
                         400,
                         "INVALID_AMOUNT"
                     );
@@ -1472,9 +1434,9 @@ const MoneyService = {
 
                 if (amount > remainingAmount) {
                     throw new AppError(
-                        "Received amount cannot exceed the remaining credit amount.",
+                        "Payment amount exceeds the remaining credit.",
                         400,
-                        "AMOUNT_EXCEEDS_REMAINING"
+                        "PAYMENT_EXCEEDS_REMAINING"
                     );
                 }
             }
@@ -1488,10 +1450,40 @@ const MoneyService = {
 
             if (!moneyAccount) {
                 throw new AppError(
-                    "Active destination money account not found.",
+                    "Active money account not found.",
                     404,
                     "MONEY_ACCOUNT_NOT_FOUND"
                 );
+            }
+
+            // OUT credit:
+            //   original transaction = money OUT
+            //   payment received    = money IN
+            //
+            // IN credit:
+            //   original transaction = money IN
+            //   payment returned    = money OUT
+            const paymentDirection =
+                credit.direction === "in"
+                    ? "out"
+                    : "in";
+
+            if (paymentDirection === "out") {
+                const balance = Number(
+                    await MoneyRepository.getMoneyAccountBalance(
+                        client,
+                        data.moneyAccountId,
+                        accountId
+                    )
+                );
+
+                if (balance < amount) {
+                    throw new AppError(
+                        "Insufficient money account balance.",
+                        400,
+                        "INSUFFICIENT_BALANCE"
+                    );
+                }
             }
 
             const payment =
@@ -1503,57 +1495,53 @@ const MoneyService = {
                         moneyAccountId:
                             data.moneyAccountId,
                         amount,
-                        receivedByUserId: userId,
+                        receivedByUserId:
+                            userId,
+                        receivedAt:
+                            data.receivedAt,
                         notes:
-                            data.notes?.trim() || null,
+                            data.notes?.trim() ||
+                            null,
                     }
                 );
 
-            await MoneyRepository.createTransaction(client, {
-                accountId,
-                moneyAccountId:
-                    data.moneyAccountId,
-                type: "credit",
-                direction: "in",
-                amount,
-                description:
-                    data.notes?.trim() ||
-                    `Credit payment received: ${credit.name}`,
-                createdByUserId: userId,
-            });
+            await MoneyRepository.createTransaction(
+                client,
+                {
+                    accountId,
+                    moneyAccountId:
+                        data.moneyAccountId,
+                    type: "credit",
+                    direction:
+                        paymentDirection,
+                    amount,
+                    description:
+                        data.notes?.trim() ||
+                        `Credit payment: ${credit.name}`,
+                    createdByUserId:
+                        userId,
+                }
+            );
 
-            const newRemainingAmount =
-                remainingAmount - amount;
+            const newReceivedAmount =
+                receivedAmount + amount;
 
-            const status =
-                newRemainingAmount === 0
+            const newStatus =
+                newReceivedAmount >=
+                    Number(credit.amount)
                     ? "paid"
                     : "partial";
 
             await MoneyRepository.updateCreditStatus(
                 client,
-                {
-                    creditId,
-                    accountId,
-                    status,
-                }
+                creditId,
+                accountId,
+                newStatus
             );
 
-            return {
-                payment,
-                credit: {
-                    id: creditId,
-                    originalAmount,
-                    receivedAmount:
-                        receivedAmount + amount,
-                    remainingAmount:
-                        newRemainingAmount,
-                    status,
-                },
-            };
+            return payment;
         });
     },
-
     async getCreditPayments(
         userId,
         accountId,

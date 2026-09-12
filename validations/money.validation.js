@@ -523,6 +523,14 @@ export const createCreditSchema = z.object({
         .string()
         .uuid("Invalid money account ID."),
 
+    direction: z.enum(
+        ["in", "out"],
+        {
+            message:
+                "Credit direction must be in or out.",
+        }
+    ),
+
     dueDate: z
         .coerce
         .date()
@@ -553,6 +561,13 @@ export const creditListQuerySchema = z.object({
             "partial",
             "paid",
             "cancelled",
+        ])
+        .optional(),
+
+    direction: z
+        .enum([
+            "in",
+            "out",
         ])
         .optional(),
 
