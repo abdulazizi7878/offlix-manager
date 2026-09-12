@@ -1,3 +1,5 @@
+// file: app/dashboard/money/credits/page.jsx
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,9 +17,12 @@ import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
 import dayjs from "dayjs";
-
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import relativeTime from "dayjs/plugin/relativeTime";
 
+dayjs.extend(utc);
+dayjs.extend(timezone);
 dayjs.extend(relativeTime);
 
 export default function CreditsPage() {
@@ -425,8 +430,14 @@ export default function CreditsPage() {
                                         </th>
 
                                         <th className="px-6 py-3.5">
+                                            Created At
+                                        </th>
+
+                                        <th className="px-6 py-3.5">
                                             Due Date
                                         </th>
+
+
 
                                         <th className="px-6 py-3.5 text-right">
                                             Action
@@ -451,6 +462,9 @@ export default function CreditsPage() {
                                         const dueDate =
                                             c.due_date;
 
+                                        const createdAt =
+                                            c.created_at;
+
                                         const isMoneyIn =
                                             c.direction ===
                                             "in";
@@ -468,8 +482,8 @@ export default function CreditsPage() {
                                                 <td className="px-6 py-4">
                                                     <span
                                                         className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${isMoneyIn
-                                                                ? "bg-(--success)/10 text-(--success)"
-                                                                : "bg-(--destructive)/10 text-(--destructive)"
+                                                            ? "bg-(--success)/10 text-(--success)"
+                                                            : "bg-(--destructive)/10 text-(--destructive)"
                                                             }`}
                                                     >
                                                         {isMoneyIn
@@ -511,25 +525,41 @@ export default function CreditsPage() {
                                                     </span>
                                                 </td>
 
+                                                
+                                                {/* Created At Column */}
                                                 <td className="px-6 py-4 text-xs text-(--muted-foreground)">
                                                     <div>
-                                                        {dueDate
+                                                        {createdAt
                                                             ? dayjs(
-                                                                dueDate
-                                                            ).format(
-                                                                "DD/MM/YYYY"
+                                                                createdAt
+                                                            ).tz("Africa/Addis_Ababa").format(
+                                                                "DD/MM/YYYY HH:mm"
                                                             )
-                                                            : "No due date"}
+                                                            : "—"}
                                                     </div>
 
                                                     <div className="text-[10px]">
-                                                        {dueDate
+                                                        {createdAt
                                                             ? `(${dayjs(
-                                                                dueDate
-                                                            ).fromNow()})`
+                                                                createdAt
+                                                            ).tz("Africa/Addis_Ababa").fromNow()})`
                                                             : ""}
                                                     </div>
                                                 </td>
+
+
+                                                {/* Due Date Column */}
+                                                <td className="px-6 py-4 text-xs text-(--muted-foreground)">
+                                                    {dueDate
+                                                        ? dayjs(
+                                                            dueDate
+                                                        ).tz("Africa/Addis_Ababa").format(
+                                                            "DD/MM/YYYY"
+                                                        )
+                                                        : "—"}
+                                                </td>
+
+
 
                                                 <td className="px-6 py-4 text-right">
                                                     <Link
@@ -551,9 +581,9 @@ export default function CreditsPage() {
             {/* Create Modal */}
             {isCreateModalOpen && (
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-md p-6 space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between pb-4 border-b border-(--border)">
-                            <h2 className="text-lg font-bold">
+                    <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-(--border) shrink-0">
+                            <h2 className="text-base font-bold">
                                 Create Credit
                             </h2>
 
@@ -573,7 +603,7 @@ export default function CreditsPage() {
                             onSubmit={
                                 handleCreateCredit
                             }
-                            className="space-y-4"
+                            className="p-6 space-y-4 overflow-y-auto"
                         >
                             {/* Customer */}
                             <div className="space-y-1.5">
