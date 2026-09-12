@@ -4,65 +4,65 @@ const AccountSettingsRepository = {
     async getAccountSettings(client, accountId, userId) {
         const result = await client.query(
             `
-      SELECT
-        a.id,
-        a.name,
-        a.status,
-        a.created_at,
-        a.updated_at,
+            SELECT
+                a.id,
+                a.name,
+                a.status,
+                a.created_at,
+                a.updated_at,
 
-        u.id AS user_id,
-        u.name AS user_name,
-        u.email,
-        u.phone,
-        u.username,
-        u.email_verified_at,
+                u.id AS user_id,
+                u.name AS user_name,
+                u.email,
+                u.phone,
+                u.username,
+                u.email_verified_at,
 
-        up.id AS profile_id,
-        up.bio,
-        up.profile_image_key,
+                up.id AS profile_id,
+                up.bio,
+                up.profile_image_key,
 
-        s.id AS subscription_id,
-        s.plan,
-        s.status AS subscription_status,
-        s.started_at,
-        s.expires_at,
+                s.id AS subscription_id,
+                s.plan,
+                s.status AS subscription_status,
+                s.started_at,
+                s.expires_at,
 
-        aset.id AS settings_id,
-        aset.currency,
-        aset.timezone,
-        aset.date_format
+                aset.id AS settings_id,
+                aset.currency,
+                aset.timezone,
+                aset.date_format
 
-      FROM accounts a
+            FROM accounts a
 
-      INNER JOIN users u
-        ON u.account_id = a.id
-       AND u.id = $2
+            INNER JOIN users u
+                ON u.account_id = a.id
+                AND u.id = $2
 
-      LEFT JOIN user_profiles up
-        ON up.user_id = u.id
+            LEFT JOIN user_profiles up
+                ON up.user_id = u.id
 
-      LEFT JOIN LATERAL (
-        SELECT
-          id,
-          plan,
-          status,
-          started_at,
-          expires_at
-        FROM subscriptions
-        WHERE account_id = a.id
-        ORDER BY created_at DESC
-        LIMIT 1
-      ) s
-        ON TRUE
+            LEFT JOIN LATERAL (
+                SELECT
+                    id,
+                    plan,
+                    status,
+                    started_at,
+                    expires_at
+                FROM subscriptions
+                WHERE account_id = a.id
+                ORDER BY created_at DESC
+                LIMIT 1
+            ) s
+                ON TRUE
 
-      LEFT JOIN account_settings aset
-        ON aset.account_id = a.id
+            LEFT JOIN account_settings aset
+                ON aset.account_id = a.id
 
-      WHERE a.id = $1
+            WHERE a.id = $1
 
-      LIMIT 1
-      `,
+            LIMIT 1
+            `,
             [accountId, userId]
         );
 
@@ -96,11 +96,11 @@ const AccountSettingsRepository = {
 
         const result = await client.query(
             `
-      UPDATE accounts
-      SET ${fields.join(", ")}
-      WHERE id = $${parameterIndex}
-      RETURNING *
-      `,
+            UPDATE accounts
+            SET ${fields.join(", ")}
+            WHERE id = $${parameterIndex}
+            RETURNING *
+            `,
             values
         );
 
@@ -115,12 +115,6 @@ const AccountSettingsRepository = {
         if (data.name !== undefined) {
             fields.push(`name = $${parameterIndex}`);
             values.push(data.name);
-            parameterIndex += 1;
-        }
-
-        if (data.email !== undefined) {
-            fields.push(`email = $${parameterIndex}`);
-            values.push(data.email);
             parameterIndex += 1;
         }
 
@@ -146,12 +140,59 @@ const AccountSettingsRepository = {
 
         const result = await client.query(
             `
-      UPDATE users
-      SET ${fields.join(", ")}
-      WHERE id = $${parameterIndex}
-      RETURNING *
-      `,
+            UPDATE users
+            SET ${fields.join(", ")}
+            WHERE id = $${parameterIndex}
+            RETURNING *
+            `,
             values
+        );
+
+        return result.rows[0] ?? null;
+    },
+
+    async findUserByEmail(client, email, excludeUserId = null) {
+        const result = await client.query(
+            `
+            SELECT
+                id,
+                account_id,
+                name,
+                email,
+                phone,
+                username,
+                email_verified_at
+            FROM users
+            WHERE LOWER(email) = LOWER($1)
+              AND ($2::uuid IS NULL OR id <> $2)
+            LIMIT 1
+            `,
+            [email, excludeUserId]
+        );
+
+        return result.rows[0] ?? null;
+    },
+
+    async updateUserEmail(client, userId, email) {
+        const result = await client.query(
+            `
+            UPDATE users
+            SET
+                email = $1,
+                email_verified_at = NOW(),
+                updated_at = NOW()
+            WHERE id = $2
+            RETURNING
+                id,
+                account_id,
+                name,
+                email,
+                phone,
+                username,
+                email_verified_at,
+                updated_at
+            `,
+            [email, userId]
         );
 
         return result.rows[0] ?? null;
@@ -184,11 +225,11 @@ const AccountSettingsRepository = {
 
         const result = await client.query(
             `
-      UPDATE user_profiles
-      SET ${fields.join(", ")}
-      WHERE user_id = $${parameterIndex}
-      RETURNING *
-      `,
+            UPDATE user_profiles
+            SET ${fields.join(", ")}
+            WHERE user_id = $${parameterIndex}
+            RETURNING *
+            `,
             values
         );
 
@@ -228,11 +269,11 @@ const AccountSettingsRepository = {
 
         const result = await client.query(
             `
-      UPDATE account_settings
-      SET ${fields.join(", ")}
-      WHERE account_id = $${parameterIndex}
-      RETURNING *
-      `,
+            UPDATE account_settings
+            SET ${fields.join(", ")}
+            WHERE account_id = $${parameterIndex}
+            RETURNING *
+            `,
             values
         );
 
@@ -242,15 +283,88 @@ const AccountSettingsRepository = {
     async createDefaultSettings(client, accountId) {
         const result = await client.query(
             `
-      INSERT INTO account_settings (
-        account_id
-      )
-      VALUES ($1)
-      ON CONFLICT (account_id)
-      DO NOTHING
-      RETURNING *
-      `,
+            INSERT INTO account_settings (
+                account_id
+            )
+            VALUES ($1)
+            ON CONFLICT (account_id)
+            DO NOTHING
+            RETURNING *
+            `,
             [accountId]
+        );
+
+        return result.rows[0] ?? null;
+    },
+    async createEmailChangeOtp(
+        client,
+        userId,
+        expiresAt,
+        codeHash
+    ) {
+        return await AuthRepository.createOtp(client, {
+            userId,
+            codeHash,
+            purpose: "email_change",
+            expiresAt,
+        });
+    },
+
+    async getRecentEmailChangeOtp(
+        client,
+        userId,
+        cooldownSeconds
+    ) {
+        return await AuthRepository.findRecentOtp(
+            client,
+            userId,
+            "email_change",
+            cooldownSeconds
+        );
+    },
+
+    async invalidateEmailChangeOtps(client, userId) {
+        return await AuthRepository.invalidateActiveOtps(
+            client,
+            userId,
+            "email_change"
+        );
+    },
+
+    async getLatestEmailChangeOtp(client, userId) {
+        return await AuthRepository.findLatestOtp(
+            client,
+            userId,
+            "email_change"
+        );
+    },
+
+    async markEmailChangeOtpVerified(client, otpId) {
+        return await AuthRepository.markOtpVerified(
+            client,
+            otpId
+        );
+    },
+    async updateUserEmail(client, userId, email) {
+        const result = await client.query(
+            `
+        UPDATE users
+        SET
+            email = $1,
+            email_verified_at = NOW(),
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING
+            id,
+            account_id,
+            name,
+            email,
+            phone,
+            username,
+            email_verified_at,
+            updated_at
+        `,
+            [email, userId]
         );
 
         return result.rows[0] ?? null;

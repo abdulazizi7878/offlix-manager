@@ -92,3 +92,24 @@ export const updateAccountSettingsSchema = z
     );
 
 export { uuidSchema };
+
+export const requestEmailChangeSchema = z.object({
+    email: z
+        .string()
+        .trim()
+        .email("Please enter a valid email address.")
+        .max(255),
+});
+
+export const verifyEmailChangeSchema = z.object({
+    otp: z
+        .string()
+        .regex(
+            /^\d{6}$/,
+            "OTP must be exactly 6 digits."
+        ),
+
+    verificationToken: z
+        .string()
+        .min(1, "Verification token is required."),
+});
