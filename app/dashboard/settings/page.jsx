@@ -1,61 +1,26 @@
-"use client";
+import { Suspense } from "react";
 
-import { useSearchParams, useRouter } from "next/navigation";
-
-import SettingsNavigation from "./components/settings-navigation";
-import AccountSettings from "./components/account-settings";
-import OrganizationSettings from "./components/organization-settings";
-import SecuritySettings from "./components/security-settings";
+import SettingsPageClient from "./components/settings-page-client";
 
 export default function SettingsPage() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-
-    const currentTab = searchParams.get("tab") || "account";
-
-    const handleTabChange = (tabId) => {
-        const params = new URLSearchParams(searchParams.toString());
-
-        params.set("tab", tabId);
-
-        router.push(`?${params.toString()}`);
-    };
-
     return (
-        <div className="max-w-7xl mx-auto space-y-6 pb-16">
-            {/* Page Header */}
-            <div className="bg-(--card) border border-(--border) p-6 rounded-2xl shadow-xs">
-                <h1 className="text-2xl font-bold tracking-tight text-(--foreground)">
-                    Settings
-                </h1>
+        <Suspense
+            fallback={
+                <div className="max-w-7xl mx-auto space-y-6 pb-16">
+                    <div className="bg-(--card) border border-(--border) p-6 rounded-2xl shadow-xs">
+                        <div className="h-7 w-32 bg-(--muted) rounded-lg animate-pulse" />
+                        <div className="h-4 w-96 max-w-full bg-(--muted) rounded-lg mt-3 animate-pulse" />
+                    </div>
 
-                <p className="text-sm text-(--muted-foreground) mt-1">
-                    Manage your account details, organization structure,
-                    branches, and security preferences.
-                </p>
-            </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+                        <div className="lg:col-span-1 bg-(--card) border border-(--border) rounded-2xl p-3 shadow-xs h-32 animate-pulse" />
 
-            {/* Main Settings Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-                {/* Navigation Sidebar */}
-                <div className="lg:col-span-1 bg-(--card) border border-(--border) rounded-2xl p-3 shadow-xs sticky top-6">
-                    <SettingsNavigation
-                        activeTab={currentTab}
-                        onTabChange={handleTabChange}
-                    />
+                        <div className="lg:col-span-3 bg-(--card) border border-(--border) rounded-2xl shadow-xs h-96 animate-pulse" />
+                    </div>
                 </div>
-
-                {/* Content Area */}
-                <div className="lg:col-span-3 space-y-6">
-                    {currentTab === "account" && <AccountSettings />}
-
-                    {currentTab === "organization" && (
-                        <OrganizationSettings />
-                    )}
-
-                    {currentTab === "security" && <SecuritySettings />}
-                </div>
-            </div>
-        </div>
+            }
+        >
+            <SettingsPageClient />
+        </Suspense>
     );
 }
