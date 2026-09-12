@@ -1,8 +1,14 @@
 // file: app/dashboard/page.jsx
-
 "use client";
 
-import { useEffect, useState, useCallback, useTransition } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+  useCallback,
+  useTransition,
+} from "react";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -35,7 +41,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-export default function OfflixManagerDashboard() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -816,4 +822,19 @@ function StatusBadge({ status }) {
         </span>
       );
   }
+}
+
+
+export default function OfflixManagerDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="h-8 w-48 bg-(--muted)/30 rounded animate-pulse" />
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
+  );
 }
