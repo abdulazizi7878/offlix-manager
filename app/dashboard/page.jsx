@@ -31,6 +31,9 @@ import {
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function OfflixManagerDashboard() {
   const router = useRouter();
@@ -132,19 +135,20 @@ export default function OfflixManagerDashboard() {
     loadOverview();
   };
 
-  // Summary metrics destructured safely
+  // Summary metrics destructured safely matching the exact API response
   const summary = data?.summary || {};
   const salesData = data?.sales || {};
-  const purchasesData = data?.purchases || {};
-  const inventoryData = data?.inventory || {};
+  const purchasesData = data?.purchases?.summary || {};
+  const inventoryData = data?.inventory?.summary || {};
   const moneyData = data?.money || {};
   const receivablesData = data?.receivables || {};
   const payablesData = data?.payables || {};
   const settlementsData = data?.settlements || {};
   const branchPerformance = data?.branches || [];
-  const alertsList = data?.alerts || {};
-  const topProducts = data?.products || {};
-  const recentSalesList = data?.recentSales || {};
+  const alertsList = data?.inventory?.alerts || {};
+  const topProducts = data?.sales?.topProducts || {};
+  const recentSalesList = data?.sales?.recent || {};
+  const alertsSummary = data?.alerts || {};
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16">
@@ -155,6 +159,11 @@ export default function OfflixManagerDashboard() {
           <p className="text-sm text-(--muted-foreground) mt-1">
             Monitor your business performance and activity.
           </p>
+          {data?.period && (
+            <p className="text-xs text-(--primary) mt-1 font-medium">
+              Period: {data.period.type} ({dayjs(data.period.from).format("MMM D, YYYY HH:mm")} - {dayjs(data.period.to).format("MMM D, YYYY HH:mm")})
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -282,10 +291,10 @@ export default function OfflixManagerDashboard() {
               <div className="text-center space-y-1">
                 <TrendingUp className="w-8 h-8 text-(--muted-foreground) mx-auto opacity-40" />
                 <p className="text-xs text-(--muted-foreground)">
-                  Total Revenue: <span className="font-semibold text-(--foreground)">{Number(salesData.totalRevenue || summary.revenue || 0).toLocaleString()} birr</span>
+                  Total Revenue: <span className="font-semibold text-(--foreground)">{Number(summary.revenue || 0).toLocaleString()} birr</span>
                 </p>
                 <p className="text-xs text-(--muted-foreground)">
-                  Total Units Sold: <span className="font-semibold text-(--foreground)">{Number(salesData.totalUnits || summary.unitsSold || 0).toLocaleString()}</span>
+                  Total Units Sold: <span className="font-semibold text-(--foreground)">{Number(summary.unitsSold || 0).toLocaleString()}</span>
                 </p>
               </div>
             )}
@@ -295,9 +304,19 @@ export default function OfflixManagerDashboard() {
         <div className="bg-(--card) border border-(--border) rounded-2xl p-6 shadow-xs space-y-4">
           <h2 className="text-base font-bold text-(--foreground)">Payment-Status Breakdown</h2>
           <div className="space-y-3 pt-2">
-            <PaymentStatusRow label="Paid" count={salesData.paidCount || 0} amount={salesData.paidAmount || 0} color="bg-emerald-500" />
-            <PaymentStatusRow label="Partial" count={salesData.partialCount || 0} amount={salesData.partialAmount || 0} color="bg-amber-500" />
-            <PaymentStatusRow label="Credit" count={salesData.creditCount || 0} amount={salesData.creditAmount || 0} color="bg-rose-500" />
+            {salesData.byPaymentStatus?.length > 0 ? (
+              salesData.byPaymentStatus.map((item, i) => (
+                <PaymentStatusRow
+                  key={i}
+                  label={item.status || item.paymentStatus}
+                  count={item.count}
+                  amount={item.amount}
+                  color={item.status === 'paid' ? 'bg-emerald-500' : item.status === 'partial' ? 'bg-amber-500' : 'bg-rose-500'}
+                />
+              ))
+            ) : (
+              <p className="text-xs text-(--muted-foreground) text-center py-4">No payment breakdown available</p>
+            )}
           </div>
         </div>
       </div>
@@ -366,15 +385,15 @@ export default function OfflixManagerDashboard() {
           <div className="grid grid-cols-3 gap-3 pt-2">
             <div className="p-3 bg-(--muted)/20 rounded-xl border border-(--border)">
               <span className="text-[11px] text-(--muted-foreground)">Count</span>
-              <div className="text-lg font-bold font-mono text-(--foreground)">{Number(purchasesData.count || 0).toLocaleString()}</div>
+              <div className="text-lg font-bold font-mono text-(--foreground)">{Number(purchasesData.purchaseCount || 0).toLocaleString()}</div>
             </div>
             <div className="p-3 bg-(--muted)/20 rounded-xl border border-(--border)">
               <span className="text-[11px] text-(--muted-foreground)">Units</span>
-              <div className="text-lg font-bold font-mono text-(--foreground)">{Number(purchasesData.units || 0).toLocaleString()}</div>
+              <div className="text-lg font-bold font-mono text-(--foreground)">{Number(purchasesData.unitsPurchased || 0).toLocaleString()}</div>
             </div>
             <div className="p-3 bg-(--muted)/20 rounded-xl border border-(--border)">
               <span className="text-[11px] text-(--muted-foreground)">Cost</span>
-              <div className="text-sm font-bold font-mono text-(--primary) truncate">{Number(purchasesData.cost || 0).toLocaleString()} birr</div>
+              <div className="text-sm font-bold font-mono text-(--primary) truncate">{Number(purchasesData.purchaseCost || 0).toLocaleString()} birr</div>
             </div>
           </div>
         </div>
@@ -382,7 +401,9 @@ export default function OfflixManagerDashboard() {
         <div className="lg:col-span-2 bg-(--card) border border-(--border) rounded-2xl p-6 shadow-xs space-y-4">
           <h2 className="text-base font-bold text-(--foreground)">Purchase Trend</h2>
           <div className="h-32 flex items-center justify-center border border-dashed border-(--border) rounded-xl bg-(--muted)/10">
-            <span className="text-xs text-(--muted-foreground)">Purchase acquisition volume chart</span>
+            <span className="text-xs text-(--muted-foreground)">
+              {data?.purchases?.trend?.length ? `${data.purchases.trend.length} trend periods logged` : 'Purchase acquisition volume chart'}
+            </span>
           </div>
         </div>
       </div>
@@ -394,7 +415,7 @@ export default function OfflixManagerDashboard() {
           <div className="space-y-3 pt-2 text-xs">
             <div className="flex justify-between py-1.5 border-b border-(--border)">
               <span className="text-(--muted-foreground)">Total Products</span>
-              <span className="font-mono font-semibold">{Number(inventoryData.totalProducts || 0).toLocaleString()}</span>
+              <span className="font-mono font-semibold">{Number(inventoryData.productCount || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-(--border)">
               <span className="text-(--muted-foreground)">Total Units</span>
@@ -402,11 +423,11 @@ export default function OfflixManagerDashboard() {
             </div>
             <div className="flex justify-between py-1.5 border-b border-(--border)">
               <span className="text-(--muted-foreground)">Cost Value</span>
-              <span className="font-mono font-semibold text-(--primary)">{Number(inventoryData.costValue || 0).toLocaleString()} birr</span>
+              <span className="font-mono font-semibold text-(--primary)">{Number(inventoryData.inventoryCostValue || 0).toLocaleString()} birr</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-(--border)">
               <span className="text-(--muted-foreground)">Retail Value</span>
-              <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{Number(inventoryData.retailValue || 0).toLocaleString()} birr</span>
+              <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">{Number(inventoryData.inventoryRetailValue || 0).toLocaleString()} birr</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-(--border)">
               <span className="text-rose-500">Out of Stock</span>
@@ -429,7 +450,7 @@ export default function OfflixManagerDashboard() {
               <thead>
                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
                   <th className="py-3 px-6">Product Name</th>
-                  <th className="py-3 px-6">Branch</th>
+                  <th className="py-3 px-6">Branch ID</th>
                   <th className="py-3 px-6 text-center">Current Stock</th>
                   <th className="py-3 px-6 text-center">Threshold</th>
                   <th className="py-3 px-6">Alert Type</th>
@@ -452,19 +473,19 @@ export default function OfflixManagerDashboard() {
                   alertsList.items.map((alert, idx) => (
                     <tr key={alert.id || idx} className="hover:bg-(--muted)/20 transition-colors">
                       <td className="py-3.5 px-6 font-medium text-xs text-(--foreground)">
-                        {alert.productName || alert.name}
+                        {alert.name}
                       </td>
-                      <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">
-                        {alert.branchName || "—"}
+                      <td className="py-3.5 px-6 text-xs text-(--muted-foreground) font-mono">
+                        {alert.branchId || "—"}
                       </td>
                       <td className="py-3.5 px-6 text-center font-mono text-xs font-bold">
-                        {alert.currentStock ?? alert.stock ?? 0}
+                        {alert.stock ?? 0}
                       </td>
                       <td className="py-3.5 px-6 text-center font-mono text-xs text-(--muted-foreground)">
-                        {alert.threshold ?? 5}
+                        {alert.lowStockThreshold ?? 5}
                       </td>
                       <td className="py-3.5 px-6 text-xs">
-                        {(alert.type === "out_of_stock" || (alert.currentStock ?? alert.stock ?? 0) === 0) ? (
+                        {alert.alertType === "out_of_stock" ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">
                             <ShieldAlert className="w-3 h-3" /> Out of Stock
                           </span>
@@ -500,7 +521,7 @@ export default function OfflixManagerDashboard() {
                 <th className="py-3 px-6 text-right">Total Amount</th>
                 <th className="py-3 px-6">Payment Status</th>
                 <th className="py-3 px-6">Created By</th>
-                <th className="py-3 px-6">Date</th>
+                <th className="py-3 px-6">Date (Relative)</th>
                 <th className="py-3 px-6 text-right">Action</th>
               </tr>
             </thead>
@@ -519,13 +540,13 @@ export default function OfflixManagerDashboard() {
                 </tr>
               ) : (
                 recentSalesList.items.map((sale) => {
-                  const id = sale.id || sale._id;
-                  const customer = sale.customerName || sale.customer_name || "Walk-in";
-                  const branchName = sale.branchName || sale.branch_name || "—";
-                  const total = Number(sale.totalAmount || sale.total_amount || 0);
-                  const status = sale.paymentStatus || sale.payment_status || "paid";
-                  const createdBy = sale.employeeName || sale.created_by || "—";
-                  const dateStr = sale.createdAt || sale.created_at;
+                  const id = sale.id;
+                  const customer = sale.customerName || "Walk-in";
+                  const branchName = sale.branchName || "—";
+                  const total = Number(sale.totalAmount || 0);
+                  const status = sale.paymentStatus || "paid";
+                  const createdBy = sale.createdByName || "—";
+                  const dateStr = sale.createdAt;
 
                   return (
                     <tr key={id} className="hover:bg-(--muted)/20 transition-colors">
@@ -544,8 +565,8 @@ export default function OfflixManagerDashboard() {
                       <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">
                         {createdBy}
                       </td>
-                      <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">
-                        {dateStr ? dayjs(dateStr).format("YYYY-MM-DD HH:mm") : "—"}
+                      <td className="py-3.5 px-6 text-xs text-(--muted-foreground)" title={dateStr ? dayjs(dateStr).format("YYYY-MM-DD HH:mm:ss") : ""}>
+                        {dateStr ? dayjs(dateStr).fromNow() : "—"}
                       </td>
                       <td className="py-3.5 px-6 text-right">
                         <Link
@@ -700,9 +721,9 @@ export default function OfflixManagerDashboard() {
                   </tr>
                 ) : (
                   branchPerformance.map((branch, idx) => (
-                    <tr key={branch.id || idx} className="hover:bg-(--muted)/20 transition-colors">
+                    <tr key={branch.branchId || idx} className="hover:bg-(--muted)/20 transition-colors">
                       <td className="py-3.5 px-6 font-medium text-xs text-(--foreground)">
-                        {branch.name || branch.branchName}
+                        {branch.branchName}
                       </td>
                       <td className="py-3.5 px-6 text-center font-mono text-xs">
                         {Number(branch.salesCount || 0).toLocaleString()}
@@ -758,7 +779,7 @@ function PaymentStatusRow({ label, count, amount, color }) {
     <div className="flex items-center justify-between p-3 bg-(--muted)/10 border border-(--border) rounded-xl">
       <div className="flex items-center gap-2">
         <span className={`w-2.5 h-2.5 rounded-full ${color}`} />
-        <span className="text-xs font-medium text-(--foreground)">{label}</span>
+        <span className="text-xs font-medium text-(--foreground) capitalize">{label}</span>
       </div>
       <div className="text-right font-mono">
         <div className="text-xs font-bold text-(--foreground)">{Number(amount || 0).toLocaleString()} birr</div>
