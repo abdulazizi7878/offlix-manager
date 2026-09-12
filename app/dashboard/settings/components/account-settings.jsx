@@ -1,4 +1,4 @@
-// file: app/dashboard/settings/components/account-settings.jsx
+// File: app/dashboard/settings/components/account-settings.jsx
 
 "use client";
 
@@ -18,9 +18,9 @@ export default function AccountSettings() {
     const [subscription, setSubscription] = useState({});
     const [preferences, setPreferences] = useState({});
 
-    // Form states for profile and preferences
+    // Form states for profile and preferences matching the API structure fields
     const [formData, setFormData] = useState({
-        fullName: "",
+        name: "",
         phone: "",
         username: "",
         bio: "",
@@ -45,7 +45,7 @@ export default function AccountSettings() {
             setPreferences(data.preferences || {});
 
             setFormData({
-                fullName: data.profile?.fullName || "",
+                name: data.profile?.name || "",
                 phone: data.profile?.phone || "",
                 username: data.profile?.username || "",
                 bio: data.profile?.bio || "",
@@ -67,10 +67,9 @@ export default function AccountSettings() {
         setSuccessMsg(null);
 
         try {
-            // Send only modified or complete profile/preferences payload as expected by PATCH
             const payload = {
                 profile: {
-                    fullName: formData.fullName,
+                    name: formData.name,
                     phone: formData.phone,
                     username: formData.username,
                     bio: formData.bio,
@@ -129,7 +128,7 @@ export default function AccountSettings() {
                         <input
                             type="text"
                             disabled
-                            value={account.name || account.businessName || "—"}
+                            value={account.name || "—"}
                             className="w-full px-3 py-2 bg-(--muted)/30 border border-(--border) rounded-xl text-sm text-(--foreground) opacity-75 cursor-not-allowed"
                         />
                     </div>
@@ -138,7 +137,7 @@ export default function AccountSettings() {
                         <input
                             type="text"
                             disabled
-                            value={account.status || "Active"}
+                            value={account.status || "active"}
                             className="w-full px-3 py-2 bg-(--muted)/30 border border-(--border) rounded-xl text-sm text-(--foreground) opacity-75 cursor-not-allowed uppercase font-mono text-xs"
                         />
                     </div>
@@ -163,12 +162,12 @@ export default function AccountSettings() {
 
                 <div className="flex items-center gap-4 py-2">
                     <div className="w-16 h-16 rounded-full bg-(--primary)/10 border border-(--primary)/20 flex items-center justify-center text-xl font-bold text-(--primary)">
-                        {formData.fullName?.charAt(0) || "U"}
+                        {formData.name?.charAt(0) || "U"}
                     </div>
                     <div>
                         <div className="text-sm font-bold text-(--foreground)">{profile.email || "—"}</div>
                         <div className="flex items-center gap-1.5 mt-1">
-                            {profile.emailVerified ? (
+                            {profile.emailVerifiedAt ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                                     <CheckCircle2 className="w-3 h-3" /> Verified Email
                                 </span>
@@ -183,11 +182,11 @@ export default function AccountSettings() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-xs font-medium text-(--foreground)">Full Name</label>
+                        <label className="text-xs font-medium text-(--foreground)">Name</label>
                         <input
                             type="text"
-                            value={formData.fullName}
-                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-sm text-(--foreground) focus:outline-none focus:border-(--primary)"
                         />
                     </div>
@@ -227,30 +226,36 @@ export default function AccountSettings() {
                     <h2 className="text-base font-bold text-(--foreground)">Subscription</h2>
                     <p className="text-xs text-(--muted-foreground)">Current subscription plan and billing cycle</p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
-                    <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
-                        <span className="text-[11px] text-(--muted-foreground)">Current Plan</span>
-                        <div className="text-sm font-bold text-(--foreground) mt-0.5">{subscription.planName || subscription.plan || "Standard Plan"}</div>
-                    </div>
-                    <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
-                        <span className="text-[11px] text-(--muted-foreground)">Status</span>
-                        <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 uppercase font-mono text-xs">
-                            {subscription.status || "Active"}
+                {subscription ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
+                        <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
+                            <span className="text-[11px] text-(--muted-foreground)">Current Plan</span>
+                            <div className="text-sm font-bold text-(--foreground) mt-0.5">{subscription.planName || subscription.plan || "Standard Plan"}</div>
+                        </div>
+                        <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
+                            <span className="text-[11px] text-(--muted-foreground)">Status</span>
+                            <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 uppercase font-mono text-xs">
+                                {subscription.status || "Active"}
+                            </div>
+                        </div>
+                        <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
+                            <span className="text-[11px] text-(--muted-foreground)">Start Date</span>
+                            <div className="text-sm font-bold font-mono text-(--foreground) mt-0.5 text-xs">
+                                {subscription.startDate ? dayjs(subscription.startDate).format("YYYY-MM-DD") : "—"}
+                            </div>
+                        </div>
+                        <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
+                            <span className="text-[11px] text-(--muted-foreground)">Expiration Date</span>
+                            <div className="text-sm font-bold font-mono text-(--foreground) mt-0.5 text-xs">
+                                {subscription.expirationDate ? dayjs(subscription.expirationDate).format("YYYY-MM-DD") : "—"}
+                            </div>
                         </div>
                     </div>
-                    <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
-                        <span className="text-[11px] text-(--muted-foreground)">Start Date</span>
-                        <div className="text-sm font-bold font-mono text-(--foreground) mt-0.5 text-xs">
-                            {subscription.startDate ? dayjs(subscription.startDate).format("YYYY-MM-DD") : "—"}
-                        </div>
+                ) : (
+                    <div className="p-4 bg-(--muted)/10 border border-(--border) rounded-xl text-sm text-(--muted-foreground)">
+                        No active subscription found.
                     </div>
-                    <div className="p-3 bg-(--muted)/20 border border-(--border) rounded-xl">
-                        <span className="text-[11px] text-(--muted-foreground)">Expiration Date</span>
-                        <div className="text-sm font-bold font-mono text-(--foreground) mt-0.5 text-xs">
-                            {subscription.expirationDate ? dayjs(subscription.expirationDate).format("YYYY-MM-DD") : "—"}
-                        </div>
-                    </div>
-                </div>
+                )}
             </div>
 
             {/* 4. Preferences */}

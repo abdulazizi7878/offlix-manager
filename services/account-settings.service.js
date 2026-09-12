@@ -1,4 +1,4 @@
-import pool from "@/lib/db";
+import pool from "@/lib/database";
 import AccountSettingsRepository from "@/repositories/account-settings.repository";
 import AuthorizationService from "@/services/authorization.service";
 import AppError from "@/lib/errors/AppError";

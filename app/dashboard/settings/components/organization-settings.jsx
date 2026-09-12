@@ -4,25 +4,23 @@
 
 import { useState, useEffect } from "react";
 import { fetchApi } from "@/lib/api/client";
-import { Building2, Users, UserPlus, Shield, Loader2, CheckCircle2, AlertTriangle, Key } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Building2, Users, UserPlus, Shield, Loader2, Key } from "lucide-react";
 import dayjs from "dayjs";
 
 export default function OrganizationSettings() {
+    const router = useRouter();
     const [activeSubTab, setActiveSubTab] = useState("branches");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const [orgData, setOrgData] = useState({
         branches: [],
-        team: [],
-        invitations: [],
+        employees: [],
+        memberships: [],
         permissions: [],
+        membershipPermissions: [],
     });
-
-    // Modal / Action states
-    const [showInviteModal, setShowInviteModal] = useState(false);
-    const [inviteForm, setInviteForm] = useState({ identifier: "", branchId: "", role: "" });
-    const [inviteLoading, setInviteLoading] = useState(false);
 
     useEffect(() => {
         loadOrgSettings();
@@ -36,44 +34,15 @@ export default function OrganizationSettings() {
             const data = res.data || res;
             setOrgData({
                 branches: data.branches || [],
-                team: data.team || data.members || [],
-                invitations: data.invitations || [],
+                employees: data.employees || [],
+                memberships: data.memberships || [],
                 permissions: data.permissions || [],
+                membershipPermissions: data.membershipPermissions || [],
             });
         } catch (err) {
             setError(err.message || "Failed to load organization settings.");
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleSendInvite = async (e) => {
-        e.preventDefault();
-        setInviteLoading(true);
-        try {
-            await fetchApi("/api/v1/settings/organization/invitations", {
-                method: "POST",
-                body: JSON.stringify(inviteForm),
-            });
-            setShowInviteModal(false);
-            setInviteForm({ identifier: "", branchId: "", role: "" });
-            loadOrgSettings();
-        } catch (err) {
-            alert(err.message || "Failed to send invitation.");
-        } finally {
-            setInviteLoading(false);
-        }
-    };
-
-    const handleRevokeInvite = async (invitationId) => {
-        if (!confirm("Are you sure you want to revoke this invitation?")) return;
-        try {
-            await fetchApi(`/api/v1/settings/organization/invitations/${invitationId}`, {
-                method: "DELETE",
-            });
-            loadOrgSettings();
-        } catch (err) {
-            alert(err.message || "Failed to revoke invitation.");
         }
     };
 
@@ -97,8 +66,8 @@ export default function OrganizationSettings() {
             <div className="flex flex-wrap items-center gap-2 bg-(--card) border border-(--border) p-2 rounded-2xl shadow-xs">
                 {[
                     { id: "branches", label: "Branches", icon: Building2, count: orgData.branches.length },
-                    { id: "team", label: "Team Members", icon: Users, count: orgData.team.length },
-                    { id: "invitations", label: "Invitations", icon: UserPlus, count: orgData.invitations.length },
+                    { id: "team", label: "Team Members", icon: Users, count: orgData.employees.length },
+                    { id: "memberships", label: "Memberships", icon: UserPlus, count: orgData.memberships.length },
                     { id: "permissions", label: "Permissions", icon: Shield, count: orgData.permissions.length },
                 ].map((tab) => {
                     const Icon = tab.icon;
@@ -136,26 +105,30 @@ export default function OrganizationSettings() {
                             <thead>
                                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
                                     <th className="py-3 px-6">Branch Name</th>
-                                    <th className="py-3 px-6">Location / Address</th>
+                                    <th className="py-3 px-6">Description</th>
                                     <th className="py-3 px-6">Status</th>
+                                    <th className="py-3 px-6">Created At</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border) text-sm">
                                 {orgData.branches.length === 0 ? (
                                     <tr>
-                                        <td colSpan={3} className="py-8 text-center text-xs text-(--muted-foreground)">
+                                        <td colSpan={4} className="py-8 text-center text-xs text-(--muted-foreground)">
                                             No branches found.
                                         </td>
                                     </tr>
                                 ) : (
                                     orgData.branches.map((b) => (
-                                        <tr key={b.id || b._id} className="hover:bg-(--muted)/20 transition-colors">
+                                        <tr key={b.id} className="hover:bg-(--muted)/20 transition-colors">
                                             <td className="py-3.5 px-6 font-medium text-xs text-(--foreground)">{b.name}</td>
-                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">{b.address || "—"}</td>
+                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">{b.description || "—"}</td>
                                             <td className="py-3.5 px-6 text-xs">
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                                                    Active
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 capitalize">
+                                                    {b.status}
                                                 </span>
+                                            </td>
+                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">
+                                                {dayjs(b.createdAt).format("YYYY-MM-DD HH:mm")}
                                             </td>
                                         </tr>
                                     ))
@@ -166,17 +139,17 @@ export default function OrganizationSettings() {
                 </div>
             )}
 
-            {/* 2. Team Section */}
+            {/* 2. Team Members Section */}
             {activeSubTab === "team" && (
                 <div className="bg-(--card) border border-(--border) rounded-2xl shadow-xs overflow-hidden">
                     <div className="p-6 border-b border-(--border) flex items-center justify-between">
                         <div>
-                            <h2 className="text-base font-bold text-(--foreground)">Team Members</h2>
-                            <p className="text-xs text-(--muted-foreground)">Active employees and administrative staff</p>
+                            <h2 className="text-base font-bold text-(--foreground)">Team Employees</h2>
+                            <p className="text-xs text-(--muted-foreground)">Active employees and administrative staff registered in the system</p>
                         </div>
                         <button
-                            onClick={() => setShowInviteModal(true)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-(--primary) text-(--primary-foreground) rounded-xl text-xs font-semibold"
+                            onClick={() => router.push("/dashboard/users/create")}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-(--primary) text-(--primary-foreground) rounded-xl text-xs font-semibold cursor-pointer"
                         >
                             <UserPlus className="w-3.5 h-3.5" />
                             <span>Invite Employee</span>
@@ -187,32 +160,28 @@ export default function OrganizationSettings() {
                             <thead>
                                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
                                     <th className="py-3 px-6">Name</th>
-                                    <th className="py-3 px-6">Contact (Email/Phone)</th>
-                                    <th className="py-3 px-6">Branch</th>
-                                    <th className="py-3 px-6">Role / Permissions</th>
-                                    <th className="py-3 px-6">Status</th>
+                                    <th className="py-3 px-6">Email</th>
+                                    <th className="py-3 px-6">Phone</th>
+                                    <th className="py-3 px-6">Username</th>
+                                    <th className="py-3 px-6">Joined Date</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border) text-sm">
-                                {orgData.team.length === 0 ? (
+                                {orgData.employees.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="py-8 text-center text-xs text-(--muted-foreground)">
-                                            No team members found.
+                                            No employees found.
                                         </td>
                                     </tr>
                                 ) : (
-                                    orgData.team.map((member) => (
-                                        <tr key={member.id || member._id} className="hover:bg-(--muted)/20 transition-colors">
-                                            <td className="py-3.5 px-6 font-medium text-xs text-(--foreground)">{member.fullName || member.name}</td>
-                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground) font-mono">
-                                                {member.email || member.phone || member.username}
-                                            </td>
-                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">{member.branchName || "All Branches"}</td>
-                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">{member.role || member.permissionSummary || "Staff"}</td>
-                                            <td className="py-3.5 px-6 text-xs">
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                                                    {member.status || "Active"}
-                                                </span>
+                                    orgData.employees.map((emp) => (
+                                        <tr key={emp.id} className="hover:bg-(--muted)/20 transition-colors">
+                                            <td className="py-3.5 px-6 font-medium text-xs text-(--foreground)">{emp.name}</td>
+                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground) font-mono">{emp.email}</td>
+                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground) font-mono">{emp.phone}</td>
+                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">{emp.username || "—"}</td>
+                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">
+                                                {dayjs(emp.createdAt).format("YYYY-MM-DD HH:mm")}
                                             </td>
                                         </tr>
                                     ))
@@ -223,56 +192,42 @@ export default function OrganizationSettings() {
                 </div>
             )}
 
-            {/* 3. Invitations Section */}
-            {activeSubTab === "invitations" && (
+            {/* 3. Memberships Section */}
+            {activeSubTab === "memberships" && (
                 <div className="bg-(--card) border border-(--border) rounded-2xl shadow-xs overflow-hidden">
                     <div className="p-6 border-b border-(--border) flex items-center justify-between">
                         <div>
-                            <h2 className="text-base font-bold text-(--foreground)">Pending & Active Invitations</h2>
-                            <p className="text-xs text-(--muted-foreground)">Established Offlix invitation codes and registration tokens</p>
+                            <h2 className="text-base font-bold text-(--foreground)">Branch Memberships</h2>
+                            <p className="text-xs text-(--muted-foreground)">Mapping of employees assigned to specific store branches</p>
                         </div>
-                        <button
-                            onClick={() => setShowInviteModal(true)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-(--primary) text-(--primary-foreground) rounded-xl text-xs font-semibold"
-                        >
-                            <UserPlus className="w-3.5 h-3.5" />
-                            <span>Invite Employee</span>
-                        </button>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
-                                    <th className="py-3 px-6">Identifier (Phone/Email/Username)</th>
-                                    <th className="py-3 px-6">Branch</th>
-                                    <th className="py-3 px-6">Verification Code</th>
-                                    <th className="py-3 px-6">Expiration</th>
-                                    <th className="py-3 px-6 text-right">Actions</th>
+                                    <th className="py-3 px-6">User Name</th>
+                                    <th className="py-3 px-6">Branch Name</th>
+                                    <th className="py-3 px-6">Contact Email</th>
+                                    <th className="py-3 px-6">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border) text-sm">
-                                {orgData.invitations.length === 0 ? (
+                                {orgData.memberships.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="py-8 text-center text-xs text-(--muted-foreground)">
-                                            No active invitations.
+                                        <td colSpan={4} className="py-8 text-center text-xs text-(--muted-foreground)">
+                                            No memberships found.
                                         </td>
                                     </tr>
                                 ) : (
-                                    orgData.invitations.map((inv) => (
-                                        <tr key={inv.id || inv._id} className="hover:bg-(--muted)/20 transition-colors">
-                                            <td className="py-3.5 px-6 font-medium text-xs text-(--foreground) font-mono">{inv.identifier}</td>
-                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">{inv.branchName || "—"}</td>
-                                            <td className="py-3.5 px-6 text-xs font-mono font-bold text-(--primary)">{inv.code || inv.verificationCode}</td>
-                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground)">
-                                                {inv.expiresAt ? dayjs(inv.expiresAt).format("YYYY-MM-DD HH:mm") : "—"}
-                                            </td>
-                                            <td className="py-3.5 px-6 text-right">
-                                                <button
-                                                    onClick={() => handleRevokeInvite(inv.id || inv._id)}
-                                                    className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-lg text-xs font-medium transition-colors"
-                                                >
-                                                    Revoke
-                                                </button>
+                                    orgData.memberships.map((m) => (
+                                        <tr key={m.id} className="hover:bg-(--muted)/20 transition-colors">
+                                            <td className="py-3.5 px-6 font-medium text-xs text-(--foreground)">{m.userName}</td>
+                                            <td className="py-3.5 px-6 text-xs text-(--foreground) font-semibold">{m.branchName}</td>
+                                            <td className="py-3.5 px-6 text-xs text-(--muted-foreground) font-mono">{m.userEmail}</td>
+                                            <td className="py-3.5 px-6 text-xs">
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 capitalize">
+                                                    {m.status}
+                                                </span>
                                             </td>
                                         </tr>
                                     ))
@@ -288,84 +243,27 @@ export default function OrganizationSettings() {
                 <div className="bg-(--card) border border-(--border) rounded-2xl p-6 shadow-xs space-y-4">
                     <div>
                         <h2 className="text-base font-bold text-(--foreground)">System Permissions</h2>
-                        <p className="text-xs text-(--muted-foreground)">Structured feature and domain permissions returned by the backend</p>
+                        <p className="text-xs text-(--muted-foreground)">Available system permissions and access keys returned by the API</p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
                         {orgData.permissions.length === 0 ? (
                             <p className="text-xs text-(--muted-foreground) py-4">No permissions defined.</p>
                         ) : (
-                            orgData.permissions.map((group, idx) => (
-                                <div key={idx} className="p-4 bg-(--muted)/10 border border-(--border) rounded-xl space-y-2">
-                                    <div className="text-sm font-bold text-(--foreground) flex items-center gap-2">
-                                        <Key className="w-4 h-4 text-(--primary)" />
-                                        <span>{group.category || group.domain || "General"}</span>
+                            orgData.permissions.map((perm) => (
+                                <div key={perm.id} className="p-3.5 bg-(--muted)/10 border border-(--border) rounded-xl space-y-1">
+                                    <div className="text-xs font-bold text-(--foreground) flex items-center gap-2">
+                                        <Key className="w-3.5 h-3.5 text-(--primary)" />
+                                        <span>{perm.name}</span>
                                     </div>
-                                    <div className="flex flex-wrap gap-1.5 pt-1">
-                                        {(group.permissions || group.items || [group]).map((perm, pIdx) => (
-                                            <span key={pIdx} className="px-2 py-1 bg-(--muted) text-(--foreground) rounded-lg text-[11px] font-mono">
-                                                {typeof perm === "string" ? perm : perm.name || perm.key}
-                                            </span>
-                                        ))}
+                                    <p className="text-[11px] text-(--muted-foreground)">{perm.description}</p>
+                                    <div className="pt-1">
+                                        <span className="px-2 py-0.5 bg-(--muted) text-(--foreground) rounded-md text-[10px] font-mono">
+                                            {perm.key}
+                                        </span>
                                     </div>
                                 </div>
                             ))
                         )}
-                    </div>
-                </div>
-            )}
-
-            {/* Invite Modal */}
-            {showInviteModal && (
-                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                    <div className="bg-(--card) border border-(--border) rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
-                        <h3 className="text-lg font-bold text-(--foreground)">Invite Employee</h3>
-                        <p className="text-xs text-(--muted-foreground)">
-                            Enter employee phone, username, or email. They can log in and verify using the generated code.
-                        </p>
-                        <form onSubmit={handleSendInvite} className="space-y-4">
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-(--foreground)">Identifier (Phone/Email/Username)</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. +251911223344"
-                                    value={inviteForm.identifier}
-                                    onChange={(e) => setInviteForm({ ...inviteForm, identifier: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-sm text-(--foreground) focus:outline-none focus:border-(--primary)"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-(--foreground)">Branch</label>
-                                <select
-                                    value={inviteForm.branchId}
-                                    onChange={(e) => setInviteForm({ ...inviteForm, branchId: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-sm text-(--foreground) focus:outline-none focus:border-(--primary)"
-                                >
-                                    <option value="">Select Branch</option>
-                                    {orgData.branches.map((b) => (
-                                        <option key={b.id || b._id} value={b.id || b._id}>
-                                            {b.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="flex justify-end gap-2 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowInviteModal(false)}
-                                    className="px-4 py-2 bg-(--muted) text-(--foreground) rounded-xl text-xs font-semibold"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={inviteLoading}
-                                    className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-xl text-xs font-semibold"
-                                >
-                                    {inviteLoading ? "Sending..." : "Send Invitation"}
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             )}
