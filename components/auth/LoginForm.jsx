@@ -1,155 +1,818 @@
 "use client";
 
-import { useState } from "react";
-
-import { useRouter } from "next/navigation";
-
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
-import { Mail, Lock } from "lucide-react";
+import {
+  LayoutDashboard,
+  GitBranch,
+  Package,
+  ShoppingCart,
+  Receipt,
+  Users,
+  BarChart3,
+  Settings,
+  Menu,
+  X,
+  ChevronDown,
+  ChevronRight,
+  LogOut,
+  User,
+} from "lucide-react";
 
+import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
+import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
-import { Input } from "../ui/Input";
-
-import { Button } from "../ui/Button";
-
-import { fetchApi } from "../../lib/api/client";
-
-export function LoginForm() {
+export default function DashboardLayout({ children }) {
+  const pathname = usePathname();
   const router = useRouter();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isBranchesOpen, setIsBranchesOpen] = useState(false);
+  const [isProductsOpen, setIsProductsOpen] = useState(false);
+  const [isSalesOpen, setIsSalesOpen] = useState(false);
+  const [isMoneyOpen, setIsMoneyOpen] = useState(false);
+  const [isUsersOpen, setIsUsersOpen] = useState(false);
 
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [user, setUser] = useState(null);
+  const [authChecking, setAuthChecking] = useState(true);
 
-  const [formData, setFormData] = useState({
-    login: "",
-    password: "",
-  });
+  // Sidebar resizing state
+  const [sidebarWidth, setSidebarWidth] = useState(288);
+  const isResizingRef = useRef(false);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-
-    if (fieldErrors[e.target.name]) {
-      setFieldErrors({
-        ...fieldErrors,
-        [e.target.name]: null,
-      });
+  useEffect(() => {
+    if (pathname.includes("/dashboard/branches")) {
+      setIsBranchesOpen(true);
     }
-  };
 
-  const handleSubmit = async (e) => {
+    if (pathname.includes("/dashboard/products")) {
+      setIsProductsOpen(true);
+    }
+
+    if (pathname.includes("/dashboard/sales")) {
+      setIsSalesOpen(true);
+    }
+
+    if (pathname.includes("/dashboard/money")) {
+      setIsMoneyOpen(true);
+    }
+
+    if (pathname.includes("/dashboard/users")) {
+      setIsUsersOpen(true);
+    }
+
+    // Close mobile drawer when route changes
+    setIsSidebarOpen(false);
+  }, [pathname]);
+
+  /*
+   * Central authentication check.
+   *
+   * The cookie may still exist even when the database session
+   * has been revoked or expired, so /auth/me is the authority.
+   */
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadUser() {
+      try {
+        const response = await fetchApi("/api/v1/auth/me");
+
+        if (!isMounted) return;
+
+        if (
+          response?.success === false &&
+          response?.error?.code === "UNAUTHORIZED"
+        ) {
+          router.replace("/login?reason=session-expired");
+          return;
+        }
+
+        const currentUser = response?.data?.user || response?.data;
+
+        if (!currentUser) {
+          router.replace("/login?reason=session-expired");
+          return;
+        }
+
+        setUser(currentUser);
+      } catch (error) {
+        if (!isMounted) return;
+
+        if (error?.code === "UNAUTHORIZED") {
+          router.replace("/login?reason=session-expired");
+          return;
+        }
+
+        console.error("Failed to verify authentication:", error);
+      } finally {
+        if (isMounted) {
+          setAuthChecking(false);
+        }
+      }
+    }
+
+    loadUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+
+  // Handle sidebar resizing
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizingRef.current) return;
+
+      const newWidth = e.clientX;
+
+      if (newWidth >= 220 && newWidth <= 450) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isResizingRef.current) {
+        isResizingRef.current = false;
+        document.body.style.userSelect = "";
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
+  const startResizing = (e) => {
     e.preventDefault();
 
-    setIsLoading(true);
-    setFieldErrors({});
+    isResizingRef.current = true;
+    document.body.style.userSelect = "none";
+  };
 
+  const handleLogout = async () => {
     try {
-      const response = await fetchApi(
-        "/api/v1/auth/login",
-        {
-          method: "POST",
-          body: JSON.stringify(formData),
-        }
-      );
+      await fetchApi("/api/v1/auth/logout", {
+        method: "POST",
+      });
 
-      if (response.data?.requiresEmailVerification) {
-        if (response.data?.user?.id) {
-          sessionStorage.setItem(
-            "offlix_verify_id",
-            response.data.user.id
-          );
-        }
+      toast.success("Successfully logged out.");
 
-        toast.info(
-          "Please verify your email to continue."
-        );
-
-        router.push("/verify");
-        return;
-      }
-
-      toast.success("Successfully signed in.");
-
-      router.push("/dashboard");
-    } catch (error) {
-      if (
-        error.code === "VALIDATION_ERROR" &&
-        error.fields
-      ) {
-        setFieldErrors(error.fields);
-      } else {
-        toast.error(error.message);
-      }
-    } finally {
-      setIsLoading(false);
+      router.push("/login");
+      router.refresh();
+    } catch (err) {
+      toast.error("Failed to log out. Please try again.");
     }
   };
 
-  return (
-    <div className="w-full max-w-md mx-auto p-6 bg-(--card) text-(--card-foreground) border border-(--border) rounded-xl shadow-sm">
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold mb-2 text-(--foreground)">
-          Welcome Back
-        </h1>
+  const isExactActive = (path) => pathname === path;
+  const isSubActive = (prefix) => pathname.startsWith(prefix);
 
-        <p className="text-(--muted-foreground)">
-          Enter your details to sign in
-        </p>
+  const getBreadcrumbs = () => {
+    const segments = pathname.split("/").filter(Boolean);
+
+    return segments.map((segment, index) => {
+      const href = "/" + segments.slice(0, index + 1).join("/");
+      const label =
+        segment.charAt(0).toUpperCase() + segment.slice(1);
+
+      return {
+        href,
+        label,
+      };
+    });
+  };
+
+  const breadcrumbs = getBreadcrumbs();
+
+  /*
+   * Do not render dashboard content until the current session
+   * has been verified.
+   */
+  if (authChecking) {
+    return (
+      <div className="h-screen bg-(--background) text-(--foreground) flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-(--border) border-t-(--primary) rounded-full animate-spin mx-auto" />
+
+          <p className="text-sm text-(--muted-foreground)">
+            Checking your session...
+          </p>
+        </div>
       </div>
+    );
+  }
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-5"
+  return (
+    <div className="h-screen bg-(--background) text-(--foreground) flex overflow-hidden antialiased selection:bg-(--primary) selection:text-(--primary-foreground)">
+      {/* Mobile Backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-xs transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        style={{ width: `${sidebarWidth}px` }}
+        className={`
+          fixed inset-y-0 left-0 z-50 bg-(--card) border-r border-(--border)
+          flex flex-col transition-transform duration-200 ease-in-out
+          md:static md:translate-x-0 shrink-0
+          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
       >
-        <Input
-          label="Email, Username, or Phone"
-          name="login"
-          icon={Mail}
-          value={formData.login}
-          onChange={handleChange}
-          error={fieldErrors.login}
-          disabled={isLoading}
-          placeholder="Enter your login"
-          autoComplete="username"
-          required
-        />
+        {/* Brand Header */}
+        <div className="h-16 px-6 border-b border-(--border) flex items-center justify-between shrink-0">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5 rounded-lg p-1 -ml-1"
+          >
+            <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs">
+              <Image
+                src="/images/logo.png"
+                width={36}
+                height={36}
+                alt="Offlix Manager Logo"
+                className="rounded-md"
+              />
+            </div>
 
-        <Input
-          label="Password"
-          name="password"
-          type="password"
-          icon={Lock}
-          value={formData.password}
-          onChange={handleChange}
-          error={fieldErrors.password}
-          disabled={isLoading}
-          placeholder="Enter your password"
-          autoComplete="current-password"
-          required
-        />
+            <span className="font-bold text-md tracking-tight">
+              Offlix Manager
+            </span>
+          </Link>
 
-        <Button
-          type="submit"
-          isLoading={isLoading}
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="md:hidden p-1.5 text-(--muted-foreground) hover:text-(--foreground) rounded-lg hover:bg-(--muted)"
+            aria-label="Close sidebar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 text-sm font-medium [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {/* Dashboard */}
+          <Link
+            href="/dashboard"
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg
+              transition-colors outline-none border-0
+              ${isExactActive("/dashboard")
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              }
+            `}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            <span>Dashboard</span>
+          </Link>
+
+          {/* Branches */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsBranchesOpen(!isBranchesOpen)}
+              className={`
+                w-full flex items-center justify-between px-3 py-2.5
+                rounded-lg transition-colors outline-none border-0
+                ${isSubActive("/dashboard/branches")
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <GitBranch className="w-4 h-4" />
+                <span>Branches</span>
+              </div>
+
+              {isBranchesOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+
+            {isBranchesOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/branches"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/branches")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Overview
+                </Link>
+
+                <Link
+                  href="/dashboard/branches/create"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/branches/create")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Create
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Products */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsProductsOpen(!isProductsOpen)}
+              className={`
+                w-full flex items-center justify-between px-3 py-2.5
+                rounded-lg transition-colors outline-none border-0
+                ${isSubActive("/dashboard/products")
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <Package className="w-4 h-4" />
+                <span>Products</span>
+              </div>
+
+              {isProductsOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+
+            {isProductsOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/products"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/products")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Overview
+                </Link>
+
+                <Link
+                  href="/dashboard/products/create"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/products/create")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Create
+                </Link>
+
+                <Link
+                  href="/dashboard/products/purchases"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/products/purchases") ||
+                      pathname.includes("/dashboard/products/purchases")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Purchases
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Sales */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsSalesOpen(!isSalesOpen)}
+              className={`
+                w-full flex items-center justify-between px-3 py-2.5
+                rounded-lg transition-colors outline-none border-0
+                ${isSubActive("/dashboard/sales")
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <ShoppingCart className="w-4 h-4" />
+                <span>Sales</span>
+              </div>
+
+              {isSalesOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+
+            {isSalesOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/sales"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/sales")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Overview
+                </Link>
+
+                <Link
+                  href="/dashboard/sales/create"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/sales/create")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Create
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Money */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsMoneyOpen(!isMoneyOpen)}
+              className={`
+                w-full flex items-center justify-between px-3 py-2.5
+                rounded-lg transition-colors outline-none border-0
+                ${isSubActive("/dashboard/money")
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <Receipt className="w-4 h-4" />
+                <span>Money</span>
+              </div>
+
+              {isMoneyOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+
+            {isMoneyOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/money"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Overview
+                </Link>
+
+                <Link
+                  href="/dashboard/money/accounts"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money/accounts")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Accounts
+                </Link>
+
+                <Link
+                  href="/dashboard/money/transactions"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money/transactions")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Transactions
+                </Link>
+
+                <Link
+                  href="/dashboard/money/transfers"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money/transfers")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Transfers
+                </Link>
+
+                <Link
+                  href="/dashboard/money/settlements"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money/settlements")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Settlements
+                </Link>
+
+                <Link
+                  href="/dashboard/money/payables"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money/payables")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Payables
+                </Link>
+
+                <Link
+                  href="/dashboard/money/credits"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money/credits")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Credit
+                </Link>
+
+                <Link
+                  href="/dashboard/money/total-money"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/money/total-money")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Total Money
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Users */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsUsersOpen(!isUsersOpen)}
+              className={`
+                w-full flex items-center justify-between px-3 py-2.5
+                rounded-lg transition-colors outline-none border-0
+                ${isSubActive("/dashboard/users")
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }
+              `}
+            >
+              <div className="flex items-center gap-3">
+                <Users className="w-4 h-4" />
+                <span>Users</span>
+              </div>
+
+              {isUsersOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+
+            {isUsersOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                <Link
+                  href="/dashboard/users"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/users")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Overview
+                </Link>
+
+                <Link
+                  href="/dashboard/users/create"
+                  className={`
+                    block px-3 py-2 rounded-lg text-xs transition-colors
+                    outline-none border-0
+                    ${isExactActive("/dashboard/users/create")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
+                    }
+                  `}
+                >
+                  Create
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Reports */}
+          <Link
+            href="/dashboard/reports"
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg
+              transition-colors outline-none border-0
+              ${isExactActive("/dashboard/reports")
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              }
+            `}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Reports</span>
+          </Link>
+
+          {/* Settings */}
+          <Link
+            href="/dashboard/settings"
+            className={`
+              flex items-center gap-3 px-3 py-2.5 rounded-lg
+              transition-colors outline-none border-0
+              ${isSubActive("/dashboard/settings")
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              }
+            `}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
+          </Link>
+        </nav>
+
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-(--border) shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-sm shrink-0">
+                {user?.name ? (
+                  user.name.charAt(0).toUpperCase()
+                ) : (
+                  <User className="w-4 h-4" />
+                )}
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {user?.name || "Manager"}
+                </p>
+
+                <p className="text-xs text-(--muted-foreground) truncate">
+                  {user?.email || "Manager account"}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="p-2 text-(--muted-foreground) hover:text-(--destructive) rounded-lg hover:bg-(--muted) outline-none transition-colors border-0"
+              title="Log out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Resizer */}
+        <div
+          onMouseDown={startResizing}
+          className="hidden md:flex absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-(--primary)/50 transition-colors items-center justify-center group"
+          title="Drag to resize sidebar"
         >
-          Sign In
-        </Button>
-      </form>
+          <div className="w-0.5 h-8 bg-(--border) group-hover:bg-(--primary) rounded-full" />
+        </div>
+      </aside>
 
-      <div className="mt-6 text-center text-sm text-(--muted-foreground)">
-        Don't have an account?{" "}
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Top Bar */}
+        <header className="h-16 px-6 bg-(--card) border-b border-(--border) flex items-center justify-between shrink-0 z-30 sticky top-0">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="md:hidden p-2 -ml-2 text-(--muted-foreground) hover:text-(--foreground) rounded-lg hover:bg-(--muted) outline-none border-0"
+              aria-label="Open sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
-        <Link
-          href="/register"
-          className="font-medium text-(--primary) hover:underline focus:outline-none focus:ring-1 focus:ring-(--ring) rounded-sm"
-        >
-          Register here
-        </Link>
+            <h1 className="text-base font-semibold tracking-tight md:hidden">
+              Offlix Manager
+            </h1>
+
+            <nav className="hidden md:flex items-center space-x-2 text-sm font-medium">
+              {breadcrumbs.map((crumb, index) => {
+                const isLast = index === breadcrumbs.length - 1;
+
+                return (
+                  <div
+                    key={crumb.href}
+                    className="flex items-center space-x-2"
+                  >
+                    {index > 0 && (
+                      <ChevronRight className="w-4 h-4 text-(--muted-foreground)" />
+                    )}
+
+                    {isLast ? (
+                      <span className="text-(--foreground) font-semibold">
+                        {crumb.label}
+                      </span>
+                    ) : (
+                      <Link
+                        href={crumb.href}
+                        className="text-(--muted-foreground) hover:text-(--foreground) transition-colors"
+                      >
+                        {crumb.label}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <ThemeSwitcher />
+
+            <div className="flex md:hidden items-center">
+              <div className="w-8 h-8 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-xs shrink-0 border border-(--border)">
+                {user?.name ? (
+                  user.name.charAt(0).toUpperCase()
+                ) : (
+                  <User className="w-3.5 h-3.5" />
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
