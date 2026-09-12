@@ -14,6 +14,7 @@ import {
   Receipt,
   Users,
   BarChart3,
+  Settings,
   Menu,
   X,
   ChevronDown,
@@ -453,6 +454,18 @@ export default function DashboardLayout({ children }) {
           >
             <BarChart3 className="w-4 h-4" />
             <span>Reports</span>
+          </Link>
+
+          {/* Settings Link */}
+          <Link
+            href="/dashboard/settings"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/settings")
+              ? "bg-(--primary) text-(--primary-foreground)"
+              : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Settings</span>
           </Link>
         </nav>
 

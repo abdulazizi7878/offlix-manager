@@ -13,6 +13,24 @@ CREATE TABLE accounts (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE account_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL UNIQUE
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    currency VARCHAR(10) NOT NULL DEFAULT 'ETB',
+
+    timezone VARCHAR(100) NOT NULL DEFAULT 'Africa/Addis_Ababa',
+
+    date_format VARCHAR(30) NOT NULL DEFAULT 'YYYY-MM-DD',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
