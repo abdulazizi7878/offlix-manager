@@ -47,9 +47,7 @@ export const POST = withErrorHandling(async (request) => {
 
 export const GET = withErrorHandling(async () => {
   const currentUser = await getCurrentUser();
-
-  console.log("Current User:", currentUser);
-
+  
   if (!currentUser) {
     throw new AppError(
       "Authentication required.",
