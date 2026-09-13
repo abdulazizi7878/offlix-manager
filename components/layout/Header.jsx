@@ -19,8 +19,8 @@ export function Header({ user = null }) {
   ];
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 mx-3 mt-2 md:mt-2 md:mx-6 max-w-7xl xl:mx-auto">
-      <div className="bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-2xl shadow-sm px-4 py-1.5 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-50 mx-3 mt-1.5 md:mt-2 md:mx-6 max-w-7xl xl:mx-auto">
+      <div className="bg-(--card)/62 backdrop-blur-2xl backdrop-opacity-200 text-(--card-foreground) border border-(--border) rounded-full shadow-sm px-4 sm:py-3.5 py-2 flex items-center justify-between">
 
         {/* Left Side: Brand & Desktop Nav */}
         <div className="flex items-center gap-8">
@@ -90,8 +90,8 @@ export function Header({ user = null }) {
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden md:hidden">
-          <div className="p-4 space-y-4">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-(--card)/62 backdrop-blur-2xl backdrop-opacity-200 border border-(--border) rounded-[50px] shadow-sm overflow-hidden md:hidden">
+          <div className="p-4 py-8 space-y-4">
             <nav className="space-y-1 pb-4 border-b border-[var(--border)]">
               {mainNavigation.map((item) => (
                 <Link
