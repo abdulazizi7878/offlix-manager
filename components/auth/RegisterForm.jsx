@@ -48,14 +48,54 @@ export function RegisterForm() {
       email.trim().toLowerCase();
 
     const corrections = {
+      // Gmail domain ending mistakes
       "gmail.con": "gmail.com",
       "gmail.co": "gmail.com",
       "gmail.cmo": "gmail.com",
+      "gmail.comm": "gmail.com",
+      "gmail.om": "gmail.com",
+      "gmail.cm": "gmail.com",
+      "gmail.c": "gmail.com",
+      "gmail.co": "gmail.com",
+      "gmail.xom": "gmail.com",
+      "gmail.vom": "gmail.com",
+      "gmail.ncom": "gmail.com",
+      "gmail.comn": "gmail.com",
+      "gmail.commm": "gmail.com",
+
+      // Gmail spelling mistakes
       "gmial.com": "gmail.com",
       "gamil.com": "gmail.com",
       "gnail.com": "gmail.com",
-      "gmail.om": "gmail.com",
+      "gmai.com": "gmail.com",
+      "gmal.com": "gmail.com",
+      "gimail.com": "gmail.com",
+      "gimail.co": "gmail.com",
+      "gmaiil.com": "gmail.com",
+      "gmaill.com": "gmail.com",
+      "gmaile.com": "gmail.com",
+      "gmail.co": "gmail.com",
+      "gmailcom": "gmail.com",
+
+      // Common letter swaps / keyboard mistakes
+      "gmali.com": "gmail.com",
+      "gmial.co": "gmail.com",
+      "gamil.co": "gmail.com",
+      "gmal.co": "gmail.com",
+      "gmai.co": "gmail.com",
+      "gmaill.co": "gmail.com",
+      "gmaol.com": "gmail.com",
+      "gmaol.co": "gmail.com",
+      "gmqil.com": "gmail.com",
+      "gmsil.com": "gmail.com",
+      "gmaol.com": "gmail.com",
+
+      // Common country/domain confusion
       "gmail.cm": "gmail.com",
+      "gmail.co": "gmail.com",
+      "gmail.in": "gmail.com",
+      "gmail.net": "gmail.com",
+      "gmail.org": "gmail.com",
     };
 
     const atIndex =
