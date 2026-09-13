@@ -838,16 +838,6 @@ export default function HomePage() {
               initial="hidden"
               animate="show"
             >
-              <motion.div
-                variants={fadeUp}
-                className="mb-5 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-xs font-medium text-[var(--muted-foreground)]"
-              >
-                <Zap
-                  size={13}
-                  className="text-[var(--primary)]"
-                />
-                Business management for growing businesses
-              </motion.div>
 
               <motion.h1
                 variants={fadeUp}
