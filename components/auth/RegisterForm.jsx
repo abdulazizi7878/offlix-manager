@@ -1,11 +1,8 @@
 "use client";
 
 import { useState } from "react";
-
 import { useRouter } from "next/navigation";
-
 import Link from "next/link";
-
 import {
   User,
   Mail,
@@ -13,26 +10,20 @@ import {
   Lock,
   Building2,
 } from "lucide-react";
-
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { Input } from "../ui/Input";
-
 import { Button } from "../ui/Button";
-
 import { fetchApi } from "../../lib/api/client";
 
 export function RegisterForm() {
   const router = useRouter();
+  const t = useTranslations("auth");
 
-  const [isLoading, setIsLoading] =
-    useState(false);
-
-  const [fieldErrors, setFieldErrors] =
-    useState({});
-
-  const [emailSuggestion, setEmailSuggestion] =
-    useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [emailSuggestion, setEmailSuggestion] = useState(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -44,8 +35,7 @@ export function RegisterForm() {
   });
 
   const suggestEmailCorrection = (email) => {
-    const value =
-      email.trim().toLowerCase();
+    const value = email.trim().toLowerCase();
 
     const corrections = {
       // Gmail domain ending mistakes
@@ -56,7 +46,6 @@ export function RegisterForm() {
       "gmail.om": "gmail.com",
       "gmail.cm": "gmail.com",
       "gmail.c": "gmail.com",
-      "gmail.co": "gmail.com",
       "gmail.xom": "gmail.com",
       "gmail.vom": "gmail.com",
       "gmail.ncom": "gmail.com",
@@ -74,7 +63,6 @@ export function RegisterForm() {
       "gmaiil.com": "gmail.com",
       "gmaill.com": "gmail.com",
       "gmaile.com": "gmail.com",
-      "gmail.co": "gmail.com",
       "gmailcom": "gmail.com",
 
       // Common letter swaps / keyboard mistakes
@@ -88,44 +76,27 @@ export function RegisterForm() {
       "gmaol.co": "gmail.com",
       "gmqil.com": "gmail.com",
       "gmsil.com": "gmail.com",
-      "gmaol.com": "gmail.com",
 
       // Common country/domain confusion
       "gmail.cm": "gmail.com",
-      "gmail.co": "gmail.com",
       "gmail.in": "gmail.com",
       "gmail.net": "gmail.com",
       "gmail.org": "gmail.com",
     };
 
-    const atIndex =
-      value.lastIndexOf("@");
+    const atIndex = value.lastIndexOf("@");
+    if (atIndex === -1) return null;
 
-    if (atIndex === -1) {
-      return null;
-    }
+    const domain = value.slice(atIndex + 1);
+    const correctedDomain = corrections[domain];
 
-    const domain =
-      value.slice(atIndex + 1);
+    if (!correctedDomain) return null;
 
-    const correctedDomain =
-      corrections[domain];
-
-    if (!correctedDomain) {
-      return null;
-    }
-
-    return (
-      `${value.slice(0, atIndex + 1)}` +
-      correctedDomain
-    );
+    return `${value.slice(0, atIndex + 1)}${correctedDomain}`;
   };
 
   const handleChange = (e) => {
-    const {
-      name,
-      value,
-    } = e.target;
+    const { name, value } = e.target;
 
     setFormData((prev) => ({
       ...prev,
@@ -140,13 +111,9 @@ export function RegisterForm() {
     }
 
     if (name === "email") {
-      const suggestion =
-        suggestEmailCorrection(value);
-
+      const suggestion = suggestEmailCorrection(value);
       setEmailSuggestion(
-        suggestion &&
-          suggestion !==
-          value.trim().toLowerCase()
+        suggestion && suggestion !== value.trim().toLowerCase()
           ? suggestion
           : null
       );
@@ -154,9 +121,7 @@ export function RegisterForm() {
   };
 
   const handleUseEmailSuggestion = () => {
-    if (!emailSuggestion) {
-      return;
-    }
+    if (!emailSuggestion) return;
 
     setFormData((prev) => ({
       ...prev,
@@ -173,64 +138,36 @@ export function RegisterForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setFieldErrors({});
 
-    if (
-      formData.password !==
-      formData.confirmPassword
-    ) {
+    if (formData.password !== formData.confirmPassword) {
       setFieldErrors({
-        confirmPassword:
-          "Passwords do not match.",
+        confirmPassword: t("passwordMismatch"),
       });
-
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const {
-        confirmPassword,
-        ...submitData
-      } = formData;
+      const { confirmPassword, ...submitData } = formData;
 
-      const response = await fetchApi(
-        "/api/v1/auth/register",
-        {
-          method: "POST",
-          body: JSON.stringify(
-            submitData
-          ),
-        }
-      );
+      const response = await fetchApi("/api/v1/auth/register", {
+        method: "POST",
+        body: JSON.stringify(submitData),
+      });
 
       if (response.data?.user?.id) {
-        sessionStorage.setItem(
-          "offlix_verify_id",
-          response.data.user.id
-        );
+        sessionStorage.setItem("offlix_verify_id", response.data.user.id);
       }
 
-      toast.success(
-        "Account created successfully. Please verify your email."
-      );
-
+      toast.success(t("registerSuccess"));
       router.push("/verify");
     } catch (error) {
-      if (
-        error.code ===
-        "VALIDATION_ERROR" &&
-        error.fields
-      ) {
-        setFieldErrors(
-          error.fields
-        );
+      if (error.code === "VALIDATION_ERROR" && error.fields) {
+        setFieldErrors(error.fields);
       } else {
-        toast.error(
-          error.message
-        );
+        toast.error(error.message);
       }
     } finally {
       setIsLoading(false);
@@ -238,23 +175,20 @@ export function RegisterForm() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-(--card) text-(--card-foreground) border border-(--border) rounded-xl shadow-sm">
+    <div className="w-full max-w-md mx-auto p-6 bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-xl shadow-sm">
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold mb-2 text-(--foreground)">
-          Create Account
+        <h1 className="text-2xl font-bold mb-2 text-[var(--foreground)]">
+          {t("createAccount")}
         </h1>
 
-        <p className="text-(--muted-foreground)">
-          Set up your manager account
+        <p className="text-[var(--muted-foreground)]">
+          {t("registerSubtitle")}
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Full Name"
+          label={t("fullNameLabel")}
           name="name"
           icon={User}
           value={formData.name}
@@ -265,7 +199,7 @@ export function RegisterForm() {
         />
 
         <Input
-          label="Business Account Name"
+          label={t("businessNameLabel")}
           name="accountName"
           icon={Building2}
           value={formData.accountName}
@@ -277,7 +211,7 @@ export function RegisterForm() {
 
         <div>
           <Input
-            label="Email Address"
+            label={t("emailLabel")}
             type="email"
             name="email"
             icon={Mail}
@@ -291,29 +225,24 @@ export function RegisterForm() {
           {emailSuggestion && (
             <div className="mt-2 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-900 dark:border-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-200">
               <p>
-                Did you mean{" "}
-                <strong>
-                  {emailSuggestion}
-                </strong>
-                ?
+                {t("didYouMean")}{" "}
+                <strong>{emailSuggestion}</strong>?
               </p>
 
               <button
                 type="button"
-                onClick={
-                  handleUseEmailSuggestion
-                }
+                onClick={handleUseEmailSuggestion}
                 disabled={isLoading}
                 className="mt-2 font-medium underline underline-offset-2 hover:no-underline disabled:opacity-50"
               >
-                Use this email
+                {t("useThisEmail")}
               </button>
             </div>
           )}
         </div>
 
         <Input
-          label="Phone Number"
+          label={t("phoneLabel")}
           type="tel"
           name="phone"
           icon={Phone}
@@ -325,7 +254,7 @@ export function RegisterForm() {
         />
 
         <Input
-          label="Password"
+          label={t("passwordLabel")}
           type="password"
           name="password"
           icon={Lock}
@@ -337,15 +266,13 @@ export function RegisterForm() {
         />
 
         <Input
-          label="Confirm Password"
+          label={t("confirmPasswordLabel")}
           type="password"
           name="confirmPassword"
           icon={Lock}
           value={formData.confirmPassword}
           onChange={handleChange}
-          error={
-            fieldErrors.confirmPassword
-          }
+          error={fieldErrors.confirmPassword}
           disabled={isLoading}
           required
         />
@@ -355,18 +282,17 @@ export function RegisterForm() {
           isLoading={isLoading}
           className="mt-2"
         >
-          Create Account
+          {t("createAccount")}
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-(--muted-foreground)">
-        Already have an account?{" "}
-
+      <div className="mt-6 text-center text-sm text-[var(--muted-foreground)]">
+        {t("alreadyHaveAccount")}{" "}
         <Link
           href="/login"
-          className="font-medium text-(--primary) hover:underline focus:outline-none focus:ring-1 focus:ring-(--ring) rounded-sm"
+          className="font-medium text-[var(--primary)] hover:underline focus:outline-none focus:ring-1 focus:ring-[var(--ring)] rounded-sm"
         >
-          Sign in
+          {t("signInLink")}
         </Link>
       </div>
     </div>

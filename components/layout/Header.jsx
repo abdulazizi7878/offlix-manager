@@ -5,17 +5,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { UserMenu } from "./UserMenu";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export function Header({ user = null }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isAuthenticated = !!user;
 
-  // Always show Dashboard navigation link as requested
+  const t = useTranslations("header");
+
   const mainNavigation = [
-    { name: "Dashboard", href: "/dashboard" }
+    { name: t("dashboard"), href: "/dashboard" }
   ];
 
   return (
@@ -31,12 +34,12 @@ export function Header({ user = null }) {
             <div className="relative size-10 rounded-md overflow-hidden flex items-center justify-center bg-[var(--primary)]/10">
               <Image
                 src="/images/logo.png"
-                alt="Offlix Manager Logo"
+                alt={`${t("brandName")} Logo`}
                 fill
                 className="object-cover"
               />
             </div>
-            <span className="font-bold text-lg tracking-tight">Offlix Manager</span>
+            <span className="font-bold text-lg tracking-tight">{t("brandName")}</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -58,7 +61,9 @@ export function Header({ user = null }) {
 
         {/* Right Side: Actions */}
         <div className="flex items-center gap-2">
-          <div className="hidden md:block">
+          {/* Fixed: Horizontally aligned with flex items-center */}
+          <div className="hidden md:flex items-center gap-2">
+            <LanguageSwitcher />
             <ThemeSwitcher />
           </div>
 
@@ -69,10 +74,10 @@ export function Header({ user = null }) {
           ) : (
             <div className="hidden md:flex items-center gap-2 border-l border-[var(--border)] pl-3 ml-1">
               <Link href="/login" className="text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)] px-3 py-1.5 transition-colors">
-                Sign In
+                {t("signIn")}
               </Link>
               <Link href="/register" className="text-sm font-medium bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 px-4 py-1.5 rounded-lg transition-opacity shadow-sm">
-                Register
+                {t("register")}
               </Link>
             </div>
           )}
@@ -81,7 +86,7 @@ export function Header({ user = null }) {
           <button
             className="md:hidden p-2 -mr-1 rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={t("toggleMenu")}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -106,17 +111,19 @@ export function Header({ user = null }) {
             </nav>
 
             <div className="flex items-center justify-between px-3">
-              <span className="text-sm font-medium text-[var(--muted-foreground)]">Theme</span>
+              <span className="text-sm font-medium text-[var(--muted-foreground)]">{t("language")}</span>
+              <LanguageSwitcher />
+              <span className="text-sm font-medium text-[var(--muted-foreground)]">{t("theme")}</span>
               <ThemeSwitcher />
             </div>
 
             {!isAuthenticated && (
               <div className="pt-4 border-t border-[var(--border)] grid grid-cols-2 gap-3">
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-2 text-center text-sm font-medium rounded-lg border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)]">
-                  Sign In
+                  {t("signIn")}
                 </Link>
                 <Link href="/register" onClick={() => setIsMobileMenuOpen(false)} className="w-full py-2 text-center text-sm font-medium rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]">
-                  Register
+                  {t("register")}
                 </Link>
               </div>
             )}
@@ -132,7 +139,7 @@ export function Header({ user = null }) {
                   }}
                   className="w-full text-left px-3 py-2 mt-2 rounded-md text-sm font-medium text-[var(--destructive)] hover:bg-[var(--muted)]"
                 >
-                  Log out
+                  {t("logout")}
                 </button>
               </div>
             )}

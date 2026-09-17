@@ -5,11 +5,22 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { GitBranch, ArrowLeft, Plus, Pencil, Trash2, Shield, UserPlus, X, CheckCircle2, XCircle, AlertCircle, RefreshCcw, Power } from "lucide-react";
+import {
+  ArrowLeft,
+  Pencil,
+  Trash2,
+  Shield,
+  UserPlus,
+  X,
+  AlertCircle,
+  RefreshCcw,
+} from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function BranchDetailsPage() {
+  const t = useTranslations("dashboard.branchDetailsPage");
   const params = useParams();
   const router = useRouter();
   const branchId = params.id;
@@ -46,7 +57,7 @@ export default function BranchDetailsPage() {
       setAvailableEmployees(allUsersRes.data?.users || allUsersRes.data || []);
       setAvailablePermissions(permsRes.data || []);
     } catch (err) {
-      setError(err.message || "Failed to load branch details.");
+      setError(err.message || t("loadError"));
     } finally {
       setIsLoading(false);
     }
@@ -90,13 +101,13 @@ export default function BranchDetailsPage() {
           permissions: selectedPermsToAdd,
         }),
       });
-      toast.success("Employee added to branch successfully.");
+      toast.success(t("addSuccess"));
       setIsAddModalOpen(false);
       setSelectedEmpIdToAdd("");
       setSelectedPermsToAdd([]);
       loadData();
     } catch (err) {
-      toast.error(err.message || "Failed to add employee.");
+      toast.error(err.message || t("addError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -120,11 +131,11 @@ export default function BranchDetailsPage() {
         }
       );
 
-      toast.success("Employee permissions updated successfully.");
+      toast.success(t("updateSuccess"));
       setEditingEmployee(null);
       loadData();
     } catch (err) {
-      toast.error(err.message || "Failed to update permissions.");
+      toast.error(err.message || t("updateError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -141,11 +152,11 @@ export default function BranchDetailsPage() {
           method: "DELETE",
         }
       );
-      toast.success("Employee removed from branch.");
+      toast.success(t("removeSuccess"));
       setRemovingEmployee(null);
       loadData();
     } catch (err) {
-      toast.error(err.message || "Failed to remove employee.");
+      toast.error(err.message || t("removeError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -158,58 +169,55 @@ export default function BranchDetailsPage() {
   if (isLoading) {
     return (
       <div className="space-y-8 max-w-5xl mx-auto pb-16 animate-pulse">
-        {/* Header Skeleton */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border)">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-(--muted) rounded-lg" />
+            <div className="w-10 h-10 bg-[var(--muted)] rounded-lg" />
             <div className="space-y-2">
-              <div className="h-7 w-48 bg-(--muted) rounded-md" />
-              <div className="h-4 w-72 bg-(--muted) rounded-md" />
+              <div className="h-7 w-48 bg-[var(--muted)] rounded-md" />
+              <div className="h-4 w-72 bg-[var(--muted)] rounded-md" />
             </div>
           </div>
-          <div className="h-10 w-28 bg-(--muted) rounded-lg" />
+          <div className="h-10 w-28 bg-[var(--muted)] rounded-lg" />
         </div>
 
-        {/* Section Heading Skeleton */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <div className="h-6 w-36 bg-(--muted) rounded-md" />
-              <div className="h-3 w-48 bg-(--muted) rounded-md" />
+              <div className="h-6 w-36 bg-[var(--muted)] rounded-md" />
+              <div className="h-3 w-48 bg-[var(--muted)] rounded-md" />
             </div>
-            <div className="h-9 w-32 bg-(--muted) rounded-lg" />
+            <div className="h-9 w-32 bg-[var(--muted)] rounded-lg" />
           </div>
 
-          {/* Cards Grid Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2].map((item) => (
               <div
                 key={item}
-                className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-4"
+                className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 space-y-4"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-(--muted)" />
+                    <div className="w-10 h-10 rounded-full bg-[var(--muted)]" />
                     <div className="space-y-1.5">
-                      <div className="h-4 w-28 bg-(--muted) rounded-md" />
-                      <div className="h-3 w-36 bg-(--muted) rounded-md" />
+                      <div className="h-4 w-28 bg-[var(--muted)] rounded-md" />
+                      <div className="h-3 w-36 bg-[var(--muted)] rounded-md" />
                     </div>
                   </div>
-                  <div className="h-5 w-14 bg-(--muted) rounded-full" />
+                  <div className="h-5 w-14 bg-[var(--muted)] rounded-full" />
                 </div>
 
-                <div className="space-y-2 pt-2 border-t border-(--border)">
-                  <div className="h-3 w-24 bg-(--muted) rounded-md" />
+                <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+                  <div className="h-3 w-24 bg-[var(--muted)] rounded-md" />
                   <div className="flex flex-wrap gap-1.5">
-                    <div className="h-6 w-20 bg-(--muted) rounded-md" />
-                    <div className="h-6 w-24 bg-(--muted) rounded-md" />
-                    <div className="h-6 w-16 bg-(--muted) rounded-md" />
+                    <div className="h-6 w-20 bg-[var(--muted)] rounded-md" />
+                    <div className="h-6 w-24 bg-[var(--muted)] rounded-md" />
+                    <div className="h-6 w-16 bg-[var(--muted)] rounded-md" />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-(--border)">
-                  <div className="h-8 w-28 bg-(--muted) rounded-lg" />
-                  <div className="h-8 w-20 bg-(--muted) rounded-lg" />
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
+                  <div className="h-8 w-28 bg-[var(--muted)] rounded-lg" />
+                  <div className="h-8 w-20 bg-[var(--muted)] rounded-lg" />
                 </div>
               </div>
             ))}
@@ -221,18 +229,20 @@ export default function BranchDetailsPage() {
 
   if (error || !branch) {
     return (
-      <div className="p-8 text-center bg-(--card) border border-(--border) rounded-xl space-y-4 max-w-xl mx-auto mt-12">
-        <AlertCircle className="w-10 h-10 text-(--destructive) mx-auto" />
+      <div className="p-8 text-center bg-[var(--card)] border border-[var(--border)] rounded-xl space-y-4 max-w-xl mx-auto mt-12">
+        <AlertCircle className="w-10 h-10 text-[var(--destructive)] mx-auto" />
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold">Unable to load branch</h2>
-          <p className="text-xs text-(--muted-foreground)">{error || "Branch not found."}</p>
+          <h2 className="text-lg font-semibold">{t("unableToLoad")}</h2>
+          <p className="text-xs text-[var(--muted-foreground)]">
+            {error || t("notFound")}
+          </p>
         </div>
         <button
           onClick={loadData}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-(--primary) text-(--primary-foreground) text-xs font-medium rounded-lg"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] text-xs font-medium rounded-lg"
         >
           <RefreshCcw className="w-3.5 h-3.5" />
-          <span>Retry</span>
+          <span>{t("retry")}</span>
         </button>
       </div>
     );
@@ -242,35 +252,46 @@ export default function BranchDetailsPage() {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-(--border)">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[var(--border)]">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard/branches"
-            className="p-2 text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted) rounded-lg transition-colors"
+            className="p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight">{branch.name}</h1>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${isActiveBranch ? "bg-(--success)/10 text-(--success)" : "bg-(--muted) text-(--muted-foreground)"
-                }`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${isActiveBranch ? "bg-(--success)" : "bg-(--muted-foreground)"}`} />
-                {isActiveBranch ? "Active" : "Inactive"}
+              <h1 className="text-2xl font-bold tracking-tight">
+                {branch.name}
+              </h1>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${isActiveBranch
+                    ? "bg-[var(--success)]/10 text-[var(--success)]"
+                    : "bg-[var(--muted)] text-[var(--muted-foreground)]"
+                  }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${isActiveBranch
+                      ? "bg-[var(--success)]"
+                      : "bg-[var(--muted-foreground)]"
+                    }`}
+                />
+                {isActiveBranch ? t("active") : t("inactive")}
               </span>
             </div>
-            <p className="text-sm text-(--muted-foreground) mt-1">
-              {branch.description || "No description provided."}
+            <p className="text-sm text-[var(--muted-foreground)] mt-1">
+              {branch.description || t("noDescription")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href={`/dashboard/branches/${branch.id}/edit`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-medium hover:bg-[var(--muted)] transition-colors"
           >
             <Pencil className="w-4 h-4" />
-            <span>Edit Branch</span>
+            <span>{t("editBranch")}</span>
           </Link>
         </div>
       </div>
@@ -279,11 +300,11 @@ export default function BranchDetailsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
-              <Shield className="w-5 h-5 text-(--primary)" />
-              <span>Assigned Employees</span>
+              <Shield className="w-5 h-5 text-[var(--primary)]" />
+              <span>{t("assignedEmployees")}</span>
             </h2>
-            <p className="text-xs text-(--muted-foreground) mt-0.5">
-              {employees.length} {employees.length === 1 ? "employee" : "employees"} assigned to this branch.
+            <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+              {t("employeesCount", { count: employees.length })}
             </p>
           </div>
           <button
@@ -292,22 +313,24 @@ export default function BranchDetailsPage() {
               setSelectedPermsToAdd([]);
               setIsAddModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-xs hover:opacity-95 transition-opacity"
+            className="inline-flex items-center justify-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-2 rounded-lg font-medium text-xs hover:opacity-95 transition-opacity"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Add Employee</span>
+            <span>{t("addEmployee")}</span>
           </button>
         </div>
 
         {employees.length === 0 ? (
-          <div className="p-12 text-center bg-(--card) border border-(--border) rounded-xl space-y-4">
-            <div className="mx-auto w-12 h-12 bg-(--muted) text-(--muted-foreground) rounded-full flex items-center justify-center">
+          <div className="p-12 text-center bg-[var(--card)] border border-[var(--border)] rounded-xl space-y-4">
+            <div className="mx-auto w-12 h-12 bg-[var(--muted)] text-[var(--muted-foreground)] rounded-full flex items-center justify-center">
               <UserPlus className="w-6 h-6" />
             </div>
             <div className="max-w-sm mx-auto space-y-1">
-              <h3 className="text-base font-semibold">No employees assigned</h3>
-              <p className="text-xs text-(--muted-foreground)">
-                Add employees to this branch and configure their direct permissions.
+              <h3 className="text-base font-semibold">
+                {t("noEmployeesAssigned")}
+              </h3>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                {t("noEmployeesAssignedSub")}
               </p>
             </div>
             <button
@@ -316,10 +339,10 @@ export default function BranchDetailsPage() {
                 setSelectedPermsToAdd([]);
                 setIsAddModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+              className="inline-flex items-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Add Employee</span>
+              <span>{t("addEmployee")}</span>
             </button>
           </div>
         ) : (
@@ -327,35 +350,42 @@ export default function BranchDetailsPage() {
             {employees.map((emp, index) => {
               const empStatus = emp.status || "active";
               const isEmpActive = empStatus === "active";
-              const uniqueKey = emp.membershipId || emp.user_id || `employee-${index}`;
+              const uniqueKey =
+                emp.membershipId || emp.user_id || `employee-${index}`;
 
               return (
                 <div
                   key={uniqueKey}
-                  className="bg-(--card) border border-(--border) rounded-xl p-5 shadow-xs flex flex-col justify-between space-y-4"
+                  className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-xs flex flex-col justify-between space-y-4"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-(--primary)/10 text-(--primary) flex items-center justify-center font-semibold text-sm">
+                        <div className="w-10 h-10 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center font-semibold text-sm">
                           {emp.name ? emp.name.charAt(0).toUpperCase() : "E"}
                         </div>
                         <div>
                           <p className="text-sm font-semibold">{emp.name}</p>
-                          <p className="text-xs text-(--muted-foreground)">
-                            {emp.email || emp.phone || "No contact info"}
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {emp.email || emp.phone || t("noContactInfo")}
                           </p>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isEmpActive ? "bg-(--success)/10 text-(--success)" : "bg-(--muted) text-(--muted-foreground)"
-                        }`}>
-                        {isEmpActive ? "Active" : "Inactive"}
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isEmpActive
+                            ? "bg-[var(--success)]/10 text-[var(--success)]"
+                            : "bg-[var(--muted)] text-[var(--muted-foreground)]"
+                          }`}
+                      >
+                        {isEmpActive ? t("active") : t("inactive")}
                       </span>
                     </div>
 
-                    <div className="space-y-1.5 pt-2 border-t border-(--border)">
-                      <p className="text-xs font-semibold text-(--muted-foreground) uppercase tracking-wider">
-                        Permissions ({emp.permissions?.length || 0})
+                    <div className="space-y-1.5 pt-2 border-t border-[var(--border)]">
+                      <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">
+                        {t("permissionsCount", {
+                          count: emp.permissions?.length || 0,
+                        })}
                       </p>
                       <div className="flex flex-wrap gap-1.5">
                         {emp.permissions && emp.permissions.length > 0 ? (
@@ -364,22 +394,22 @@ export default function BranchDetailsPage() {
                             return (
                               <span
                                 key={`${uniqueKey}-perm-${pKey}-${pIdx}`}
-                                className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-(--muted) text-(--foreground)"
+                                className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--muted)] text-[var(--foreground)]"
                               >
                                 {label}
                               </span>
                             );
                           })
                         ) : (
-                          <span className="text-xs text-(--muted-foreground) italic">
-                            No permissions assigned
+                          <span className="text-xs text-[var(--muted-foreground)] italic">
+                            {t("noPermissionsAssigned")}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-(--border)">
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border)]">
                     <button
                       onClick={() =>
                         setEditingEmployee({
@@ -388,10 +418,10 @@ export default function BranchDetailsPage() {
                           permissions: [...(emp.permissions || [])],
                         })
                       }
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-lg text-xs font-medium hover:bg-[var(--muted)] transition-colors"
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                      <span>Edit Permissions</span>
+                      <span>{t("editPermissions")}</span>
                     </button>
                     <button
                       onClick={() =>
@@ -400,10 +430,10 @@ export default function BranchDetailsPage() {
                           name: emp.name,
                         })
                       }
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-(--destructive)/30 text-(--destructive) rounded-lg text-xs font-medium hover:bg-(--destructive)/10 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--destructive)]/30 text-[var(--destructive)] rounded-lg text-xs font-medium hover:bg-[var(--destructive)]/10 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      <span>Remove</span>
+                      <span>{t("remove")}</span>
                     </button>
                   </div>
                 </div>
@@ -415,12 +445,14 @@ export default function BranchDetailsPage() {
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-(--card) border border-(--border) rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold">Add Employee to Branch</h3>
+              <h3 className="text-base font-semibold">
+                {t("addEmployeeModalTitle")}
+              </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1.5 text-(--muted-foreground) hover:text-(--foreground) rounded-lg"
+                className="p-1.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -428,21 +460,21 @@ export default function BranchDetailsPage() {
 
             <form onSubmit={handleAddEmployeeSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-(--muted-foreground) mb-1.5">
-                  Select Employee *
+                <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1.5">
+                  {t("selectEmployeeLabel")}
                 </label>
                 {unassignedEmployees.length === 0 ? (
-                  <p className="text-xs text-(--muted-foreground) py-3 text-center bg-(--muted)/50 rounded-lg">
-                    All available employees are already assigned to this branch.
+                  <p className="text-xs text-[var(--muted-foreground)] py-3 text-center bg-[var(--muted)]/50 rounded-lg">
+                    {t("allEmployeesAssigned")}
                   </p>
                 ) : (
                   <select
                     required
                     value={selectedEmpIdToAdd}
                     onChange={(e) => setSelectedEmpIdToAdd(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-(--background) border border-(--border) rounded-lg text-sm text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--ring)"
+                    className="w-full px-3.5 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                   >
-                    <option value="">-- Choose an employee --</option>
+                    <option value="">{t("chooseEmployeeOption")}</option>
                     {unassignedEmployees.map((emp) => (
                       <option key={emp.id} value={emp.id}>
                         {emp.name} ({emp.email || emp.phone})
@@ -453,57 +485,67 @@ export default function BranchDetailsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-medium text-(--muted-foreground)">
-                  Branch Permissions
+                <label className="block text-xs font-medium text-[var(--muted-foreground)]">
+                  {t("branchPermissions")}
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 border border-(--border) rounded-lg bg-(--background)/50">
-                  {Object.entries(groupedPermissions).map(([groupName, permKeys]) => (
-                    <div key={groupName} className="space-y-1.5 p-2 bg-(--card) border border-(--border) rounded-lg">
-                      <span className="text-xs font-bold text-(--foreground) block">{groupName}</span>
-                      <div className="space-y-1">
-                        {permKeys.map((pKey) => {
-                          const { action } = formatPermissionLabel(pKey);
-                          const isChecked = selectedPermsToAdd.includes(pKey);
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2 border border-[var(--border)] rounded-lg bg-[var(--background)]/50">
+                  {Object.entries(groupedPermissions).map(
+                    ([groupName, permKeys]) => (
+                      <div
+                        key={groupName}
+                        className="space-y-1.5 p-2 bg-[var(--card)] border border-[var(--border)] rounded-lg"
+                      >
+                        <span className="text-xs font-bold text-[var(--foreground)] block">
+                          {groupName}
+                        </span>
+                        <div className="space-y-1">
+                          {permKeys.map((pKey) => {
+                            const { action } = formatPermissionLabel(pKey);
+                            const isChecked =
+                              selectedPermsToAdd.includes(pKey);
 
-                          return (
-                            <label
-                              key={pKey}
-                              className="flex items-center gap-2 text-xs text-(--muted-foreground) hover:text-(--foreground) cursor-pointer select-none"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  setSelectedPermsToAdd((prev) =>
-                                    isChecked ? prev.filter((p) => p !== pKey) : [...prev, pKey]
-                                  );
-                                }}
-                                className="rounded border-(--border) text-(--primary) focus:ring-(--ring) w-3.5 h-3.5"
-                              />
-                              <span>{action}</span>
-                            </label>
-                          );
-                        })}
+                            return (
+                              <label
+                                key={pKey}
+                                className="flex items-center gap-2 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer select-none"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    setSelectedPermsToAdd((prev) =>
+                                      isChecked
+                                        ? prev.filter((p) => p !== pKey)
+                                        : [...prev, pKey]
+                                    );
+                                  }}
+                                  className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--ring)] w-3.5 h-3.5"
+                                />
+                                <span>{action}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-(--border)">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted)"
+                  className="px-4 py-2 border border-[var(--border)] rounded-lg text-xs font-medium hover:bg-[var(--muted)]"
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || !selectedEmpIdToAdd}
-                  className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
+                  className="px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Adding..." : "Add Employee"}
+                  {isSubmitting ? t("adding") : t("addEmployee")}
                 </button>
               </div>
             </form>
@@ -513,71 +555,85 @@ export default function BranchDetailsPage() {
 
       {editingEmployee && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-(--card) border border-(--border) rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-lg w-full p-6 space-y-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-semibold">Edit Employee Permissions</h3>
-                <p className="text-xs text-(--muted-foreground)">{editingEmployee.name}</p>
+                <h3 className="text-base font-semibold">
+                  {t("editPermissionsModalTitle")}
+                </h3>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {editingEmployee.name}
+                </p>
               </div>
               <button
                 onClick={() => setEditingEmployee(null)}
-                className="p-1.5 text-(--muted-foreground) hover:text-(--foreground) rounded-lg"
+                className="p-1.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleEditPermissionsSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto p-2 border border-(--border) rounded-lg bg-(--background)/50">
-                {Object.entries(groupedPermissions).map(([groupName, permKeys]) => (
-                  <div key={groupName} className="space-y-1.5 p-2 bg-(--card) border border-(--border) rounded-lg">
-                    <span className="text-xs font-bold text-(--foreground) block">{groupName}</span>
-                    <div className="space-y-1">
-                      {permKeys.map((pKey) => {
-                        const { action } = formatPermissionLabel(pKey);
-                        const isChecked = editingEmployee.permissions.includes(pKey);
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto p-2 border border-[var(--border)] rounded-lg bg-[var(--background)]/50">
+                {Object.entries(groupedPermissions).map(
+                  ([groupName, permKeys]) => (
+                    <div
+                      key={groupName}
+                      className="space-y-1.5 p-2 bg-[var(--card)] border border-[var(--border)] rounded-lg"
+                    >
+                      <span className="text-xs font-bold text-[var(--foreground)] block">
+                        {groupName}
+                      </span>
+                      <div className="space-y-1">
+                        {permKeys.map((pKey) => {
+                          const { action } = formatPermissionLabel(pKey);
+                          const isChecked =
+                            editingEmployee.permissions.includes(pKey);
 
-                        return (
-                          <label
-                            key={pKey}
-                            className="flex items-center gap-2 text-xs text-(--muted-foreground) hover:text-(--foreground) cursor-pointer select-none"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => {
-                                setEditingEmployee((prev) => ({
-                                  ...prev,
-                                  permissions: isChecked
-                                    ? prev.permissions.filter((p) => p !== pKey)
-                                    : [...prev.permissions, pKey],
-                                }));
-                              }}
-                              className="rounded border-(--border) text-(--primary) focus:ring-(--ring) w-3.5 h-3.5"
-                            />
-                            <span>{action}</span>
-                          </label>
-                        );
-                      })}
+                          return (
+                            <label
+                              key={pKey}
+                              className="flex items-center gap-2 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer select-none"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setEditingEmployee((prev) => ({
+                                    ...prev,
+                                    permissions: isChecked
+                                      ? prev.permissions.filter(
+                                        (p) => p !== pKey
+                                      )
+                                      : [...prev.permissions, pKey],
+                                  }));
+                                }}
+                                className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--ring)] w-3.5 h-3.5"
+                              />
+                              <span>{action}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-(--border)">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--border)]">
                 <button
                   type="button"
                   onClick={() => setEditingEmployee(null)}
-                  className="px-4 py-2 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted)"
+                  className="px-4 py-2 border border-[var(--border)] rounded-lg text-xs font-medium hover:bg-[var(--muted)]"
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
+                  className="px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
                 >
-                  {isSubmitting ? "Saving..." : "Save Permissions"}
+                  {isSubmitting ? t("saving") : t("savePermissions")}
                 </button>
               </div>
             </form>
@@ -587,31 +643,33 @@ export default function BranchDetailsPage() {
 
       {removingEmployee && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-(--card) border border-(--border) rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl">
-            <div className="p-3 bg-(--destructive)/10 text-(--destructive) w-fit rounded-xl">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl">
+            <div className="p-3 bg-[var(--destructive)]/10 text-[var(--destructive)] w-fit rounded-xl">
               <Trash2 className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-semibold">Remove Employee?</h3>
-              <p className="text-xs text-(--muted-foreground)">
-                Are you sure you want to remove <span className="font-semibold text-(--foreground)">{removingEmployee.name}</span> from this branch? This will not delete their Offlix account.
+              <h3 className="text-base font-semibold">
+                {t("removeEmployeeTitle")}
+              </h3>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                {t("removeEmployeeConfirm", { name: removingEmployee.name })}
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setRemovingEmployee(null)}
-                className="px-4 py-2 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted)"
+                className="px-4 py-2 border border-[var(--border)] rounded-lg text-xs font-medium hover:bg-[var(--muted)]"
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="button"
                 disabled={isSubmitting}
                 onClick={handleRemoveEmployeeConfirm}
-                className="px-4 py-2 bg-(--destructive) text-(--destructive-foreground, #fff) rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
+                className="px-4 py-2 bg-[var(--destructive)] text-[var(--destructive-foreground,#fff)] rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
               >
-                {isSubmitting ? "Removing..." : "Remove Employee"}
+                {isSubmitting ? t("removing") : t("removeEmployeeBtn")}
               </button>
             </div>
           </div>

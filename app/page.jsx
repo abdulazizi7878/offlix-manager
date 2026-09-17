@@ -4,6 +4,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import {
   ArrowRight,
   BarChart3,
@@ -290,6 +291,8 @@ function MobileFrame({ children, className = "" }) {
 /* -------------------------------------------------------------------------- */
 
 function DashboardMockup() {
+  const t = useTranslations("HomePage.mockups");
+
   return (
     <BrowserFrame>
       <div className="flex min-h-[430px]">
@@ -298,16 +301,16 @@ function DashboardMockup() {
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--primary)] text-xs font-bold text-[var(--primary-foreground)]">
               O
             </div>
-            <span className="text-sm font-semibold">Offlix</span>
+            <span className="text-sm font-semibold">{t("brand")}</span>
           </div>
 
           <div className="space-y-1 text-xs">
             {[
-              ["Dashboard", LayoutDashboard],
-              ["Sales", Receipt],
-              ["Products", Package],
-              ["Money", Wallet],
-              ["Reports", BarChart3],
+              [t("dashboard"), LayoutDashboard],
+              [t("sales"), Receipt],
+              [t("products"), Package],
+              [t("money"), Wallet],
+              [t("reports"), BarChart3],
             ].map(([label, Icon], index) => (
               <div
                 key={label}
@@ -329,37 +332,37 @@ function DashboardMockup() {
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <p className="text-xs text-[var(--muted-foreground)]">
-                Overview
+                {t("overview")}
               </p>
               <h3 className="mt-1 text-lg font-semibold">
-                Business dashboard
+                {t("businessDashboard")}
               </h3>
             </div>
 
             <div className="hidden rounded-md border border-[var(--border)] px-3 py-2 text-xs sm:block">
-              Main branch
+              {t("mainBranch")}
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile
-              label="Sales"
-              value="Today"
+              label={t("sales")}
+              value={t("today")}
               icon={Receipt}
             />
             <StatTile
-              label="Inventory"
-              value="Healthy"
+              label={t("inventory")}
+              value={t("healthy")}
               icon={Boxes}
             />
             <StatTile
-              label="Money"
-              value="Updated"
+              label={t("money")}
+              value={t("updated")}
               icon={Wallet}
             />
             <StatTile
-              label="Branches"
-              value="Connected"
+              label={t("branches")}
+              value={t("connected")}
               icon={Building2}
             />
           </div>
@@ -369,10 +372,10 @@ function DashboardMockup() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-[var(--muted-foreground)]">
-                    Sales activity
+                    {t("salesActivity")}
                   </p>
                   <p className="mt-1 text-sm font-semibold">
-                    Recent performance
+                    {t("recentPerformance")}
                   </p>
                 </div>
 
@@ -402,26 +405,26 @@ function DashboardMockup() {
                   className="text-[var(--warning)]"
                 />
                 <p className="text-sm font-semibold">
-                  Attention
+                  {t("attention")}
                 </p>
               </div>
 
               <div className="mt-4 space-y-3">
                 <div className="rounded-md bg-[var(--muted)] p-3">
                   <p className="text-xs font-medium">
-                    Inventory update
+                    {t("inventoryUpdate")}
                   </p>
                   <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">
-                    Review low-stock products.
+                    {t("reviewLowStock")}
                   </p>
                 </div>
 
                 <div className="rounded-md bg-[var(--muted)] p-3">
                   <p className="text-xs font-medium">
-                    Payment verification
+                    {t("paymentVerification")}
                   </p>
                   <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">
-                    One payment needs review.
+                    {t("onePaymentNeedsReview")}
                   </p>
                 </div>
               </div>
@@ -434,11 +437,13 @@ function DashboardMockup() {
 }
 
 function InventoryMockup() {
+  const t = useTranslations("HomePage.mockups");
+
   const products = [
-    ["Arabica Coffee", "Beverages", "In stock"],
-    ["Cooking Oil", "Groceries", "Low stock"],
-    ["Laundry Soap", "Household", "In stock"],
-    ["Bottled Water", "Beverages", "In stock"],
+    ["Arabica Coffee", "Beverages", t("inStock")],
+    ["Cooking Oil", "Groceries", t("lowStock")],
+    ["Laundry Soap", "Household", t("inStock")],
+    ["Bottled Water", "Beverages", t("inStock")],
   ];
 
   return (
@@ -447,25 +452,25 @@ function InventoryMockup() {
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
             <p className="text-xs text-[var(--muted-foreground)]">
-              Inventory
+              {t("inventory")}
             </p>
             <h3 className="mt-1 text-lg font-semibold">
-              Products
+              {t("products")}
             </h3>
           </div>
 
           <button className="inline-flex w-fit items-center gap-2 rounded-md bg-[var(--primary)] px-3 py-2 text-xs font-medium text-[var(--primary-foreground)]">
             <Package size={14} />
-            Add product
+            {t("addProduct")}
           </button>
         </div>
 
         <div className="mt-5 overflow-hidden rounded-lg border border-[var(--border)]">
           <div className="grid grid-cols-[1.5fr_1fr_auto] border-b border-[var(--border)] bg-[var(--muted)] px-3 py-2.5 text-[10px] font-medium text-[var(--muted-foreground)] sm:grid-cols-[1.5fr_1fr_1fr_auto]">
-            <span>Product</span>
-            <span>Category</span>
-            <span className="hidden sm:block">Stock</span>
-            <span>Status</span>
+            <span>{t("product")}</span>
+            <span>{t("category")}</span>
+            <span className="hidden sm:block">{t("stock")}</span>
+            <span>{t("status")}</span>
           </div>
 
           {products.map(([name, category, status]) => (
@@ -485,10 +490,10 @@ function InventoryMockup() {
               </span>
 
               <span className="hidden text-[10px] text-[var(--muted-foreground)] sm:block">
-                Tracked
+                {t("tracked")}
               </span>
 
-              <MiniBadge tone={status === "Low stock" ? "warning" : "success"}>
+              <MiniBadge tone={status === t("lowStock") ? "warning" : "success"}>
                 {status}
               </MiniBadge>
             </div>
@@ -500,16 +505,18 @@ function InventoryMockup() {
 }
 
 function BranchMockup() {
+  const t = useTranslations("HomePage.mockups");
+
   return (
     <BrowserFrame>
       <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-[var(--muted-foreground)]">
-              Organization
+              {t("organization")}
             </p>
             <h3 className="mt-1 text-lg font-semibold">
-              Branches & employees
+              {t("branchesAndEmployees")}
             </h3>
           </div>
 
@@ -521,10 +528,10 @@ function BranchMockup() {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {[
-            ["Main Branch", "8 employees", "Active"],
-            ["City Branch", "5 employees", "Active"],
-            ["Warehouse", "3 employees", "Active"],
-            ["Retail Branch", "6 employees", "Active"],
+            ["Main Branch", t("employeesCount", { count: 8 }), t("active")],
+            ["City Branch", t("employeesCount", { count: 5 }), t("active")],
+            ["Warehouse", t("employeesCount", { count: 3 }), t("active")],
+            ["Retail Branch", t("employeesCount", { count: 6 }), t("active")],
           ].map(([branch, employees, status]) => (
             <div
               key={branch}
@@ -551,7 +558,7 @@ function BranchMockup() {
 
               <div className="mt-4 flex items-center justify-between border-t border-[var(--border)] pt-3">
                 <span className="text-[10px] text-[var(--muted-foreground)]">
-                  Permissions managed
+                  {t("permissionsManaged")}
                 </span>
                 <ChevronRight size={14} />
               </div>
@@ -564,16 +571,18 @@ function BranchMockup() {
 }
 
 function PaymentMockup() {
+  const t = useTranslations("HomePage.mockups");
+
   return (
     <BrowserFrame>
       <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-[var(--muted-foreground)]">
-              Sale payment
+              {t("salePayment")}
             </p>
             <h3 className="mt-1 text-lg font-semibold">
-              Verify payment
+              {t("verifyPayment")}
             </h3>
           </div>
 
@@ -590,11 +599,11 @@ function PaymentMockup() {
             </div>
 
             <p className="mt-3 text-sm font-semibold">
-              Scan QR
+              {t("scanQr")}
             </p>
 
             <p className="mt-1 text-[10px] leading-5 text-[var(--muted-foreground)]">
-              Scan the payment QR directly.
+              {t("scanQrDesc")}
             </p>
           </div>
 
@@ -604,11 +613,11 @@ function PaymentMockup() {
             </div>
 
             <p className="mt-3 text-sm font-semibold">
-              Upload receipt
+              {t("uploadReceipt")}
             </p>
 
             <p className="mt-1 text-[10px] leading-5 text-[var(--muted-foreground)]">
-              Upload a screenshot or receipt message.
+              {t("uploadReceiptDesc")}
             </p>
           </div>
 
@@ -618,11 +627,11 @@ function PaymentMockup() {
             </div>
 
             <p className="mt-3 text-sm font-semibold">
-              Read payment message
+              {t("readPaymentMessage")}
             </p>
 
             <p className="mt-1 text-[10px] leading-5 text-[var(--muted-foreground)]">
-              Review supported SMS or payment messages.
+              {t("readPaymentMessageDesc")}
             </p>
           </div>
         </div>
@@ -635,10 +644,10 @@ function PaymentMockup() {
 
             <div>
               <p className="text-sm font-semibold">
-                Payment verified
+                {t("paymentVerified")}
               </p>
               <p className="mt-0.5 text-[10px] text-[var(--muted-foreground)]">
-                The sale can now be completed.
+                {t("saleCompletedDesc")}
               </p>
             </div>
           </div>
@@ -649,16 +658,18 @@ function PaymentMockup() {
 }
 
 function MoneyMockup() {
+  const t = useTranslations("HomePage.mockups");
+
   return (
     <BrowserFrame>
       <div className="p-4 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs text-[var(--muted-foreground)]">
-              Money management
+              {t("moneyManagement")}
             </p>
             <h3 className="mt-1 text-lg font-semibold">
-              Accounts
+              {t("accounts")}
             </h3>
           </div>
 
@@ -670,29 +681,29 @@ function MoneyMockup() {
 
         <div className="mt-5 rounded-lg bg-[var(--foreground)] p-5 text-[var(--background)]">
           <p className="text-xs opacity-70">
-            Total available
+            {t("totalAvailable")}
           </p>
 
           <p className="mt-2 text-2xl font-semibold tracking-tight">
-            Current balance
+            {t("currentBalance")}
           </p>
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-md bg-[var(--background)]/10 p-3">
               <p className="text-[10px] opacity-70">
-                Income
+                {t("income")}
               </p>
               <p className="mt-1 text-sm font-medium">
-                Tracked
+                {t("tracked")}
               </p>
             </div>
 
             <div className="rounded-md bg-[var(--background)]/10 p-3">
               <p className="text-[10px] opacity-70">
-                Expenses
+                {t("expenses")}
               </p>
               <p className="mt-1 text-sm font-medium">
-                Tracked
+                {t("tracked")}
               </p>
             </div>
           </div>
@@ -700,9 +711,9 @@ function MoneyMockup() {
 
         <div className="mt-4 space-y-2">
           {[
-            ["Sales income", "Income"],
-            ["Supplier payment", "Expense"],
-            ["Branch transfer", "Transfer"],
+            [t("salesIncome"), t("income")],
+            [t("supplierPayment"), t("expense")],
+            [t("branchTransfer"), t("transfer")],
           ].map(([label, type]) => (
             <div
               key={label}
@@ -727,16 +738,18 @@ function MoneyMockup() {
 }
 
 function MobileAppMockup() {
+  const t = useTranslations("HomePage.mockups");
+
   return (
     <MobileFrame>
       <div className="min-h-[470px] bg-[var(--background)] p-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[10px] text-[var(--muted-foreground)]">
-              Main branch
+              {t("mainBranch")}
             </p>
             <p className="mt-0.5 text-sm font-semibold">
-              Sales
+              {t("sales")}
             </p>
           </div>
 
@@ -749,7 +762,7 @@ function MobileAppMockup() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] text-[var(--muted-foreground)]">
-                Connection
+                {t("connection")}
               </p>
               <div className="mt-1 flex items-center gap-2">
                 <WifiOff
@@ -757,36 +770,36 @@ function MobileAppMockup() {
                   className="text-[var(--warning)]"
                 />
                 <span className="text-xs font-semibold">
-                  Offline
+                  {t("offline")}
                 </span>
               </div>
             </div>
 
             <MiniBadge tone="warning">
-              Offline mode
+              {t("offlineMode")}
             </MiniBadge>
           </div>
 
           <div className="mt-4 rounded-lg bg-[var(--muted)] p-3">
             <p className="text-[10px] text-[var(--muted-foreground)]">
-              Current sale
+              {t("currentSale")}
             </p>
 
             <p className="mt-1 text-sm font-semibold">
-              3 products
+              {t("productsCount")}
             </p>
 
             <button className="mt-3 w-full rounded-md bg-[var(--primary)] py-2 text-[11px] font-medium text-[var(--primary-foreground)]">
-              Complete sale
+              {t("completeSale")}
             </button>
           </div>
         </div>
 
         <div className="mt-4 space-y-2">
           {[
-            ["New sale", Receipt],
-            ["Products", Package],
-            ["Payments", CreditCard],
+            [t("newSale"), Receipt],
+            [t("products"), Package],
+            [t("payments"), CreditCard],
           ].map(([label, Icon]) => (
             <div
               key={label}
@@ -817,6 +830,23 @@ function MobileAppMockup() {
 /* -------------------------------------------------------------------------- */
 
 export default function HomePage() {
+  const tHero = useTranslations("HomePage.hero");
+  const tOverview = useTranslations("HomePage.productOverview");
+  const tOrg = useTranslations("HomePage.organization");
+  const tInv = useTranslations("HomePage.inventory");
+  const tSales = useTranslations("HomePage.sales");
+  const tPayment = useTranslations("HomePage.paymentVerification");
+  const tPayCap = useTranslations("HomePage.paymentCapabilities");
+  const tMoney = useTranslations("HomePage.moneyManagement");
+  const tReports = useTranslations("HomePage.reports");
+  const tCap = useTranslations("HomePage.capabilities");
+  const tMobile = useTranslations("HomePage.mobile");
+  const tLang = useTranslations("HomePage.languages");
+  const tWorkflow = useTranslations("HomePage.connectedWorkflow");
+  const tDaily = useTranslations("HomePage.dailyUse");
+  const tCta = useTranslations("HomePage.finalCta");
+  const tMockups = useTranslations("HomePage.mockups");
+
   return (
     <main
       className="min-h-screen overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]"
@@ -843,9 +873,9 @@ export default function HomePage() {
                 variants={fadeUp}
                 className="max-w-xl text-4xl font-semibold tracking-[-0.035em] sm:text-5xl lg:text-[3.5rem] lg:leading-[1.08]"
               >
-                Run your business with{" "}
+                {tHero("title")}
                 <span className="text-[var(--primary)]">
-                  clarity.
+                  {tHero("titleHighlight")}
                 </span>
               </motion.h1>
 
@@ -853,9 +883,7 @@ export default function HomePage() {
                 variants={fadeUp}
                 className="mt-5 max-w-xl text-base leading-7 text-[var(--muted-foreground)] sm:text-lg"
               >
-                Manage branches, employees, products, sales,
-                payments, inventory, money and reports from one
-                connected platform.
+                {tHero("description")}
               </motion.p>
 
               <motion.div
@@ -866,7 +894,7 @@ export default function HomePage() {
                   href="/register"
                   className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-[var(--primary-foreground)] transition-transform hover:-translate-y-0.5"
                 >
-                  Create your account
+                  {tHero("createAccount")}
                   <ArrowRight size={16} />
                 </Link>
 
@@ -874,7 +902,7 @@ export default function HomePage() {
                   href="/login"
                   className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--card)] px-5 py-3 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
                 >
-                  Sign in
+                  {tHero("signIn")}
                 </Link>
               </motion.div>
 
@@ -884,17 +912,17 @@ export default function HomePage() {
               >
                 <span className="inline-flex items-center gap-2">
                   <Check size={14} className="text-[var(--success)]" />
-                  Branch management
+                  {tHero("feature1")}
                 </span>
 
                 <span className="inline-flex items-center gap-2">
                   <Check size={14} className="text-[var(--success)]" />
-                  Inventory
+                  {tHero("feature2")}
                 </span>
 
                 <span className="inline-flex items-center gap-2">
                   <Check size={14} className="text-[var(--success)]" />
-                  Money management
+                  {tHero("feature3")}
                 </span>
               </motion.div>
             </motion.div>
@@ -921,9 +949,9 @@ export default function HomePage() {
       <section className="border-y border-[var(--border)] bg-[var(--card)]">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-6 sm:py-20 lg:px-8">
           <SectionIntro
-            eyebrow="One platform"
-            title="Everything important, connected."
-            description="Offlix Manager brings the operational parts of your business into one place so your team can work from the same information."
+            eyebrow={tOverview("eyebrow")}
+            title={tOverview("title")}
+            description={tOverview("description")}
             align="center"
           />
 
@@ -936,26 +964,26 @@ export default function HomePage() {
           >
             <FeatureCard
               icon={Building2}
-              title="Branches"
-              description="Keep multiple locations organized from a single workspace."
+              title={tOverview("branchesTitle")}
+              description={tOverview("branchesDescription")}
             />
 
             <FeatureCard
               icon={Users}
-              title="Employees"
-              description="Give people the access they need without giving everyone everything."
+              title={tOverview("employeesTitle")}
+              description={tOverview("employeesDescription")}
             />
 
             <FeatureCard
               icon={Boxes}
-              title="Inventory"
-              description="Know what you have, where it is, and what needs attention."
+              title={tOverview("inventoryTitle")}
+              description={tOverview("inventoryDescription")}
             />
 
             <FeatureCard
               icon={CircleDollarSign}
-              title="Money"
-              description="Track business money alongside the activity that creates it."
+              title={tOverview("moneyTitle")}
+              description={tOverview("moneyDescription")}
             />
           </motion.div>
         </div>
@@ -975,9 +1003,9 @@ export default function HomePage() {
               variants={stagger}
             >
               <SectionIntro
-                eyebrow="Organization"
-                title="Keep every branch under control."
-                description="Create branches, organize employees, and control what each person can see or change."
+                eyebrow={tOrg("eyebrow")}
+                title={tOrg("title")}
+                description={tOrg("description")}
               />
 
               <motion.div
@@ -987,18 +1015,18 @@ export default function HomePage() {
                 {[
                   [
                     Store,
-                    "Multiple branches",
-                    "Manage locations from the same organization.",
+                    tOrg("feature1Title"),
+                    tOrg("feature1Description"),
                   ],
                   [
                     Users,
-                    "Employee access",
-                    "Assign people to branches and roles.",
+                    tOrg("feature2Title"),
+                    tOrg("feature2Description"),
                   ],
                   [
                     LockKeyhole,
-                    "Permissions",
-                    "Keep sensitive actions limited to the right people.",
+                    tOrg("feature3Title"),
+                    tOrg("feature3Description"),
                   ],
                 ].map(([Icon, title, description]) => (
                   <div
@@ -1053,9 +1081,9 @@ export default function HomePage() {
             </motion.div>
 
             <SectionIntro
-              eyebrow="Products & inventory"
-              title="Know what is moving through your business."
-              description="Organize products, categories and stock so sales and inventory stay connected instead of living in separate systems."
+              eyebrow={tInv("eyebrow")}
+              title={tInv("title")}
+              description={tInv("description")}
               inverted
             />
           </div>
@@ -1069,9 +1097,9 @@ export default function HomePage() {
       <section>
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
           <SectionIntro
-            eyebrow="Sales"
-            title="Turn every sale into useful business information."
-            description="Sales are connected to products, inventory, payments and money, giving your team one consistent flow from checkout to reporting."
+            eyebrow={tSales("eyebrow")}
+            title={tSales("title")}
+            description={tSales("description")}
             align="center"
           />
 
@@ -1084,20 +1112,20 @@ export default function HomePage() {
           >
             <CapabilityCard
               icon={Receipt}
-              title="Fast sales"
-              description="Create sales with product information and current prices already available."
+              title={tSales("fastSalesTitle")}
+              description={tSales("fastSalesDescription")}
             />
 
             <CapabilityCard
               icon={Boxes}
-              title="Stock updates"
-              description="Completed sales can update inventory so stock reflects actual business activity."
+              title={tSales("stockUpdatesTitle")}
+              description={tSales("stockUpdatesDescription")}
             />
 
             <CapabilityCard
               icon={CircleDollarSign}
-              title="Money flow"
-              description="Connect completed sales with the money your business receives."
+              title={tSales("moneyFlowTitle")}
+              description={tSales("moneyFlowDescription")}
             />
           </motion.div>
         </div>
@@ -1111,9 +1139,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
             <SectionIntro
-              eyebrow="Payment verification"
-              title="Verify payments from the information you already receive."
-              description="Give your team practical ways to verify a payment, whether it starts with a QR code, a screenshot, a receipt, or a supported payment message."
+              eyebrow={tPayment("eyebrow")}
+              title={tPayment("title")}
+              description={tPayment("description")}
             />
 
             <motion.div
@@ -1143,26 +1171,26 @@ export default function HomePage() {
           >
             <CapabilityCard
               icon={QrCode}
-              title="Scan QR codes"
-              description="Use the device camera to inspect supported payment QR information."
+              title={tPayCap("scanQrTitle")}
+              description={tPayCap("scanQrDescription")}
             />
 
             <CapabilityCard
               icon={ScanLine}
-              title="Upload screenshots"
-              description="Upload a screenshot of a QR code or payment confirmation when scanning is not convenient."
+              title={tPayCap("uploadScreenshotsTitle")}
+              description={tPayCap("uploadScreenshotsDescription")}
             />
 
             <CapabilityCard
               icon={Receipt}
-              title="Check receipts"
-              description="Review receipt screenshots and payment confirmation details."
+              title={tPayCap("checkReceiptsTitle")}
+              description={tPayCap("checkReceiptsDescription")}
             />
 
             <CapabilityCard
               icon={MessageSquareText}
-              title="Read messages"
-              description="Review supported SMS or payment messages to help verify the transaction."
+              title={tPayCap("readMessagesTitle")}
+              description={tPayCap("readMessagesDescription")}
             />
           </motion.div>
         </div>
@@ -1176,9 +1204,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <SectionIntro
-              eyebrow="Money management"
-              title="Keep business money organized with the rest of the operation."
-              description="Track accounts, income, expenses and transfers without losing the connection to your sales and daily business activity."
+              eyebrow={tMoney("eyebrow")}
+              title={tMoney("title")}
+              description={tMoney("description")}
               inverted
             />
 
@@ -1214,10 +1242,10 @@ export default function HomePage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-[var(--muted-foreground)]">
-                        Reports
+                        {tMockups("reports")}
                       </p>
                       <h3 className="mt-1 text-lg font-semibold">
-                        Business overview
+                        {tMockups("businessOverview")}
                       </h3>
                     </div>
 
@@ -1229,18 +1257,18 @@ export default function HomePage() {
 
                   <div className="mt-6 grid gap-3 sm:grid-cols-3">
                     <StatTile
-                      label="Sales"
-                      value="Overview"
+                      label={tMockups("sales")}
+                      value={tMockups("overview")}
                       icon={Receipt}
                     />
                     <StatTile
-                      label="Inventory"
-                      value="Overview"
+                      label={tMockups("inventory")}
+                      value={tMockups("overview")}
                       icon={Boxes}
                     />
                     <StatTile
-                      label="Expenses"
-                      value="Overview"
+                      label={tMockups("expenses")}
+                      value={tMockups("overview")}
                       icon={Wallet}
                     />
                   </div>
@@ -1248,10 +1276,10 @@ export default function HomePage() {
                   <div className="mt-4 rounded-lg border border-[var(--border)] p-4">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium">
-                        Activity
+                        {tMockups("activity")}
                       </p>
                       <span className="text-[10px] text-[var(--muted-foreground)]">
-                        Recent
+                        {tMockups("recent")}
                       </span>
                     </div>
 
@@ -1272,9 +1300,9 @@ export default function HomePage() {
             </motion.div>
 
             <SectionIntro
-              eyebrow="Reports & visibility"
-              title="See the business, not just the transactions."
-              description="Bring operational information together so owners and managers can understand what is happening across their business."
+              eyebrow={tReports("eyebrow")}
+              title={tReports("title")}
+              description={tReports("description")}
             />
           </div>
         </div>
@@ -1287,9 +1315,9 @@ export default function HomePage() {
       <section className="border-y border-[var(--border)] bg-[var(--card)]">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
           <SectionIntro
-            eyebrow="Built for real-world operations"
-            title="Useful capabilities beyond the dashboard."
-            description="Offlix Manager is designed around how teams actually work, including mobile use, connectivity limitations and different languages."
+            eyebrow={tCap("eyebrow")}
+            title={tCap("title")}
+            description={tCap("description")}
             align="center"
           />
 
@@ -1302,34 +1330,34 @@ export default function HomePage() {
           >
             <CapabilityCard
               icon={WifiOff}
-              title="Offline mobile apps"
-              description="Keep working from mobile applications when connectivity is unavailable, then synchronize supported activity when the connection returns."
+              title={tCap("offlineTitle")}
+              description={tCap("offlineDescription")}
             >
               <div className="mt-6 flex items-center gap-2 text-xs font-medium text-[var(--primary)]">
                 <Smartphone size={14} />
-                Designed for mobile work
+                {tCap("offlineBadge")}
               </div>
             </CapabilityCard>
 
             <CapabilityCard
               icon={Languages}
-              title="Multilingual support"
-              description="Make the product accessible to teams that work in different languages instead of forcing everyone into one language."
+              title={tCap("multilingualTitle")}
+              description={tCap("multilingualDescription")}
             >
               <div className="mt-6 flex items-center gap-2 text-xs font-medium text-[var(--primary)]">
                 <Globe2 size={14} />
-                Built for diverse teams
+                {tCap("multilingualBadge")}
               </div>
             </CapabilityCard>
 
             <CapabilityCard
               icon={ShieldCheck}
-              title="Controlled access"
-              description="Use roles and permissions to give employees the right level of access for their responsibilities."
+              title={tCap("accessTitle")}
+              description={tCap("accessDescription")}
             >
               <div className="mt-6 flex items-center gap-2 text-xs font-medium text-[var(--primary)]">
                 <KeyRound size={14} />
-                Role-based access
+                {tCap("accessBadge")}
               </div>
             </CapabilityCard>
           </motion.div>
@@ -1355,17 +1383,17 @@ export default function HomePage() {
 
             <div className="order-1 lg:order-2">
               <SectionIntro
-                eyebrow="Mobile"
-                title="Your team should not stop working because the connection does."
-                description="Offline-capable mobile applications let teams keep working in places where internet access is unreliable. Supported activity can be synchronized when connectivity returns."
+                eyebrow={tMobile("eyebrow")}
+                title={tMobile("title")}
+                description={tMobile("description")}
               />
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
                 {[
-                  "Mobile-first workflows",
-                  "Offline-capable operations",
-                  "Synchronization when connected",
-                  "Designed for branch teams",
+                  tMobile("feature1"),
+                  tMobile("feature2"),
+                  tMobile("feature3"),
+                  tMobile("feature4"),
                 ].map((item) => (
                   <div
                     key={item}
@@ -1395,17 +1423,17 @@ export default function HomePage() {
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <div>
               <SectionIntro
-                eyebrow="Languages"
-                title="Let the product speak to the people using it."
-                description="Multilingual functionality makes it possible to build a workspace that fits the language needs of different teams and markets."
+                eyebrow={tLang("eyebrow")}
+                title={tLang("title")}
+                description={tLang("description")}
               />
 
               <div className="mt-7 flex flex-wrap gap-2">
                 {[
-                  "English",
-                  "Amharic",
-                  "Arabic",
-                  "More languages",
+                  tLang("lang1"),
+                  tLang("lang2"),
+                  tLang("lang3"),
+                  tLang("langMore"),
                 ].map((language, index) => (
                   <div
                     key={language}
@@ -1437,19 +1465,19 @@ export default function HomePage() {
 
                     <div>
                       <p className="text-sm font-semibold">
-                        Workspace language
+                        {tLang("cardTitle")}
                       </p>
                       <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
-                        Choose the language your team needs.
+                        {tLang("cardDescription")}
                       </p>
                     </div>
                   </div>
 
                   <div className="mt-5 space-y-2">
                     {[
-                      ["English", "Available"],
-                      ["Amharic", "Available"],
-                      ["Arabic", "Available"],
+                      [tLang("lang1"), tLang("statusAvailable")],
+                      [tLang("lang2"), tLang("statusAvailable")],
+                      [tLang("lang3"), tLang("statusAvailable")],
                     ].map(([language, status], index) => (
                       <div
                         key={language}
@@ -1490,9 +1518,9 @@ export default function HomePage() {
       <section className="bg-[var(--foreground)] text-[var(--background)]">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
           <SectionIntro
-            eyebrow="Connected workflow"
-            title="One action can keep the rest of the system in sync."
-            description="The value is not just having more screens. It is having the important parts of your operation connected."
+            eyebrow={tWorkflow("eyebrow")}
+            title={tWorkflow("title")}
+            description={tWorkflow("description")}
             align="center"
             inverted
           />
@@ -1505,11 +1533,11 @@ export default function HomePage() {
             className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
           >
             {[
-              [Receipt, "Sale"],
-              [ShieldCheck, "Payment"],
-              [Boxes, "Inventory"],
-              [Wallet, "Money"],
-              [BarChart3, "Reports"],
+              [Receipt, tWorkflow("sale")],
+              [ShieldCheck, tWorkflow("payment")],
+              [Boxes, tWorkflow("inventory")],
+              [Wallet, tWorkflow("money")],
+              [BarChart3, tWorkflow("reports")],
             ].map(([Icon, label], index) => (
               <motion.div
                 key={label}
@@ -1543,9 +1571,9 @@ export default function HomePage() {
       <section>
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-6 sm:py-24 lg:px-8">
           <SectionIntro
-            eyebrow="Built for everyday work"
-            title="From opening the branch to closing the day."
-            description="Offlix Manager brings the recurring work of your business into a consistent workflow."
+            eyebrow={tDaily("eyebrow")}
+            title={tDaily("title")}
+            description={tDaily("description")}
             align="center"
           />
 
@@ -1560,26 +1588,26 @@ export default function HomePage() {
               [
                 "01",
                 Store,
-                "Open",
-                "Check branch activity, employees and what needs attention.",
+                tDaily("openTitle"),
+                tDaily("openDescription"),
               ],
               [
                 "02",
                 Receipt,
-                "Sell",
-                "Create sales, verify payments and keep stock moving.",
+                tDaily("sellTitle"),
+                tDaily("sellDescription"),
               ],
               [
                 "03",
                 Wallet,
-                "Track",
-                "Record income, expenses and other money movements.",
+                tDaily("trackTitle"),
+                tDaily("trackDescription"),
               ],
               [
                 "04",
                 BarChart3,
-                "Review",
-                "Use reports and business information to make decisions.",
+                tDaily("reviewTitle"),
+                tDaily("reviewDescription"),
               ],
             ].map(([number, Icon, title, description]) => (
               <motion.article
@@ -1634,16 +1662,14 @@ export default function HomePage() {
               variants={fadeUp}
               className="mx-auto mt-6 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl"
             >
-              Build a clearer way to run your business.
+              {tCta("title")}
             </motion.h2>
 
             <motion.p
               variants={fadeUp}
               className="mx-auto mt-4 max-w-xl text-base leading-7 text-[var(--muted-foreground)]"
             >
-              Bring your branches, people, products, sales,
-              payments, money and reports into one connected
-              workspace.
+              {tCta("description")}
             </motion.p>
 
             <motion.div
@@ -1654,7 +1680,7 @@ export default function HomePage() {
                 href="/register"
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--primary)] px-6 py-3 text-sm font-semibold text-[var(--primary-foreground)] transition-transform hover:-translate-y-0.5"
               >
-                Create your account
+                {tCta("createAccount")}
                 <ArrowRight size={16} />
               </Link>
 
@@ -1662,7 +1688,7 @@ export default function HomePage() {
                 href="/login"
                 className="inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--background)] px-6 py-3 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
               >
-                Sign in
+                {tCta("signIn")}
               </Link>
             </motion.div>
           </motion.div>

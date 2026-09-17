@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import {
   LayoutDashboard,
@@ -23,12 +24,14 @@ import {
 } from "lucide-react";
 
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const t = useTranslations("dashboard");
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isBranchesOpen, setIsBranchesOpen] = useState(false);
@@ -71,9 +74,6 @@ export default function DashboardLayout({ children }) {
 
   /*
    * Central authentication check.
-   *
-   * The cookie may still exist even when the database session
-   * has been revoked or expired, so /auth/me is the authority.
    */
   useEffect(() => {
     let isMounted = true;
@@ -164,12 +164,12 @@ export default function DashboardLayout({ children }) {
         method: "POST",
       });
 
-      toast.success("Successfully logged out.");
+      toast.success(t("loggedOutSuccess"));
 
       router.push("/login");
       router.refresh();
     } catch (err) {
-      toast.error("Failed to log out. Please try again.");
+      toast.error(t("logoutError"));
     }
   };
 
@@ -181,22 +181,21 @@ export default function DashboardLayout({ children }) {
 
     return segments.map((segment, index) => {
       const href = "/" + segments.slice(0, index + 1).join("/");
-      const label =
-        segment.charAt(0).toUpperCase() + segment.slice(1);
+
+      // Attempt to translate path segment using nav keys, or fallback to capitalized string
+      const translatedLabel = t.has(`nav.${segment}`)
+        ? t(`nav.${segment}`)
+        : segment.charAt(0).toUpperCase() + segment.slice(1);
 
       return {
         href,
-        label,
+        label: translatedLabel,
       };
     });
   };
 
   const breadcrumbs = getBreadcrumbs();
 
-  /*
-   * Do not render dashboard content until the current session
-   * has been verified.
-   */
   if (authChecking) {
     return (
       <div className="h-screen bg-(--background) text-(--foreground) flex items-center justify-center">
@@ -204,7 +203,7 @@ export default function DashboardLayout({ children }) {
           <div className="w-8 h-8 border-2 border-(--border) border-t-(--primary) rounded-full animate-spin mx-auto" />
 
           <p className="text-sm text-(--muted-foreground)">
-            Checking your session...
+            {t("checkingSession")}
           </p>
         </div>
       </div>
@@ -237,18 +236,18 @@ export default function DashboardLayout({ children }) {
             href="/dashboard"
             className="flex items-center gap-2.5 rounded-lg p-1 -ml-1"
           >
-            <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs">
+            <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs overflow-hidden">
               <Image
                 src="/images/logo.png"
                 width={36}
                 height={36}
-                alt="Offlix Manager Logo"
-                className="rounded-md"
+                alt={`${t("brandName")} Logo`}
+                className="rounded-md object-cover"
               />
             </div>
 
             <span className="font-bold text-md tracking-tight">
-              Offlix Manager
+              {t("brandName")}
             </span>
           </Link>
 
@@ -276,7 +275,7 @@ export default function DashboardLayout({ children }) {
             `}
           >
             <LayoutDashboard className="w-4 h-4" />
-            <span>Dashboard</span>
+            <span>{t("nav.dashboard")}</span>
           </Link>
 
           {/* Branches */}
@@ -294,7 +293,7 @@ export default function DashboardLayout({ children }) {
             >
               <div className="flex items-center gap-3">
                 <GitBranch className="w-4 h-4" />
-                <span>Branches</span>
+                <span>{t("nav.branches")}</span>
               </div>
 
               {isBranchesOpen ? (
@@ -317,7 +316,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Overview
+                  {t("nav.overview")}
                 </Link>
 
                 <Link
@@ -331,7 +330,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Create
+                  {t("nav.create")}
                 </Link>
               </div>
             )}
@@ -352,7 +351,7 @@ export default function DashboardLayout({ children }) {
             >
               <div className="flex items-center gap-3">
                 <Package className="w-4 h-4" />
-                <span>Products</span>
+                <span>{t("nav.products")}</span>
               </div>
 
               {isProductsOpen ? (
@@ -375,7 +374,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Overview
+                  {t("nav.overview")}
                 </Link>
 
                 <Link
@@ -389,7 +388,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Create
+                  {t("nav.create")}
                 </Link>
 
                 <Link
@@ -404,7 +403,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Purchases
+                  {t("nav.purchases")}
                 </Link>
               </div>
             )}
@@ -425,7 +424,7 @@ export default function DashboardLayout({ children }) {
             >
               <div className="flex items-center gap-3">
                 <ShoppingCart className="w-4 h-4" />
-                <span>Sales</span>
+                <span>{t("nav.sales")}</span>
               </div>
 
               {isSalesOpen ? (
@@ -448,7 +447,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Overview
+                  {t("nav.overview")}
                 </Link>
 
                 <Link
@@ -462,7 +461,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Create
+                  {t("nav.create")}
                 </Link>
               </div>
             )}
@@ -483,7 +482,7 @@ export default function DashboardLayout({ children }) {
             >
               <div className="flex items-center gap-3">
                 <Receipt className="w-4 h-4" />
-                <span>Money</span>
+                <span>{t("nav.money")}</span>
               </div>
 
               {isMoneyOpen ? (
@@ -506,7 +505,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Overview
+                  {t("nav.overview")}
                 </Link>
 
                 <Link
@@ -520,7 +519,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Accounts
+                  {t("nav.accounts")}
                 </Link>
 
                 <Link
@@ -534,7 +533,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Transactions
+                  {t("nav.transactions")}
                 </Link>
 
                 <Link
@@ -548,7 +547,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Transfers
+                  {t("nav.transfers")}
                 </Link>
 
                 <Link
@@ -562,7 +561,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Settlements
+                  {t("nav.settlements")}
                 </Link>
 
                 <Link
@@ -576,7 +575,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Payables
+                  {t("nav.payables")}
                 </Link>
 
                 <Link
@@ -590,7 +589,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Credit
+                  {t("nav.credit")}
                 </Link>
 
                 <Link
@@ -604,7 +603,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Total Money
+                  {t("nav.totalMoney")}
                 </Link>
               </div>
             )}
@@ -625,7 +624,7 @@ export default function DashboardLayout({ children }) {
             >
               <div className="flex items-center gap-3">
                 <Users className="w-4 h-4" />
-                <span>Users</span>
+                <span>{t("nav.users")}</span>
               </div>
 
               {isUsersOpen ? (
@@ -648,7 +647,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Overview
+                  {t("nav.overview")}
                 </Link>
 
                 <Link
@@ -662,7 +661,7 @@ export default function DashboardLayout({ children }) {
                     }
                   `}
                 >
-                  Create
+                  {t("nav.create")}
                 </Link>
               </div>
             )}
@@ -681,7 +680,7 @@ export default function DashboardLayout({ children }) {
             `}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Reports</span>
+            <span>{t("nav.reports")}</span>
           </Link>
 
           {/* Settings */}
@@ -697,7 +696,7 @@ export default function DashboardLayout({ children }) {
             `}
           >
             <Settings className="w-4 h-4" />
-            <span>Settings</span>
+            <span>{t("nav.settings")}</span>
           </Link>
         </nav>
 
@@ -715,11 +714,11 @@ export default function DashboardLayout({ children }) {
 
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {user?.name || "Manager"}
+                  {user?.name || t("manager")}
                 </p>
 
                 <p className="text-xs text-(--muted-foreground) truncate">
-                  {user?.email || "Manager account"}
+                  {user?.email || t("managerAccount")}
                 </p>
               </div>
             </div>
@@ -727,7 +726,7 @@ export default function DashboardLayout({ children }) {
             <button
               onClick={handleLogout}
               className="p-2 text-(--muted-foreground) hover:text-(--destructive) rounded-lg hover:bg-(--muted) outline-none transition-colors border-0"
-              title="Log out"
+              title={t("logout")}
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -758,7 +757,7 @@ export default function DashboardLayout({ children }) {
             </button>
 
             <h1 className="text-base font-semibold tracking-tight md:hidden">
-              Offlix Manager
+              {t("brandName")}
             </h1>
 
             <nav className="hidden md:flex items-center space-x-2 text-sm font-medium">
@@ -792,10 +791,11 @@ export default function DashboardLayout({ children }) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <ThemeSwitcher />
 
-            <div className="flex md:hidden items-center">
+            <div className="flex md:hidden items-center ml-1">
               <div className="w-8 h-8 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-xs shrink-0 border border-(--border)">
                 {user?.name ? (
                   user.name.charAt(0).toUpperCase()

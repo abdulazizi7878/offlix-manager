@@ -1,27 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { useRouter } from "next/navigation";
-
 import { KeyRound } from "lucide-react";
-
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { Input } from "../ui/Input";
-
 import { Button } from "../ui/Button";
-
 import { fetchApi } from "../../lib/api/client";
 
 export function VerifyForm() {
     const router = useRouter();
+    const t = useTranslations("auth");
 
     const [userId, setUserId] = useState(null);
-    const [verificationPurpose, setVerificationPurpose] =
-        useState("registration");
-    const [verificationToken, setVerificationToken] =
-        useState(null);
+    const [verificationPurpose, setVerificationPurpose] = useState("registration");
+    const [verificationToken, setVerificationToken] = useState(null);
 
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
@@ -32,40 +27,24 @@ export function VerifyForm() {
     const [cooldown, setCooldown] = useState(60);
 
     useEffect(() => {
-        const storedId =
-            sessionStorage.getItem("offlix_verify_id");
+        const storedId = sessionStorage.getItem("offlix_verify_id");
 
         if (!storedId) {
-            toast.error(
-                "Verification session expired. Please sign in again."
-            );
-
+            toast.error(t("sessionExpiredLogin"));
             router.push("/login");
             return;
         }
 
         const storedPurpose =
-            sessionStorage.getItem(
-                "offlix_verify_purpose"
-            ) || "registration";
+            sessionStorage.getItem("offlix_verify_purpose") || "registration";
 
-        const storedToken =
-            sessionStorage.getItem(
-                "offlix_email_change_token"
-            );
+        const storedToken = sessionStorage.getItem("offlix_email_change_token");
 
-        if (
-            storedPurpose === "email_change" &&
-            !storedToken
-        ) {
-            toast.error(
-                "Email verification session expired. Please try again."
-            );
+        if (storedPurpose === "email_change" && !storedToken) {
+            toast.error(t("sessionExpiredSettings"));
 
             sessionStorage.removeItem("offlix_verify_id");
-            sessionStorage.removeItem(
-                "offlix_verify_purpose"
-            );
+            sessionStorage.removeItem("offlix_verify_purpose");
 
             router.push("/dashboard/settings");
             return;
@@ -77,30 +56,25 @@ export function VerifyForm() {
         if (storedPurpose === "email_change") {
             setVerificationToken(storedToken);
         }
-    }, [router]);
+    }, [router, t]);
 
     useEffect(() => {
         if (cooldown <= 0) return;
 
         const timer = setInterval(() => {
-            setCooldown((prev) =>
-                prev > 0 ? prev - 1 : 0
-            );
+            setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
         }, 1000);
 
         return () => clearInterval(timer);
     }, [cooldown]);
 
-    const isEmailChange =
-        verificationPurpose === "email_change";
+    const isEmailChange = verificationPurpose === "email_change";
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (otp.length !== 6) {
-            setError(
-                "OTP must be exactly 6 digits."
-            );
+            setError(t("otpLengthError"));
             return;
         }
 
@@ -109,74 +83,41 @@ export function VerifyForm() {
 
         try {
             if (isEmailChange) {
-                await fetchApi(
-                    "/api/v1/settings/account/email/verify",
-                    {
-                        method: "POST",
-                        body: JSON.stringify({
-                            userId,
-                            otp,
-                            verificationToken,
-                        }),
-                    }
-                );
-
-                sessionStorage.removeItem(
-                    "offlix_verify_id"
-                );
-
-                sessionStorage.removeItem(
-                    "offlix_verify_purpose"
-                );
-
-                sessionStorage.removeItem(
-                    "offlix_email_change_token"
-                );
-
-                toast.success(
-                    "Email address updated successfully."
-                );
-
-                router.push(
-                    "/dashboard/settings"
-                );
-
-                return;
-            }
-
-            await fetchApi(
-                "/api/v1/auth/otp/verify",
-                {
+                await fetchApi("/api/v1/settings/account/email/verify", {
                     method: "POST",
                     body: JSON.stringify({
                         userId,
                         otp,
+                        verificationToken,
                     }),
-                }
-            );
+                });
 
-            sessionStorage.removeItem(
-                "offlix_verify_id"
-            );
+                sessionStorage.removeItem("offlix_verify_id");
+                sessionStorage.removeItem("offlix_verify_purpose");
+                sessionStorage.removeItem("offlix_email_change_token");
 
-            sessionStorage.removeItem(
-                "offlix_verify_purpose"
-            );
+                toast.success(t("emailUpdateSuccess"));
+                router.push("/dashboard/settings");
+                return;
+            }
 
-            sessionStorage.removeItem(
-                "offlix_email_change_token"
-            );
+            await fetchApi("/api/v1/auth/otp/verify", {
+                method: "POST",
+                body: JSON.stringify({
+                    userId,
+                    otp,
+                }),
+            });
 
-            toast.success(
-                "Verification successful."
-            );
+            sessionStorage.removeItem("offlix_verify_id");
+            sessionStorage.removeItem("offlix_verify_purpose");
+            sessionStorage.removeItem("offlix_email_change_token");
 
+            toast.success(t("verificationSuccess"));
             router.push("/dashboard");
         } catch (err) {
             setError(
-                err.fields?.otp ||
-                    err.message ||
-                    "Verification failed."
+                err.fields?.otp || err.message || t("verificationFailed")
             );
         } finally {
             setIsLoading(false);
@@ -189,52 +130,32 @@ export function VerifyForm() {
 
         try {
             if (isEmailChange) {
-                await fetchApi(
-                    "/api/v1/settings/account/email/resend",
-                    {
-                        method: "POST",
-                        body: JSON.stringify({
-                            userId,
-                            verificationToken,
-                        }),
-                    }
-                );
+                await fetchApi("/api/v1/settings/account/email/resend", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        userId,
+                        verificationToken,
+                    }),
+                });
             } else {
-                await fetchApi(
-                    "/api/v1/auth/otp/resend",
-                    {
-                        method: "POST",
-                        body: JSON.stringify({
-                            userId,
-                        }),
-                    }
-                );
+                await fetchApi("/api/v1/auth/otp/resend", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        userId,
+                    }),
+                });
             }
 
-            toast.success(
-                "A new code has been sent."
-            );
-
+            toast.success(t("newCodeSent"));
             setCooldown(60);
         } catch (err) {
-            if (
-                err.code ===
-                "OTP_RESEND_COOLDOWN"
-            ) {
-                const matches =
-                    err.message?.match(/\d+/);
-
-                const seconds = matches
-                    ? parseInt(matches[0], 10)
-                    : 60;
-
+            if (err.code === "OTP_RESEND_COOLDOWN") {
+                const matches = err.message?.match(/\d+/);
+                const seconds = matches ? parseInt(matches[0], 10) : 60;
                 setCooldown(seconds);
             }
 
-            toast.error(
-                err.message ||
-                    "Failed to resend verification code."
-            );
+            toast.error(err.message || t("resendFailed"));
         } finally {
             setIsResending(false);
         }
@@ -243,63 +164,48 @@ export function VerifyForm() {
     if (!userId) return null;
 
     return (
-        <div className="w-full max-w-md mx-auto p-6 bg-(--card) text-(--card-foreground) border border-(--border) rounded-xl shadow-sm">
+        <div className="w-full max-w-md mx-auto p-6 bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-xl shadow-sm">
             <div className="mb-6 text-center">
-                <div className="mx-auto w-12 h-12 bg-(--muted) rounded-full flex items-center justify-center mb-4">
-                    <KeyRound className="w-6 h-6 text-(--primary)" />
+                <div className="mx-auto w-12 h-12 bg-[var(--muted)] rounded-full flex items-center justify-center mb-4">
+                    <KeyRound className="w-6 h-6 text-[var(--primary)]" />
                 </div>
 
-                <h1 className="text-2xl font-bold mb-2 text-(--foreground)">
+                <h1 className="text-2xl font-bold mb-2 text-[var(--foreground)]">
                     {isEmailChange
-                        ? "Verify New Email"
-                        : "Verification Required"}
+                        ? t("verifyNewEmail")
+                        : t("verificationRequired")}
                 </h1>
 
-                <p className="text-(--muted-foreground)">
+                <p className="text-[var(--muted-foreground)]">
                     {isEmailChange
-                        ? "Enter the 6-digit code sent to your new email address"
-                        : "Enter the 6-digit code sent to your device"}
+                        ? t("verifyEmailSubtitle")
+                        : t("verifyGeneralSubtitle")}
                 </p>
             </div>
 
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-6"
-            >
+            <form onSubmit={handleSubmit} className="space-y-6">
                 <Input
-                    label="Verification Code"
+                    label={t("verificationCodeLabel")}
                     type="text"
                     inputMode="numeric"
                     pattern="\d{6}"
                     maxLength={6}
                     value={otp}
                     onChange={(e) => {
-                        setOtp(
-                            e.target.value.replace(
-                                /\D/g,
-                                ""
-                            )
-                        );
-
+                        setOtp(e.target.value.replace(/\D/g, ""));
                         if (error) {
                             setError(null);
                         }
                     }}
                     error={error}
-                    disabled={
-                        isLoading ||
-                        isResending
-                    }
+                    disabled={isLoading || isResending}
                     placeholder="123456"
                     required
                 />
 
                 <div className="space-y-3">
-                    <Button
-                        type="submit"
-                        isLoading={isLoading}
-                    >
-                        Verify Code
+                    <Button type="submit" isLoading={isLoading}>
+                        {t("verifyButton")}
                     </Button>
 
                     <Button
@@ -307,14 +213,11 @@ export function VerifyForm() {
                         variant="ghost"
                         onClick={handleResend}
                         isLoading={isResending}
-                        disabled={
-                            isResending ||
-                            cooldown > 0
-                        }
+                        disabled={isResending || cooldown > 0}
                     >
                         {cooldown > 0
-                            ? `Resend Code in ${ cooldown } s`
-                            : "Resend Code"}
+                            ? t("resendCodeCooldown", { seconds: cooldown })
+                            : t("resendCode")}
                     </Button>
                 </div>
             </form>

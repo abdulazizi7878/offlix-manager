@@ -5,11 +5,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GitBranch, ArrowLeft, Plus, Trash2, Shield, Check, AlertCircle, UserPlus, X } from "lucide-react";
+import { GitBranch, ArrowLeft, Trash2, Shield, UserPlus, X } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function CreateBranchPage() {
+  const t = useTranslations("dashboard.createBranchPage");
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -34,13 +36,13 @@ export default function CreateBranchPage() {
         setAvailableEmployees(usersData);
         setAvailablePermissions(permsData);
       } catch (err) {
-        toast.error(err.message || "Failed to load required data.");
+        toast.error(err.message || t("loadMetaError"));
       } finally {
         setIsLoadingMeta(false);
       }
     }
     loadMetaData();
-  }, []);
+  }, [t]);
 
   const formatPermissionLabel = (key) => {
     if (!key || typeof key !== "string") return { group: "Other", action: key };
@@ -64,7 +66,7 @@ export default function CreateBranchPage() {
   const handleAddEmployee = () => {
     if (!selectedEmployeeToAdd) return;
     if (selectedEmployees.some((e) => e.userId === selectedEmployeeToAdd)) {
-      toast.error("Employee is already added to this branch.");
+      toast.error(t("alreadyAddedError"));
       return;
     }
     setSelectedEmployees((prev) => [
@@ -95,7 +97,7 @@ export default function CreateBranchPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error("Branch name is required.");
+      toast.error(t("requiredNameError"));
       return;
     }
 
@@ -109,11 +111,11 @@ export default function CreateBranchPage() {
           employees: selectedEmployees,
         }),
       });
-      toast.success("Branch created successfully.");
+      toast.success(t("createdSuccess"));
       router.push("/dashboard/branches");
       router.refresh();
     } catch (err) {
-      toast.error(err.message || "Failed to create branch.");
+      toast.error(err.message || t("createError"));
     } finally {
       setIsSubmitting(false);
     }
@@ -128,90 +130,90 @@ export default function CreateBranchPage() {
       <div className="flex items-center gap-4">
         <Link
           href="/dashboard/branches"
-          className="p-2 text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted) rounded-lg transition-colors"
+          className="p-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)] rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create Branch</h1>
-          <p className="text-sm text-(--muted-foreground) mt-0.5">
-            Add a new business location and assign employees with direct permissions.
+          <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
+            {t("subtitle")}
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="bg-(--card) border border-(--border) rounded-xl p-6 shadow-xs space-y-4">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-xs space-y-4">
           <h2 className="text-base font-semibold flex items-center gap-2">
-            <GitBranch className="w-4 h-4 text-(--primary)" />
-            <span>Branch Information</span>
+            <GitBranch className="w-4 h-4 text-[var(--primary)]" />
+            <span>{t("branchInformation")}</span>
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-(--muted-foreground) mb-1.5">
-                Branch Name *
+              <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1.5">
+                {t("branchNameLabel")}
               </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Main Store - Addis Ababa"
-                className="w-full px-3.5 py-2.5 bg-(--background) border border-(--border) rounded-lg text-sm text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--ring)"
+                placeholder={t("branchNamePlaceholder")}
+                className="w-full px-3.5 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-(--muted-foreground) mb-1.5">
-                Description
+              <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1.5">
+                {t("descriptionLabel")}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Brief description of this branch location..."
+                placeholder={t("descriptionPlaceholder")}
                 rows={3}
-                className="w-full px-3.5 py-2.5 bg-(--background) border border-(--border) rounded-lg text-sm text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--ring)"
+                className="w-full px-3.5 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-(--card) border border-(--border) rounded-xl p-6 shadow-xs space-y-6">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-semibold flex items-center gap-2">
-                <Shield className="w-4 h-4 text-(--primary)" />
-                <span>Employees & Permissions</span>
+                <Shield className="w-4 h-4 text-[var(--primary)]" />
+                <span>{t("employeesAndPermissions")}</span>
               </h2>
-              <p className="text-xs text-(--muted-foreground) mt-0.5">
-                Assign employees to this branch and configure their direct permissions.
+              <p className="text-xs text-[var(--muted-foreground)] mt-0.5">
+                {t("employeesAndPermissionsSub")}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setIsAddEmployeeModalOpen(true)}
               disabled={isLoadingMeta || unselectedEmployees.length === 0}
-              className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-xs hover:opacity-95 transition-opacity disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-2 rounded-lg font-medium text-xs hover:opacity-95 transition-opacity disabled:opacity-50"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Add Employee</span>
+              <span>{t("addEmployee")}</span>
             </button>
           </div>
 
           {isLoadingMeta ? (
-            <div className="h-24 flex items-center justify-center text-xs text-(--muted-foreground)">
-              Loading employees and permissions...
+            <div className="h-24 flex items-center justify-center text-xs text-[var(--muted-foreground)]">
+              {t("loadingMeta")}
             </div>
           ) : selectedEmployees.length === 0 ? (
-            <div className="p-8 text-center border border-dashed border-(--border) rounded-xl space-y-3">
-              <div className="mx-auto w-10 h-10 bg-(--muted) text-(--muted-foreground) rounded-full flex items-center justify-center">
+            <div className="p-8 text-center border border-dashed border-[var(--border)] rounded-xl space-y-3">
+              <div className="mx-auto w-10 h-10 bg-[var(--muted)] text-[var(--muted-foreground)] rounded-full flex items-center justify-center">
                 <UserPlus className="w-5 h-5" />
               </div>
               <div className="max-w-xs mx-auto space-y-1">
-                <p className="text-sm font-medium">No employees added yet</p>
-                <p className="text-xs text-(--muted-foreground)">
-                  Click &quot;Add Employee&quot; to assign team members to this branch.
+                <p className="text-sm font-medium">{t("noEmployeesAdded")}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {t("noEmployeesAddedSub")}
                 </p>
               </div>
             </div>
@@ -224,41 +226,41 @@ export default function CreateBranchPage() {
                 return (
                   <div
                     key={empConfig.userId}
-                    className="border border-(--border) rounded-xl p-4 bg-(--background)/50 space-y-4"
+                    className="border border-[var(--border)] rounded-xl p-4 bg-[var(--background)]/50 space-y-4"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-(--primary)/10 text-(--primary) flex items-center justify-center font-semibold text-sm">
+                        <div className="w-9 h-9 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center font-semibold text-sm">
                           {empInfo.name ? empInfo.name.charAt(0).toUpperCase() : "E"}
                         </div>
                         <div>
                           <p className="text-sm font-semibold">{empInfo.name}</p>
-                          <p className="text-xs text-(--muted-foreground)">
-                            {empInfo.email || empInfo.phone || "No contact info"}
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {empInfo.email || empInfo.phone || t("noContactInfo")}
                           </p>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveEmployee(empConfig.userId)}
-                        className="p-1.5 text-(--muted-foreground) hover:text-(--destructive) rounded-lg hover:bg-(--muted) transition-colors"
-                        title="Remove employee"
+                        className="p-1.5 text-[var(--muted-foreground)] hover:text-[var(--destructive)] rounded-lg hover:bg-[var(--muted)] transition-colors"
+                        title={t("removeEmployee")}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="space-y-3 pt-2 border-t border-(--border)">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                        Branch Permissions ({empConfig.permissions.length} selected)
+                    <div className="space-y-3 pt-2 border-t border-[var(--border)]">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+                        {t("branchPermissionsCount", { count: empConfig.permissions.length })}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {Object.entries(groupedPermissions).map(([groupName, permKeys]) => (
                           <div
                             key={groupName}
-                            className="bg-(--card) border border-(--border) rounded-lg p-3 space-y-2"
+                            className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-3 space-y-2"
                           >
-                            <span className="text-xs font-bold text-(--foreground) block">
+                            <span className="text-xs font-bold text-[var(--foreground)] block">
                               {groupName}
                             </span>
                             <div className="space-y-1.5">
@@ -269,13 +271,13 @@ export default function CreateBranchPage() {
                                 return (
                                   <label
                                     key={pKey}
-                                    className="flex items-center gap-2.5 text-xs text-(--muted-foreground) hover:text-(--foreground) cursor-pointer select-none"
+                                    className="flex items-center gap-2.5 text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-pointer select-none"
                                   >
                                     <input
                                       type="checkbox"
                                       checked={isChecked}
                                       onChange={() => handleTogglePermission(empConfig.userId, pKey)}
-                                      className="rounded border-(--border) text-(--primary) focus:ring-(--ring) w-4 h-4"
+                                      className="rounded border-[var(--border)] text-[var(--primary)] focus:ring-[var(--ring)] w-4 h-4"
                                     />
                                     <span>{action}</span>
                                   </label>
@@ -296,49 +298,49 @@ export default function CreateBranchPage() {
         <div className="flex items-center justify-end gap-3 pt-4">
           <Link
             href="/dashboard/branches"
-            className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium text-(--foreground) hover:bg-(--muted) transition-colors"
+            className="px-4 py-2 border border-[var(--border)] rounded-lg text-sm font-medium text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors"
           >
-            Cancel
+            {t("cancel")}
           </Link>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50 inline-flex items-center gap-2"
+            className="px-5 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50 inline-flex items-center gap-2"
           >
-            {isSubmitting ? "Creating..." : "Create Branch"}
+            {isSubmitting ? t("creating") : t("createBranch")}
           </button>
         </div>
       </form>
 
       {isAddEmployeeModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-(--card) border border-(--border) rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold">Add Employee to Branch</h3>
+              <h3 className="text-base font-semibold">{t("addEmployeeModalTitle")}</h3>
               <button
                 type="button"
                 onClick={() => setIsAddEmployeeModalOpen(false)}
-                className="p-1.5 text-(--muted-foreground) hover:text-(--foreground) rounded-lg"
+                className="p-1.5 text-[var(--muted-foreground)] hover:text-[var(--foreground)] rounded-lg"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-3">
-              <label className="block text-xs font-medium text-(--muted-foreground)">
-                Select Employee
+              <label className="block text-xs font-medium text-[var(--muted-foreground)]">
+                {t("selectEmployeeLabel")}
               </label>
               {unselectedEmployees.length === 0 ? (
-                <p className="text-xs text-(--muted-foreground) py-4 text-center">
-                  All available employees have already been added.
+                <p className="text-xs text-[var(--muted-foreground)] py-4 text-center">
+                  {t("allEmployeesAdded")}
                 </p>
               ) : (
                 <select
                   value={selectedEmployeeToAdd}
                   onChange={(e) => setSelectedEmployeeToAdd(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-(--background) border border-(--border) rounded-lg text-sm text-(--foreground) focus:outline-none focus:ring-2 focus:ring-(--ring)"
+                  className="w-full px-3 py-2.5 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                 >
-                  <option value="">-- Choose an employee --</option>
+                  <option value="">{t("chooseEmployeeOption")}</option>
                   {unselectedEmployees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
                       {emp.name} ({emp.email || emp.phone})
@@ -352,17 +354,17 @@ export default function CreateBranchPage() {
               <button
                 type="button"
                 onClick={() => setIsAddEmployeeModalOpen(false)}
-                className="px-3.5 py-2 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted)"
+                className="px-3.5 py-2 border border-[var(--border)] rounded-lg text-xs font-medium hover:bg-[var(--muted)]"
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleAddEmployee}
                 disabled={!selectedEmployeeToAdd}
-                className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
+                className="px-4 py-2 bg-[var(--primary)] text-[var(--primary-foreground)] rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50"
               >
-                Add Employee
+                {t("addEmployee")}
               </button>
             </div>
           </div>
