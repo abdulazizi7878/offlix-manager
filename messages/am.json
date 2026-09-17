@@ -1609,6 +1609,109 @@
                     "utc": "UTC"
                 }
             }
+        },
+        "organizationSettings": {
+            "loadError": "የድርጅት ቅንብሮችን መጫን አልተቻለም።",
+            "tabs": {
+                "branches": "ቅርንጫፎች",
+                "team": "የቡድን አባላት",
+                "memberships": "አባልነቶች",
+                "permissions": "ፈቃዶች"
+            },
+            "branches": {
+                "title": "የድርጅት ቅርንጫፎች",
+                "subtitle": "የንግድ ስራ ቦታዎችን እና የስራ ቅርንጫፎችን ያስተዳድሩ",
+                "table": {
+                    "name": "የቅርንጫፍ ስም",
+                    "description": "መግለጫ",
+                    "status": "ሁኔታ",
+                    "createdAt": "የተፈጠረበት ቀን",
+                    "noData": "ምንም ቅርንጫፎች አልተገኙም።"
+                }
+            },
+            "team": {
+                "title": "የቡድን ሰራተኞች",
+                "subtitle": "በስርዓቱ ውስጥ የተመዘገቡ ንቁ ሰራተኞች እና አስተዳደራዊ ሰራተኞች",
+                "inviteBtn": "ሰራተኛ ይጋብዙ",
+                "table": {
+                    "name": "ስም",
+                    "email": "ኢሜይል",
+                    "phone": "ስልክ",
+                    "username": "የተጠቃሚ ስም",
+                    "joinedDate": "የተቀላቀሉበት ቀን",
+                    "noData": "ምንም ሰራተኞች አልተገኙም።"
+                }
+            },
+            "memberships": {
+                "title": "የቅርንጫፍ አባልነቶች",
+                "subtitle": "ለተወሰኑ ቅርንጫፎች የተመደቡ ሰራተኞች ዝርዝር",
+                "table": {
+                    "userName": "የተጠቃሚ ስም",
+                    "branchName": "የቅርንጫፍ ስም",
+                    "contactEmail": "የግንኙነት ኢሜይል",
+                    "status": "ሁኔታ",
+                    "noData": "ምንም አባልነቶች አልተገኙም።"
+                }
+            },
+            "permissions": {
+                "title": "የስርዓት ፈቃዶች",
+                "subtitle": "ከኤፒአይ (API) የተመለሱ በስርዓቱ ውስጥ ያሉ የፈቃድ አይነቶች እና መዳረሻዎች",
+                "noData": "ምንም የተገለጹ ፈቃዶች የሉም።"
+            }
+        },
+        "securitySettings": {
+            "loadError": "የደህንነት ቅንብሮችን መጫን አልተቻለም።",
+            "passwordMismatch": "አዲሱ የይለፍ ቃል አይመሳሰልም።",
+            "passwordSuccess": "የይለፍ ቃል በስኬት ተዘምኗል።",
+            "passwordUpdateError": "የይለፍ ቃል ማዘመን አልተቻለም።",
+            "revokeConfirm": "እርግጠኛ ነዎት ይህንን ሴሽን መሰረዝ ይፈልጋሉ?",
+            "revokeError": "ሴሽኑን መሰረዝ አልተቻለም።",
+            "noCurrentSession": "የአሁኑ ሴሽን መረጃ አይገኝም።",
+            "revokeAllConfirm": "እርግጠኛ ነዎት ሌሎችን ሁሉንም ንቁ ሴሽኖች መሰረዝ ይፈልጋሉ?",
+            "revokeAllError": "ሴሽኖችን መሰረዝ አልተቻለም።",
+            "changePassword": {
+                "title": "የይለፍ ቃል ቀይር",
+                "subtitle": "አካውንትዎ ጠንካራ እና ደህንነቱ የተጠበቀ የይለፍ ቃል መጠቀሙን ያረጋግጡ",
+                "currentPassword": "የአሁኑ የይለፍ ቃል",
+                "newPassword": "አዲስ የይለፍ ቃል",
+                "confirmPassword": "አዲሱን የይለፍ ቃል ያረጋግጡ",
+                "updating": "በማዘመን ላይ...",
+                "updateBtn": "የይለፍ ቃል አዝምን"
+            },
+            "sessions": {
+                "title": "ንቁ ሴሽኖች (Sessions)",
+                "subtitle": "ንቁ የሆኑ የብሮውዘር እና የመሳሪያ ሴሽኖችን ያስተዳድሩ እና ይሰርዙ",
+                "revokeAllBtn": "ሌሎች ሁሉንም ሴሽኖች ሰርዝ",
+                "revoking": "በመሰረዝ ላይ...",
+                "browserDevice": "ዌብ ብሮውዘር",
+                "currentSession": "የአሁኑ ሴሽን",
+                "table": {
+                    "device": "መሳሪያ / ሴሽን",
+                    "created": "የተፈጠረበት",
+                    "expiration": "የሚያበቃበት",
+                    "action": "እርምጃ",
+                    "noData": "ምንም ንቁ ሴሽኖች አልተገኙም።"
+                },
+                "revokeBtn": "ሰርዝ"
+            }
+        },
+        "settingsPage": {
+            "title": "ቅንብሮች",
+            "description": "የመለያዎን መረጃ፣ የድርጅት መዋቅር፣ ቅርንጫፎችን እና የደህንነት ምርጫዎችን ያቀናብሩ።",
+            "nav": {
+                "account": {
+                    "label": "መለያ",
+                    "description": "ንግድ፣ መገለጫ እና ምዝገባ"
+                },
+                "organization": {
+                    "label": "ድርጅት",
+                    "description": "ቅርንጫፎች፣ ቡድን እና ፈቃዶች"
+                },
+                "security": {
+                    "label": "ደህንነት",
+                    "description": "የይለፍ ቃል፣ ሴሽኖች እና ማረጋገጫ"
+                }
+            }
         }
     }
 }

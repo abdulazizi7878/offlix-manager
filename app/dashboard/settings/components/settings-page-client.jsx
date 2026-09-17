@@ -1,8 +1,7 @@
-// file: app/dashboard/settings/components/settings-page-client.jsx
-
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import SettingsNavigation from "./settings-navigation";
 import AccountSettings from "./account-settings";
@@ -10,6 +9,7 @@ import OrganizationSettings from "./organization-settings";
 import SecuritySettings from "./security-settings";
 
 export default function SettingsPageClient() {
+    const t = useTranslations("dashboard.settingsPage");
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -28,18 +28,17 @@ export default function SettingsPageClient() {
             {/* Page Header */}
             <div className="bg-(--card) border border-(--border) p-6 rounded-2xl shadow-xs">
                 <h1 className="text-2xl font-bold tracking-tight text-(--foreground)">
-                    Settings
+                    {t("title")}
                 </h1>
 
                 <p className="text-sm text-(--muted-foreground) mt-1">
-                    Manage your account details, organization structure,
-                    branches, and security preferences.
+                    {t("description")}
                 </p>
             </div>
 
             {/* Main Settings Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-                {/* Navigation Sidebar - Fixed floating bug on small screens by changing sticky to lg:sticky */}
+                {/* Navigation Sidebar */}
                 <div className="lg:col-span-1 bg-(--card) border border-(--border) rounded-2xl p-3 shadow-xs lg:sticky lg:top-6">
                     <SettingsNavigation
                         activeTab={currentTab}

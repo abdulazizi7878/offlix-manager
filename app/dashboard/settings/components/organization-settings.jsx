@@ -1,5 +1,3 @@
-// file: app/dashboard/settings/components/organization-settings.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,8 +5,10 @@ import { fetchApi } from "@/lib/api/client";
 import { useRouter } from "next/navigation";
 import { Building2, Users, UserPlus, Shield, Loader2, Key } from "lucide-react";
 import dayjs from "dayjs";
+import { useTranslations } from "next-intl";
 
 export default function OrganizationSettings() {
+    const t = useTranslations("dashboard.organizationSettings");
     const router = useRouter();
     const [activeSubTab, setActiveSubTab] = useState("branches");
     const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function OrganizationSettings() {
                 membershipPermissions: data.membershipPermissions || [],
             });
         } catch (err) {
-            setError(err.message || "Failed to load organization settings.");
+            setError(err.message || t("loadError"));
         } finally {
             setLoading(false);
         }
@@ -65,10 +65,10 @@ export default function OrganizationSettings() {
             {/* Sub-navigation for Organization */}
             <div className="flex flex-wrap items-center gap-2 bg-(--card) border border-(--border) p-2 rounded-2xl shadow-xs">
                 {[
-                    { id: "branches", label: "Branches", icon: Building2, count: orgData.branches.length },
-                    { id: "team", label: "Team Members", icon: Users, count: orgData.employees.length },
-                    { id: "memberships", label: "Memberships", icon: UserPlus, count: orgData.memberships.length },
-                    { id: "permissions", label: "Permissions", icon: Shield, count: orgData.permissions.length },
+                    { id: "branches", label: t("tabs.branches"), icon: Building2, count: orgData.branches.length },
+                    { id: "team", label: t("tabs.team"), icon: Users, count: orgData.employees.length },
+                    { id: "memberships", label: t("tabs.memberships"), icon: UserPlus, count: orgData.memberships.length },
+                    { id: "permissions", label: t("tabs.permissions"), icon: Shield, count: orgData.permissions.length },
                 ].map((tab) => {
                     const Icon = tab.icon;
                     const isActive = activeSubTab === tab.id;
@@ -77,8 +77,8 @@ export default function OrganizationSettings() {
                             key={tab.id}
                             onClick={() => setActiveSubTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors ${isActive
-                                    ? "bg-(--primary) text-(--primary-foreground)"
-                                    : "bg-(--muted)/40 hover:bg-(--muted) text-(--foreground)"
+                                ? "bg-(--primary) text-(--primary-foreground)"
+                                : "bg-(--muted)/40 hover:bg-(--muted) text-(--foreground)"
                                 }`}
                         >
                             <Icon className="w-3.5 h-3.5" />
@@ -96,25 +96,25 @@ export default function OrganizationSettings() {
                 <div className="bg-(--card) border border-(--border) rounded-2xl shadow-xs overflow-hidden">
                     <div className="p-6 border-b border-(--border) flex items-center justify-between">
                         <div>
-                            <h2 className="text-base font-bold text-(--foreground)">Organization Branches</h2>
-                            <p className="text-xs text-(--muted-foreground)">Manage your business locations and operating branches</p>
+                            <h2 className="text-base font-bold text-(--foreground)">{t("branches.title")}</h2>
+                            <p className="text-xs text-(--muted-foreground)">{t("branches.subtitle")}</p>
                         </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
-                                    <th className="py-3 px-6">Branch Name</th>
-                                    <th className="py-3 px-6">Description</th>
-                                    <th className="py-3 px-6">Status</th>
-                                    <th className="py-3 px-6">Created At</th>
+                                    <th className="py-3 px-6">{t("branches.table.name")}</th>
+                                    <th className="py-3 px-6">{t("branches.table.description")}</th>
+                                    <th className="py-3 px-6">{t("branches.table.status")}</th>
+                                    <th className="py-3 px-6">{t("branches.table.createdAt")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border) text-sm">
                                 {orgData.branches.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="py-8 text-center text-xs text-(--muted-foreground)">
-                                            No branches found.
+                                            {t("branches.table.noData")}
                                         </td>
                                     </tr>
                                 ) : (
@@ -144,33 +144,33 @@ export default function OrganizationSettings() {
                 <div className="bg-(--card) border border-(--border) rounded-2xl shadow-xs overflow-hidden">
                     <div className="p-6 border-b border-(--border) flex items-center justify-between">
                         <div>
-                            <h2 className="text-base font-bold text-(--foreground)">Team Employees</h2>
-                            <p className="text-xs text-(--muted-foreground)">Active employees and administrative staff registered in the system</p>
+                            <h2 className="text-base font-bold text-(--foreground)">{t("team.title")}</h2>
+                            <p className="text-xs text-(--muted-foreground)">{t("team.subtitle")}</p>
                         </div>
                         <button
                             onClick={() => router.push("/dashboard/users/create")}
                             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-(--primary) text-(--primary-foreground) rounded-xl text-xs font-semibold cursor-pointer"
                         >
                             <UserPlus className="w-3.5 h-3.5" />
-                            <span>Invite Employee</span>
+                            <span>{t("team.inviteBtn")}</span>
                         </button>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
-                                    <th className="py-3 px-6">Name</th>
-                                    <th className="py-3 px-6">Email</th>
-                                    <th className="py-3 px-6">Phone</th>
-                                    <th className="py-3 px-6">Username</th>
-                                    <th className="py-3 px-6">Joined Date</th>
+                                    <th className="py-3 px-6">{t("team.table.name")}</th>
+                                    <th className="py-3 px-6">{t("team.table.email")}</th>
+                                    <th className="py-3 px-6">{t("team.table.phone")}</th>
+                                    <th className="py-3 px-6">{t("team.table.username")}</th>
+                                    <th className="py-3 px-6">{t("team.table.joinedDate")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border) text-sm">
                                 {orgData.employees.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="py-8 text-center text-xs text-(--muted-foreground)">
-                                            No employees found.
+                                            {t("team.table.noData")}
                                         </td>
                                     </tr>
                                 ) : (
@@ -197,25 +197,25 @@ export default function OrganizationSettings() {
                 <div className="bg-(--card) border border-(--border) rounded-2xl shadow-xs overflow-hidden">
                     <div className="p-6 border-b border-(--border) flex items-center justify-between">
                         <div>
-                            <h2 className="text-base font-bold text-(--foreground)">Branch Memberships</h2>
-                            <p className="text-xs text-(--muted-foreground)">Mapping of employees assigned to specific store branches</p>
+                            <h2 className="text-base font-bold text-(--foreground)">{t("memberships.title")}</h2>
+                            <p className="text-xs text-(--muted-foreground)">{t("memberships.subtitle")}</p>
                         </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
-                                    <th className="py-3 px-6">User Name</th>
-                                    <th className="py-3 px-6">Branch Name</th>
-                                    <th className="py-3 px-6">Contact Email</th>
-                                    <th className="py-3 px-6">Status</th>
+                                    <th className="py-3 px-6">{t("memberships.table.userName")}</th>
+                                    <th className="py-3 px-6">{t("memberships.table.branchName")}</th>
+                                    <th className="py-3 px-6">{t("memberships.table.contactEmail")}</th>
+                                    <th className="py-3 px-6">{t("memberships.table.status")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border) text-sm">
                                 {orgData.memberships.length === 0 ? (
                                     <tr>
                                         <td colSpan={4} className="py-8 text-center text-xs text-(--muted-foreground)">
-                                            No memberships found.
+                                            {t("memberships.table.noData")}
                                         </td>
                                     </tr>
                                 ) : (
@@ -242,12 +242,12 @@ export default function OrganizationSettings() {
             {activeSubTab === "permissions" && (
                 <div className="bg-(--card) border border-(--border) rounded-2xl p-6 shadow-xs space-y-4">
                     <div>
-                        <h2 className="text-base font-bold text-(--foreground)">System Permissions</h2>
-                        <p className="text-xs text-(--muted-foreground)">Available system permissions and access keys returned by the API</p>
+                        <h2 className="text-base font-bold text-(--foreground)">{t("permissions.title")}</h2>
+                        <p className="text-xs text-(--muted-foreground)">{t("permissions.subtitle")}</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
                         {orgData.permissions.length === 0 ? (
-                            <p className="text-xs text-(--muted-foreground) py-4">No permissions defined.</p>
+                            <p className="text-xs text-(--muted-foreground) py-4">{t("permissions.noData")}</p>
                         ) : (
                             orgData.permissions.map((perm) => (
                                 <div key={perm.id} className="p-3.5 bg-(--muted)/10 border border-(--border) rounded-xl space-y-1">

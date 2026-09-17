@@ -1609,6 +1609,109 @@
                     "utc": "UTC"
                 }
             }
+        },
+        "organizationSettings": {
+            "loadError": "Failed to load organization settings.",
+            "tabs": {
+                "branches": "Branches",
+                "team": "Team Members",
+                "memberships": "Memberships",
+                "permissions": "Permissions"
+            },
+            "branches": {
+                "title": "Organization Branches",
+                "subtitle": "Manage your business locations and operating branches",
+                "table": {
+                    "name": "Branch Name",
+                    "description": "Description",
+                    "status": "Status",
+                    "createdAt": "Created At",
+                    "noData": "No branches found."
+                }
+            },
+            "team": {
+                "title": "Team Employees",
+                "subtitle": "Active employees and administrative staff registered in the system",
+                "inviteBtn": "Invite Employee",
+                "table": {
+                    "name": "Name",
+                    "email": "Email",
+                    "phone": "Phone",
+                    "username": "Username",
+                    "joinedDate": "Joined Date",
+                    "noData": "No employees found."
+                }
+            },
+            "memberships": {
+                "title": "Branch Memberships",
+                "subtitle": "Mapping of employees assigned to specific store branches",
+                "table": {
+                    "userName": "User Name",
+                    "branchName": "Branch Name",
+                    "contactEmail": "Contact Email",
+                    "status": "Status",
+                    "noData": "No memberships found."
+                }
+            },
+            "permissions": {
+                "title": "System Permissions",
+                "subtitle": "Available system permissions and access keys returned by the API",
+                "noData": "No permissions defined."
+            }
+        },
+        "securitySettings": {
+            "loadError": "Failed to load security settings.",
+            "passwordMismatch": "New passwords do not match.",
+            "passwordSuccess": "Password updated successfully.",
+            "passwordUpdateError": "Failed to update password.",
+            "revokeConfirm": "Are you sure you want to revoke this session?",
+            "revokeError": "Failed to revoke session.",
+            "noCurrentSession": "Current session information is unavailable.",
+            "revokeAllConfirm": "Are you sure you want to revoke all other active sessions?",
+            "revokeAllError": "Failed to revoke sessions.",
+            "changePassword": {
+                "title": "Change Password",
+                "subtitle": "Ensure your account is using a secure password",
+                "currentPassword": "Current Password",
+                "newPassword": "New Password",
+                "confirmPassword": "Confirm New Password",
+                "updating": "Updating...",
+                "updateBtn": "Update Password"
+            },
+            "sessions": {
+                "title": "Active Sessions",
+                "subtitle": "Manage and revoke active browser or device sessions",
+                "revokeAllBtn": "Revoke All Other Sessions",
+                "revoking": "Revoking...",
+                "browserDevice": "Web Browser",
+                "currentSession": "Current Session",
+                "table": {
+                    "device": "Device / Session",
+                    "created": "Created",
+                    "expiration": "Expiration",
+                    "action": "Action",
+                    "noData": "No active sessions found."
+                },
+                "revokeBtn": "Revoke"
+            }
+        },
+        "settingsPage": {
+            "title": "Settings",
+            "description": "Manage your account details, organization structure, branches, and security preferences.",
+            "nav": {
+                "account": {
+                    "label": "Account",
+                    "description": "Business, profile & subscription"
+                },
+                "organization": {
+                    "label": "Organization",
+                    "description": "Branches, team & permissions"
+                },
+                "security": {
+                    "label": "Security",
+                    "description": "Password, sessions & Auth"
+                }
+            }
         }
     }
 }

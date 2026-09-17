@@ -1,27 +1,28 @@
-// file: app/dashboard/settings/components/settings-navigation.jsx
-
 "use client";
 
 import { User, Building2, Shield } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function SettingsNavigation({ activeTab, onTabChange }) {
+    const t = useTranslations("dashboard.settingsPage.nav");
+
     const navItems = [
         {
             id: "account",
-            label: "Account",
-            description: "Business, profile & subscription",
+            label: t("account.label"),
+            description: t("account.description"),
             icon: User,
         },
         {
             id: "organization",
-            label: "Organization",
-            description: "Branches, team & permissions",
+            label: t("organization.label"),
+            description: t("organization.description"),
             icon: Building2,
         },
         {
             id: "security",
-            label: "Security",
-            description: "Password, sessions & Auth",
+            label: t("security.label"),
+            description: t("security.description"),
             icon: Shield,
         },
     ];
@@ -36,8 +37,8 @@ export default function SettingsNavigation({ activeTab, onTabChange }) {
                         key={item.id}
                         onClick={() => onTabChange(item.id)}
                         className={`w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors ${isActive
-                                ? "bg-(--primary)/10 text-(--primary) border border-(--primary)/20 font-medium"
-                                : "hover:bg-(--muted)/50 text-(--foreground) border border-transparent"
+                            ? "bg-(--primary)/10 text-(--primary) border border-(--primary)/20 font-medium"
+                            : "hover:bg-(--muted)/50 text-(--foreground) border border-transparent"
                             }`}
                     >
                         <Icon className={`w-5 h-5 mt-0.5 ${isActive ? "text-(--primary)" : "text-(--muted-foreground)"}`} />
