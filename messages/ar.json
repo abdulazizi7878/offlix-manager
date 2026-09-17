@@ -762,6 +762,956 @@
             "createdBy": "تم الإنشاء بواسطة",
             "notFound": "لم يتم العثور على سجل الشراء.",
             "loadError": "فشل تحميل تفاصيل الشراء."
+        },
+        "salesPage": {
+            "title": "المبيعات",
+            "subtitle": "إدارة المعاملات، تتبع المدفوعات، ومراجعة سجلات المبيعات.",
+            "createSale": "إنشاء عملية بيع",
+            "totalSales": "إجمالي المبيعات",
+            "totalRevenue": "إجمالي الإيرادات",
+            "paid": "مدفوع",
+            "partial": "جزئي",
+            "credit": "آجل / ائتمان",
+            "searchPlaceholder": "البحث عن العميل، المعرف...",
+            "allBranches": "جميع الفروع",
+            "allEmployees": "جميع الموظفين",
+            "allPaymentStatuses": "جميع حالات الدفع",
+            "clear": "مسح",
+            "selectToday": "تحديد اليوم",
+            "loading": "جاري تحميل سجلات المبيعات...",
+            "loadError": "فشل تحميل بيانات المبيعات.",
+            "tryAgain": "حاول مرة أخرى",
+            "noSalesFound": "لم يتم العثور على مبيعات",
+            "noSalesDesc": "حاول مسح الفلاتر أو تسجيل معاملة بيع جديدة.",
+            "colSaleIdDate": "معرف البيع / التاريخ",
+            "colBranch": "الفرع",
+            "colCustomer": "العميل",
+            "colEmployee": "الموظف",
+            "colTotal": "الإجمالي",
+            "colStatus": "الحالة",
+            "colActions": "الإجراءات",
+            "walkIn": "عميل مباشر",
+            "view": "عرض",
+            "birr": "بر",
+            "statusPaid": "مدفوع",
+            "statusPartial": "جزئي",
+            "statusCredit": "آجل / ائتمان",
+            "pageIndicator": "صفحة {page} من {totalPages}"
+        },
+        "createSalePage": {
+            "title": "إنشاء بيع جديد",
+            "subtitle": "تسجيل معاملة بيع، العناصر، وشروط الدفع.",
+            "saleDetails": "تفاصيل البيع",
+            "branch": "الفرع",
+            "selectBranch": "حدد الفرع",
+            "customerName": "اسم العميل (اختياري)",
+            "customerPlaceholder": "اسم العميل",
+            "notes": "ملاحظات (اختياري)",
+            "notesPlaceholder": "أضف أي ملاحظات إضافية عن البيع هنا...",
+            "productsItems": "المنتجات / العناصر",
+            "stockLimitation": "الكميات محدودة بالمخزون المتاح.",
+            "addItem": "إضافة عنصر",
+            "selectBranchFirst": "يرجى تحديد الفرع أولاً لتحميل المنتجات.",
+            "loadingProducts": "جاري تحميل المنتجات لهذا الفرع...",
+            "noProducts": "لا توجد منتجات متاحة لهذا الفرع.",
+            "selectProduct": "حدد المنتج",
+            "qty": "الكمية",
+            "price": "السعر",
+            "stock": "المخزون",
+            "inThisSale": "في هذا البيع",
+            "remaining": "المتبقي",
+            "totalSaleAmount": "المبلغ الإجمالي للبيع",
+            "paymentTerms": "شروط الدفع",
+            "paymentStatus": "حالة الدفع",
+            "paymentMethod": "طريقة الدفع",
+            "paid": "مدفوع",
+            "partial": "جزئي",
+            "credit": "آجل / ائتمان (غير مدفوع)",
+            "cash": "نقداً",
+            "bank": "بنك",
+            "paidAmount": "المبلغ المدفوع (بالبر)",
+            "paidAmountPlaceholder": "المبلغ المدفوع الآن",
+            "remainingBalance": "الرصيد المتبقي",
+            "creditInfo": "لن يتم تسجيل أي دفع الآن. سيتم إضافة المبلغ الإجمالي للبيع إلى المستحقات الآجلة.",
+            "cancel": "إلغاء",
+            "completeSale": "إكمال البيع",
+            "birr": "بر",
+            "messages": {
+                "loadError": "فشل تحميل متطلبات النموذج.",
+                "loadProductsError": "فشل تحميل المنتجات لهذا الفرع.",
+                "duplicateProduct": "تمت إضافة هذا المنتج بالفعل إلى عملية البيع.",
+                "noRemainingStock": "لا يوجد مخزون متبقٍ لهذا المنتج.",
+                "quantityAvailableRow": "تتوفر {maxQuantity} وحدة/وحدات فقط لهذا الصف.",
+                "addOneProduct": "أضف منتجًا واحدًا على الأقل.",
+                "selectBranchError": "يرجى تحديد فرع.",
+                "stockExceeded": "\"{name}\" يحتوي فقط على {stock} وحدة/وحدات في المخزون، ولكن تم طلب {requested}.",
+                "invalidPartial": "أدخل مبلغ دفع جزئي صالح.",
+                "partialLessThanTotal": "يجب أن يكون الدفع الجزئي أقل من إجمالي البيع.",
+                "selectPaymentMethod": "يرجى تحديد طريقة الدفع.",
+                "createSuccess": "تم إنشاء البيع بنجاح",
+                "createError": "فشل إنشاء البيع."
+            }
+        },
+        "saleDetailPage": {
+            "title": "بيع #{id}",
+            "backToSales": "العودة إلى المبيعات",
+            "notFound": "لم يتم العثور على عملية البيع.",
+            "print": "طباعة",
+            "branch": "الفرع",
+            "customer": "العميل",
+            "handledBy": "تمت بواسطة (الموظف)",
+            "purchasedItems": "العناصر المشتراة",
+            "product": "المنتج",
+            "quantity": "الكمية",
+            "pricePerItem": "السعر لكل عنصر",
+            "lineTotal": "إجمالي البند",
+            "saleTotalAmount": "المبلغ الإجمالي للبيع:",
+            "paymentBreakdown": "تفاصيل الدفع",
+            "paymentStatus": "حالة الدفع:",
+            "paymentMethod": "طريقة الدفع:",
+            "amountPaid": "المبلغ المدفوع:",
+            "remainingBalance": "الرصيد المتبقي:",
+            "notes": "الملاحظات",
+            "walkInCustomer": "عميل مباشر",
+            "defaultProduct": "المنتج",
+            "birr": "بر",
+            "status": {
+                "paid": "مدفوع",
+                "partial": "جزئي",
+                "credit": "آجل / ائتمان"
+            },
+            "messages": {
+                "loadError": "فشل تحميل تفاصيل البيع."
+            }
+        },
+        "moneyOverviewPage": {
+            "title": "إدارة الأموال",
+            "subtitle": "نظرة عامة على سيولة العمل، الحسابات، المعاملات، والتدفقات النقدية.",
+            "transactions": "المعاملات",
+            "manageAccounts": "إدارة الحسابات",
+            "totalLiquidMoney": "إجمالي السيولة النقدية للعمل",
+            "cash": "النقد",
+            "bankAccounts": "الحسابات البنكية",
+            "mobileMoney": "المحفظة الإلكترونية",
+            "etb": "بر إثيوبي",
+            "modules": {
+                "accounts": "الحسابات",
+                "transactions": "المعاملات",
+                "transfers": "التحويلات",
+                "settlements": "التسويات",
+                "payables": "المستحقات للدفع",
+                "credits": "الائتمانات"
+            },
+            "moneyAccounts": "الحسابات المالية",
+            "recentTransactions": "المعاملات الأخيرة",
+            "viewAll": "عرض الكل ←",
+            "noAccounts": "لم يتم إنشاء حسابات مالية بعد.",
+            "noTransactions": "لم يتم تسجيل معاملات بعد.",
+            "account": "الحساب",
+            "active": "نشط",
+            "inactive": "غير نشط",
+            "tryAgain": "حاول مرة أخرى",
+            "messages": {
+                "loadError": "فشل تحميل النظرة العامة المالية.",
+                "unableToLoad": "تعذر تحميل لوحة التحكم"
+            }
+        },
+        "moneyAccountsPage": {
+            "title": "الحسابات المالية",
+            "subtitle": "إدارة الخزائن النقدية الفعلية، الحسابات البنكية، والمحافظ الإلكترونية.",
+            "createAccount": "إنشاء حساب",
+            "searchPlaceholder": "البحث عن الحسابات بالاسم...",
+            "allTypes": "جميع الأنواع",
+            "cash": "نقداً",
+            "bank": "بنك",
+            "mobileMoney": "محفظة إلكترونية",
+            "active": "نشط",
+            "inactive": "غير نشط",
+            "currentBalance": "الرصيد الحالي",
+            "details": "التفاصيل",
+            "etb": "بر إثيوبي",
+            "retry": "إعادة المحاولة",
+            "emptyState": {
+                "title": "لا توجد حسابات مالية بعد",
+                "subtitle": "أنشئ حسابك المالي الأول للبدء في تتبع أموال عملك."
+            },
+            "modal": {
+                "title": "إنشاء حساب مالي",
+                "accountName": "اسم الحساب",
+                "namePlaceholder": "مثال: النقد الرئيسي، CBE، Telebirr",
+                "accountType": "نوع الحساب",
+                "activeAccount": "حساب نشط",
+                "cancel": "إلغاء",
+                "submitting": "جاري الإنشاء..."
+            },
+            "messages": {
+                "loadError": "فشل تحميل الحسابات المالية.",
+                "nameRequired": "اسم الحساب مطلوب",
+                "createSuccess": "تم إنشاء الحساب المالي بنجاح",
+                "createError": "فشل إنشاء الحساب المالي"
+            }
+        },
+        "createMoneyAccountPage": {
+            "title": "إنشاء حساب مالي",
+            "subtitle": "إضافة حساب نقدي أو بنكي جديد للنشاط التجاري.",
+            "accountType": "نوع الحساب",
+            "cashAccount": "حساب نقدي",
+            "bankAccount": "حساب بنكي",
+            "accountName": "اسم الحساب",
+            "namePlaceholder": "مثال: صندوق النقد الرئيسي أو البنك التجاري",
+            "bankName": "اسم البنك",
+            "bankNamePlaceholder": "مثال: البنك التجاري الإثيوبي",
+            "accountIdentifier": "معرف / رقم الحساب",
+            "identifierPlaceholder": "مثال: 1000284910293",
+            "cancel": "إلغاء",
+            "createAccount": "إنشاء الحساب",
+            "messages": {
+                "nameRequired": "يرجى إدخال اسم الحساب.",
+                "createSuccess": "تم إنشاء الحساب المالي بنجاح.",
+                "createError": "فشل إنشاء الحساب. يرجى المحاولة مرة أخرى."
+            }
+        },
+        "editMoneyAccountPage": {
+            "title": "تعديل الحساب",
+            "subtitle": "إدارة معلومات الحساب والحالة.",
+            "derivedBalance": "الرصيد المحسوب",
+            "etb": "بر إثيوبي",
+            "accountName": "اسم الحساب",
+            "accountType": "نوع الحساب",
+            "accountStatus": "حالة الحساب",
+            "cash": "نقداً",
+            "bank": "بنك",
+            "mobileMoney": "محفظة إلكترونية",
+            "active": "نشط",
+            "inactive": "غير نشط",
+            "backToAccounts": "العودة إلى الحسابات",
+            "cancel": "إلغاء",
+            "saveChanges": "حفظ التغييرات",
+            "saving": "جاري الحفظ...",
+            "messages": {
+                "missingId": "معرف الحساب المالي مفقود.",
+                "loadError": "فشل تحميل تفاصيل الحساب.",
+                "updateSuccess": "تم تحديث الحساب بنجاح",
+                "updateError": "فشل تحديث الحساب"
+            }
+        },
+        "transactionsPage": {
+            "title": "المعاملات",
+            "subtitle": "تتبع جميع التحركات المالية الواردة والصادرة.",
+            "newTransaction": "معاملة جديدة",
+            "searchPlaceholder": "البحث في الوصف...",
+            "allAccounts": "جميع الحسابات",
+            "allTypes": "جميع الأنواع",
+            "allDirections": "جميع الاتجاهات",
+            "moneyIn": "الأموال الواردة",
+            "moneyOut": "الأموال الصادرة",
+            "moneyInInflow": "الأموال الواردة (تدفق داخلي)",
+            "moneyOutOutflow": "الأموال الصادرة (تدفق خارجي)",
+            "selectMoneyAccount": "حدد الحساب المالي",
+            "accountFallback": "الحساب",
+            "noDescription": "لا يوجد وصف",
+            "retry": "إعادة المحاولة",
+            "details": "التفاصيل",
+            "etb": "بر إثيوبي",
+            "types": {
+                "income": "إيراد",
+                "expense": "مصروف",
+                "deposit": "إيداع",
+                "withdrawal": "سحب",
+                "payment": "دفع",
+                "settlement": "تسوية",
+                "credit": "ائتمان",
+                "debit": "خصم",
+                "transfer": "تحويل",
+                "other": "آخر"
+            },
+            "table": {
+                "typeDescription": "النوع / الوصف",
+                "account": "الحساب",
+                "direction": "الاتجاه",
+                "amount": "المبلغ",
+                "date": "التاريخ",
+                "action": "الإجراء"
+            },
+            "emptyState": {
+                "title": "لم يتم العثور على معاملات",
+                "subtitle": "سجل معاملتك الأولى للبدء في تتبع التدفق النقدي."
+            },
+            "modal": {
+                "title": "تسجيل معاملة",
+                "type": "النوع",
+                "direction": "الاتجاه",
+                "moneyAccount": "الحساب المالي",
+                "amount": "المبلغ (بالبر)",
+                "date": "التاريخ",
+                "description": "الوصف / الملاحظات",
+                "descriptionPlaceholder": "أضف ملاحظات أو وصفًا...",
+                "cancel": "إلغاء",
+                "submitting": "جاري التسجيل..."
+            },
+            "messages": {
+                "loadError": "فشل تحميل المعاملات.",
+                "selectAccount": "يرجى تحديد حساب مالي",
+                "invalidAmount": "يرجى إدخال مبلغ صالح",
+                "maxDecimals": "يمكن للمبالغ أن تدعم خانتين عشريتين كحد أقصى",
+                "createSuccess": "تم تسجيل المعاملة بنجاح",
+                "createError": "فشل تسجيل المعاملة"
+            }
+        },
+        "transactionDetailsPage": {
+            "title": "تفاصيل المعاملة",
+            "subtitle": "المعلومات الكاملة حول سجل هذه المعاملة.",
+            "notFound": "المعاملة غير موجودة",
+            "backToTransactions": "العودة إلى المعاملات",
+            "in": "وارد",
+            "out": "صادر",
+            "etb": "بر إثيوبي",
+            "moneyAccount": "الحساب المالي",
+            "date": "التاريخ",
+            "description": "الوصف / الملاحظات",
+            "noDescription": "لم يتم تقديم وصف.",
+            "na": "غير متوفر",
+            "types": {
+                "income": "إيراد",
+                "expense": "مصروف",
+                "deposit": "إيداع",
+                "withdrawal": "سحب",
+                "payment": "دفع",
+                "settlement": "تسوية",
+                "credit": "ائتمان",
+                "debit": "خصم",
+                "transfer": "تحويل",
+                "other": "آخر"
+            },
+            "messages": {
+                "loadError": "فشل تحميل تفاصيل المعاملة."
+            }
+        },
+        "transfersPage": {
+            "title": "تحويلات الحسابات",
+            "subtitle": "نقل الأموال بسلاسة بين حساباتك المالية التجاري.",
+            "newTransfer": "تحويل جديد",
+            "retry": "إعادة المحاولة",
+            "noTransfersTitle": "لا توجد تحويلات بعد",
+            "noTransfersSubtitle": "حول الأموال بين حساباتك للحفاظ على تنظيم السيولة.",
+            "table": {
+                "route": "المسار",
+                "amount": "المبلغ",
+                "notes": "الملاحظات",
+                "date": "التاريخ",
+                "action": "الإجراء",
+                "details": "التفاصيل",
+                "source": "المصدر",
+                "destination": "الوجهة",
+                "noNotes": "لا توجد ملاحظات",
+                "etb": "بر إثيوبي"
+            },
+            "modal": {
+                "title": "تحويل مالي جديد",
+                "fromAccount": "من حساب",
+                "selectSource": "حدد حساب المصدر",
+                "toAccount": "إلى حساب",
+                "selectDestination": "حدد حساب الوجهة",
+                "amount": "المبلغ (بالبر)",
+                "amountPlaceholder": "0.00",
+                "notes": "الملاحظات",
+                "notesPlaceholder": "شرح التحويل...",
+                "cancel": "إلغاء",
+                "execute": "تنفيذ التحويل",
+                "transferring": "جاري التحويل..."
+            },
+            "messages": {
+                "loadError": "فشل تحميل التحويلات.",
+                "selectBoth": "يرجى تحديد حسابي المصدر والوجهة",
+                "sameAccount": "لا يمكن أن يكون حساب المصدر والوجهة هم أنفسهم",
+                "invalidAmount": "يرجى إدخال مبلغ صالح",
+                "decimalLimit": "يمكن للمبالغ أن تدعم خانتين عشريتين كحد أقصى",
+                "success": "تم اكتمال التحويل بنجاح",
+                "failed": "فشل تنفيذ التحويل"
+            }
+        },
+        "transferDetailsPage": {
+            "title": "تفاصيل التحويل",
+            "subtitle": "المعلومات الكاملة حول تحويل الحساب هذا.",
+            "notFound": "التحويل غير موجود",
+            "backToTransfers": "العودة إلى التحويلات",
+            "transferAmount": "مبلغ التحويل",
+            "etb": "بر إثيوبي",
+            "fromAccount": "من حساب",
+            "toAccount": "إلى حساب",
+            "date": "التاريخ",
+            "notes": "الملاحظات",
+            "noNotes": "لم يتم تقديم ملاحظات.",
+            "source": "المصدر",
+            "destination": "الوجهة",
+            "messages": {
+                "loadError": "فشل تحميل تفاصيل التحويل."
+            }
+        },
+        "settlementsPage": {
+            "title": "تسويات الفروع",
+            "subtitle": "إدارة تسويات الإيرادات المطلوبة من قبل الفروع إلى الأنظمة المالية المركزية.",
+            "searchPlaceholder": "البحث بالفرع أو المستخدم...",
+            "filterStatus": "تصفية الحالة:",
+            "allStatuses": "جميع الحالات",
+            "requestedPending": "مطلوب / معلق",
+            "received": "مستلم",
+            "retry": "إعادة المحاولة",
+            "noSettlementsTitle": "لم يتم العثور على تسويات",
+            "noSettlementsSubtitle": "حاول ضبط خيارات البحث أو الفلترة.",
+            "table": {
+                "branch": "الفرع",
+                "original": "الأصلي",
+                "accepted": "المقبول",
+                "remaining": "المتبقي",
+                "status": "الحالة",
+                "requestedBy": "تم الطلب بواسطة",
+                "receiver": "المستلم",
+                "requestedDate": "تاريخ الطلب",
+                "action": "الإجراء",
+                "viewHistory": "عرض السجل",
+                "acceptFunds": "قبول الأموال",
+                "etb": "بر إثيوبي",
+                "na": "غير متوفر",
+                "pending": "معلق",
+                "receivedStatus": "مستلم"
+            },
+            "messages": {
+                "loadError": "فشل تحميل التسويات."
+            }
+        },
+        "settlementDetailsPage": {
+            "title": "تفاصيل التسوية",
+            "subtitle": "إدارة قبول أموال إيرادات الفروع.",
+            "notFound": "التسوية غير موجودة",
+            "backToSettlements": "العودة إلى التسويات",
+            "meta": {
+                "branchName": "اسم الفرع",
+                "requestedBy": "تم الطلب بواسطة",
+                "requestedDate": "تاريخ الطلب",
+                "na": "غير متوفر"
+            },
+            "summary": {
+                "originalAmount": "المبلغ الأصلي",
+                "acceptedAmount": "المبلغ المقبول",
+                "remainingAmount": "المبلغ المتبقي",
+                "etb": "بر إثيوبي"
+            },
+            "form": {
+                "title": "قبول أموال التسوية",
+                "destinationAccount": "الحساب المالي المستهدف",
+                "selectDestination": "حدد الحساب المستهدف",
+                "acceptFull": "قبول المبلغ المتبقي بالكامل ({amount} بر)",
+                "partialAmount": "مبلغ جزئي (بالبر)",
+                "notes": "الملاحظات",
+                "notesPlaceholder": "ملاحظات القبول...",
+                "acceptFunds": "قبول الأموال",
+                "processing": "جاري المعالجة..."
+            },
+            "history": {
+                "title": "سجل القبول",
+                "noRecords": "لا توجد سجلات قبول حتى الآن لهذه التسوية.",
+                "account": "الحساب",
+                "noNotes": "لا توجد ملاحظات"
+            },
+            "messages": {
+                "loadError": "فشل تحميل تفاصيل التسوية.",
+                "selectAccount": "يرجى تحديد حساب مالي مستهدف",
+                "invalidAmount": "يرجى إدخال مبلغ صالح",
+                "exceedsRemaining": "لا يمكن أن يتجاوز المبلغ مبلغ التسوية المتبقي",
+                "decimalLimit": "يمكن للمبالغ أن تدعم خانتين عشريتين كحد أقصى",
+                "success": "تم قبول التسوية بنجاح",
+                "failed": "فشل قبول التسوية"
+            }
+        },
+        "payablesPage": {
+            "title": "المستحقات للدفع (الديون للغير)",
+            "subtitle": "إدارة فواتير الموردين والتزامات الدفع الخارجية.",
+            "createPayable": "إنشاء مستحق للدفع",
+            "searchPlaceholder": "البحث عن المورد...",
+            "allStatuses": "جميع الحالات",
+            "statusPending": "معلق",
+            "statusPartial": "جزئي",
+            "statusPaid": "مدفوع",
+            "statusCancelled": "ملغى",
+            "retry": "إعادة المحاولة",
+            "noPayablesTitle": "لم يتم العثور على مستحقات للدفع",
+            "noPayablesSubtitle": "أنشئ مستحقًا للدفع عندما يدين عملك بأموال لمورد.",
+            "table": {
+                "supplier": "المورد",
+                "original": "الأصلي",
+                "remaining": "المتبقي",
+                "status": "الحالة",
+                "dueDate": "تاريخ الاستحقاق",
+                "action": "الإجراء",
+                "viewPay": "عرض / دفع",
+                "noDueDate": "لا يوجد تاريخ استحقاق",
+                "etb": "بر إثيوبي",
+                "pending": "معلق"
+            },
+            "modal": {
+                "title": "إنشاء مستحق للدفع",
+                "supplierName": "اسم المورد",
+                "supplierPlaceholder": "اسم المورد...",
+                "amount": "المبلغ (بالبر)",
+                "amountPlaceholder": "0.00",
+                "dueDate": "تاريخ الاستحقاق",
+                "notes": "الملاحظات",
+                "notesPlaceholder": "ملاحظات...",
+                "cancel": "إلغاء",
+                "create": "إنشاء",
+                "creating": "جاري الإنشاء..."
+            },
+            "messages": {
+                "loadError": "فشل تحميل المستحقات للدفع.",
+                "supplierRequired": "اسم المورد مطلوب",
+                "invalidAmount": "يرجى إدخال مبلغ صالح",
+                "decimalLimit": "يمكن للمبالغ أن تدعم خانتين عشريتين كحد أقصى",
+                "createSuccess": "تم إنشاء المستحق بنجاح",
+                "createFailed": "فشل إنشاء المستحق"
+            }
+        },
+        "payableDetailsPage": {
+            "title": "تفاصيل المستحق للدفع",
+            "supplier": "المورد",
+            "originalAmount": "المبلغ الأصلي",
+            "paidAmount": "المبلغ المدفوع",
+            "remainingAmount": "المبلغ المتبقي",
+            "etb": "بر إثيوبي",
+            "backToPayables": "العودة إلى المستحقات للدفع",
+            "notFound": "المستحق غير موجود",
+            "makePayment": {
+                "title": "إجراء دفع",
+                "account": "حساب الدفع",
+                "selectAccount": "حدد الحساب",
+                "payFull": "دفع المبلغ المتبقي بالكامل",
+                "partialAmount": "مبلغ جزئي (بالبر)",
+                "notes": "الملاحظات",
+                "notesPlaceholder": "ملاحظات الدفع...",
+                "submit": "إرسال الدفع",
+                "submitting": "جاري المعالجة..."
+            },
+            "history": {
+                "title": "سجل المدفوعات",
+                "noRecords": "لا توجد سجلات دفع بعد.",
+                "via": "عبر",
+                "noNotes": "لا توجد ملاحظات"
+            },
+            "messages": {
+                "loadError": "فشل تحميل تفاصيل المستحق للدفع.",
+                "selectAccount": "يرجى تحديد حساب مالي للدفع",
+                "invalidAmount": "يرجى إدخال مبلغ صالح",
+                "exceedsRemaining": "لا يمكن أن يتجاوز المبلغ المبلغ المتبقي للدفع",
+                "decimalLimit": "يمكن للمبالغ أن تدعم خانتين عشريتين كحد أقصى",
+                "paymentSuccess": "تم تسجيل الدفع بنجاح",
+                "paymentFailed": "فشل تسجيل الدفع"
+            }
+        },
+        "creditsPage": {
+            "title": "الائتمانات",
+            "description": "تتبع الأموال المقدمة كائتمان والمستلمة كائتمان.",
+            "createCredit": "إنشاء ائتمان",
+            "searchPlaceholder": "بحث...",
+            "allDirections": "جميع الاتجاهات",
+            "moneyIn": "الأموال الواردة",
+            "moneyOut": "الأموال الصادرة",
+            "allStatuses": "جميع الحالات",
+            "statuses": {
+                "pending": "معلق",
+                "partial": "جزئي",
+                "paid": "مدفوع",
+                "cancelled": "ملغى"
+            },
+            "retry": "إعادة المحاولة",
+            "empty": {
+                "title": "لم يتم العثور على ائتمانات",
+                "description": "أنشئ سجل ائتمان عندما يتم تقديم أموال أو استلامها كائتمان."
+            },
+            "table": {
+                "customer": "العميل",
+                "direction": "الاتجاه",
+                "original": "الأصلي",
+                "remaining": "المتبقي",
+                "status": "الحالة",
+                "createdAt": "تم الإنشاء في",
+                "dueDate": "تاريخ الاستحقاق",
+                "action": "الإجراء",
+                "etb": "بر إثيوبي",
+                "viewManage": "عرض / إدارة"
+            },
+            "modal": {
+                "title": "إنشاء ائتمان",
+                "name": "الاسم",
+                "namePlaceholder": "اسم الشخص أو الشريكة...",
+                "direction": "الاتجاه",
+                "directionHelp": "الأموال الصادرة تقلل من رصيدك. الأموال الواردة تزيد من رصيدك.",
+                "account": "الحساب المالي",
+                "selectAccount": "حدد الحساب",
+                "amount": "المبلغ (بالبر)",
+                "amountPlaceholder": "0.00",
+                "dueDate": "تاريخ الاستحقاق",
+                "notes": "الملاحظات",
+                "notesPlaceholder": "ملاحظات...",
+                "cancel": "إلغاء",
+                "submit": "إنشاء",
+                "submitting": "جاري الإنشاء..."
+            },
+            "messages": {
+                "loadError": "فشل تحميل الائتمانات",
+                "nameRequired": "اسم العميل مطلوب",
+                "selectAccount": "يرجى تحديد حساب مالي",
+                "selectDirection": "يرجى تحديد اتجاه الائتمان",
+                "invalidAmount": "يرجى إدخال مبلغ صالح",
+                "decimalLimit": "يمكن للمبالغ أن تدعم خانتين عشريتين كحد أقصى",
+                "success": "تم تسجيل الائتمان بنجاح",
+                "createError": "فشل تسجيل الائتمان"
+            }
+        },
+        "creditDetailsPage": {
+            "title": "تفاصيل الائتمان",
+            "moneyInSub": "إدارة الائتمان والمدفوعات للأموال الواردة",
+            "moneyOutSub": "إدارة الائتمان والمدفوعات للأموال الصادرة",
+            "info": {
+                "title": "معلومات الائتمان",
+                "direction": "الاتجاه",
+                "createdBy": "تم الإنشاء بواسطة",
+                "dueDate": "تاريخ الاستحقاق",
+                "createdAt": "تم الإنشاء في",
+                "lastUpdated": "آخر تحديث",
+                "description": "الوصف / الملاحظات",
+                "systemUser": "مستخدم النظام",
+                "noDueDate": "لا يوجد تاريخ استحقاق",
+                "na": "غير متوفر"
+            },
+            "summary": {
+                "original": "المبلغ الأصلي",
+                "received": "المبلغ المستلم",
+                "returned": "المبلغ المرجع",
+                "remaining": "المبلغ المتبقي",
+                "etb": "بر إثيوبي"
+            },
+            "paymentForm": {
+                "makePayment": "إجراء دفع",
+                "receivePayment": "استلام دفع",
+                "paymentAccount": "حساب الدفع",
+                "receivingAccount": "حساب الاستلام",
+                "selectAccount": "حدد الحساب",
+                "payFull": "دفع المبلغ المتبقي بالكامل ({amount} بر)",
+                "receiveFull": "استلام المبلغ المتبقي بالكامل ({amount} بر)",
+                "paymentAmount": "مبلغ الدفع (بالبر)",
+                "receivedAmount": "المبلغ المستلم (بالبر)",
+                "notes": "الملاحظات",
+                "notesPlaceholder": "ملاحظات الدفع...",
+                "submitPayment": "إجراء الدفع",
+                "submitReceive": "استلام الدفع",
+                "processing": "جاري المعالجة..."
+            },
+            "history": {
+                "title": "سجل المدفوعات",
+                "noRecords": "لا توجد سجلات دفع بعد.",
+                "to": "إلى",
+                "etb": "بر إثيوبي",
+                "account": "الحساب",
+                "noNotes": "لا توجد ملاحظات"
+            },
+            "backToCredits": "العودة إلى الائتمانات",
+            "notFound": "الائتمان غير موجود",
+            "messages": {
+                "loadError": "فشل تحميل تفاصيل الائتمان.",
+                "selectPaymentAccount": "يرجى تحديد حساب دفع",
+                "selectReceivingAccount": "يرجى تحديد حساب استلام أموال",
+                "invalidAmount": "يرجى إدخال مبلغ صالح",
+                "exceedsRemaining": "لا يمكن أن يتجاوز المبلغ مبلغ الائتمان المتبقي",
+                "decimalLimit": "يمكن للمبالغ أن تدعم خانتين عشريتين كحد أقصى",
+                "paymentSuccess": "تم إجراء الدفع بنجاح",
+                "receiveSuccess": "تم استلام الدفع بنجاح",
+                "processFailed": "فشل معالجة الدفع"
+            }
+        },
+        "totalMoneyPage": {
+            "title": "تفاصيل إجمالي الأموال",
+            "subtitle": "الأموال الفعلية المحتفظ بها عبر جميع الحسابات المالية (تستثني المستحقات والديون).",
+            "actualLiquidBalance": "الرصيد النقدي السائل الفعلي",
+            "balanceHelp": "مجموع كافة الأرصدة النقدية والحسابات البنكية الفعلية في الحسابات النشطة.",
+            "cashBalances": "الأرصدة النقدية",
+            "noCashAccounts": "لم يتم العثور على حسابات نقدية.",
+            "bankBalances": "الأرصدة البنكية",
+            "noBankAccounts": "لم يتم العثور على حسابات بنكية.",
+            "accountDetails": "التفاصيل حساب بحساب",
+            "noAccounts": "لم يتم العثور على حسابات.",
+            "ownerAccount": "حساب المالك",
+            "birr": "بر",
+            "loadError": "فشل تحميل تفاصيل إجمالي الأموال."
+        },
+        "usersPage": {
+            "title": "الموظفون",
+            "subtitle": "إدارة الموظفين التابعين لحساب عملك.",
+            "addEmployee": "إضافة موظف",
+            "searchPlaceholder": "البحث عن اسم الموظف، البريد الإلكتروني، رقم الهاتف...",
+            "errorTitle": "تعذر تحميل الموظفين",
+            "retry": "إعادة المحاولة",
+            "emptyTitle": "لم يتم العثور على موظفين",
+            "emptyDescription": "حاول مسح البحث أو إضافة موظف جديد للبدء في إدارة فريقك.",
+            "table": {
+                "name": "الاسم",
+                "phone": "رقم الهاتف",
+                "email": "البريد الإلكتروني",
+                "verified": "مؤكد",
+                "created": "تاريخ الإنشاء",
+                "actions": "الإجراءات",
+                "noEmail": "لا يوجد بريد إلكتروني",
+                "verifiedStatus": "مؤكد",
+                "unverifiedStatus": "غير مؤكد",
+                "recently": "مؤخراً",
+                "viewEdit": "عرض / تعديل"
+            },
+            "pagination": {
+                "page": "صفحة",
+                "of": "من",
+                "total": "إجمالي",
+                "previous": "السابق",
+                "next": "التالي"
+            },
+            "loadError": "فشل تحميل الموظفين."
+        },
+        "createUserPage": {
+            "title": "إضافة موظف",
+            "subtitle": "إنشاء حساب موظف جديد لعملك.",
+            "backAria": "العودة إلى الموظفين",
+            "form": {
+                "fullName": "الاسم الكامل",
+                "fullNamePlaceholder": "مثال: أبيب كيبيدي",
+                "phone": "رقم الهاتف",
+                "phonePlaceholder": "مثال: 0912345678",
+                "email": "عنوان البريد الإلكتروني (اختياري)",
+                "emailPlaceholder": "مثال: abebe@example.com",
+                "cancel": "إلغاء",
+                "submit": "إنشاء موظف"
+            },
+            "success": {
+                "title": "تم إنشاء الموظف بنجاح",
+                "subtitle": "تفاصيل الحساب وكلمة المرور المؤقتة.",
+                "warningTitle": "احفظ كلمة المرور المؤقتة هذه",
+                "warningDescription": "سيتم عرض كلمة المرور المؤقتة هذه مرة واحدة فقط. قدمها بشكل آمن للموظف. ويجب عليهم تغييرها عند تسجيل الدخول الأول.",
+                "employeeName": "اسم الموظف",
+                "phoneNumber": "رقم الهاتف",
+                "emailAddress": "عنوان البريد الإلكتروني",
+                "generatedPassword": "كلمة المرور المؤقتة المنشأة",
+                "copyPassword": "نسخ كلمة المرور",
+                "copied": "تم النسخ",
+                "returnToList": "العودة إلى قائمة الموظفين",
+                "viewDetails": "عرض تفاصيل الموظف"
+            },
+            "validation": {
+                "nameRequired": "الاسم مطلوب.",
+                "phoneRequired": "رقم الهاتف مطلوب."
+            },
+            "messages": {
+                "createdSuccess": "تم إنشاء الموظف بنجاح.",
+                "copiedSuccess": "تم نسخ كلمة المرور المؤقتة إلى الحافظة.",
+                "createFailed": "فشل إنشاء الموظف."
+            }
+        },
+        "userDetailsPage": {
+            "subtitle": "تفاصيل ومعلومات حساب الموظف.",
+            "backAria": "العودة إلى الموظفين",
+            "editEmployee": "تعديل الموظف",
+            "loadError": "فشل تحميل تفاصيل الموظف.",
+            "updateError": "فشل تحديث الموظف.",
+            "updateSuccess": "تم تحديث الموظف بنجاح.",
+            "errorState": {
+                "title": "تعذر تحميل الموظف",
+                "notFound": "الموظف غير موجود.",
+                "back": "العودة إلى الموظفين",
+                "retry": "إعادة المحاولة"
+            },
+            "details": {
+                "verificationStatus": "حالة التأكيد",
+                "verified": "مؤكد",
+                "unverified": "غير مؤكد",
+                "employeeId": "معرف الموظف",
+                "phoneNumber": "رقم الهاتف",
+                "emailAddress": "عنوان البريد الإلكتروني",
+                "noEmail": "لم يتم تقديم بريد إلكتروني",
+                "createdAt": "تم الإنشاء في",
+                "updatedAt": "تم التحديث في",
+                "na": "غير متوفر"
+            },
+            "form": {
+                "fullName": "الاسم الكامل",
+                "phone": "رقم الهاتف",
+                "email": "عنوان البريد الإلكتروني",
+                "cancel": "إلغاء",
+                "save": "حفظ التغييرات"
+            },
+            "validation": {
+                "nameRequired": "الاسم مطلوب.",
+                "phoneRequired": "رقم الهاتف مطلوب."
+            }
+        },
+        "accountSettings": {
+            "loadError": "فشل تحميل إعدادات الحساب.",
+            "updateError": "فشل تحديث الإعدادات.",
+            "updateSuccess": "تم تحديث إعدادات الحساب بنجاح.",
+            "saveChanges": "حفظ التغييرات",
+            "businessInfo": {
+                "title": "معلومات النشاط التجاري",
+                "subtitle": "التفاصيل الأساسية لمعرف الحساب",
+                "accountName": "اسم النشاط التجاري / الحساب",
+                "status": "حالة الحساب",
+                "creationDate": "تاريخ الإنشاء"
+            },
+            "profile": {
+                "title": "ملفي الشخصي",
+                "subtitle": "الملف الشخصي للمستخدم وحالة التأكيد",
+                "verifiedEmail": "بريد إلكتروني مؤكد",
+                "unverifiedEmail": "بريد إلكتروني غير مؤكد",
+                "emailTitle": "عنوان البريد الإلكتروني",
+                "emailSubtitle": "يتطلب تغيير بريدك الإلكتروني تأكيد العنوان الجديد.",
+                "emailLabel": "البريد الإلكتروني",
+                "emailPlaceholder": "you@example.com",
+                "sendingCode": "جاري إرسال الرمز...",
+                "changeEmail": "تغيير البريد الإلكتروني",
+                "name": "الاسم",
+                "username": "اسم المستخدم",
+                "phone": "رقم الهاتف",
+                "bio": "السيرة الذاتية",
+                "validation": {
+                    "enterEmail": "يرجى إدخال عنوان بريدك الإلكتروني.",
+                    "alreadyCurrent": "هذا هو عنوان بريدك الإلكتروني الحالي بالفعل.",
+                    "verificationSessionFailed": "تعذر إنشاء جلسة تأكيد البريد الإلكتروني.",
+                    "verificationTokenMissing": "لم يتم إرجاع رمز تأكيد البريد الإلكتروني.",
+                    "verificationSent": "تم إرسال رمز التأكيد إلى بريدك الإلكتروني الجديد.",
+                    "emailChangeFailed": "فشل بدء تغيير البريد الإلكتروني."
+                }
+            },
+            "subscription": {
+                "title": "الاشتراك",
+                "subtitle": "خطة الاشتراك الحالية ودورة الفوترة",
+                "currentPlan": "الخطة الحالية",
+                "standardPlan": "الخطة القياسية",
+                "status": "الحالة",
+                "active": "نشط",
+                "startDate": "تاريخ البدء",
+                "expirationDate": "تاريخ الانتهاء",
+                "noSubscription": "لم يتم العثور على اشتراك نشط."
+            },
+            "preferences": {
+                "title": "التفضيلات",
+                "subtitle": "التنسيقات المنسقة إقليميًا ومحليًا للنظام",
+                "currency": "العملة",
+                "timezone": "المنطقة الزمنية",
+                "dateFormat": "تنسيق التاريخ",
+                "options": {
+                    "etb": "بر إثيوبي (ETB)",
+                    "usd": "دولار أمريكي ($)",
+                    "addisAbaba": "أفريقيا/أديس_أبابا (EAT)",
+                    "utc": "التوقيت العالمي الموحد (UTC)"
+                }
+            }
+        },
+        "organizationSettings": {
+            "loadError": "فشل تحميل إعدادات المؤسسة.",
+            "tabs": {
+                "branches": "الفروع",
+                "team": "أعضاء الفريق",
+                "memberships": "العضويات",
+                "permissions": "الصلاحيات"
+            },
+            "branches": {
+                "title": "فروع المؤسسة",
+                "subtitle": "إدارة مواقع عملك والفروع العاملة",
+                "table": {
+                    "name": "اسم الفرع",
+                    "description": "الوصف",
+                    "status": "الحالة",
+                    "createdAt": "تم الإنشاء في",
+                    "noData": "لم يتم العثور على فروع."
+                }
+            },
+            "team": {
+                "title": "موظفو الفريق",
+                "subtitle": "الموظفون النشطون والكادر الإداري المسجل في النظام",
+                "inviteBtn": "دعوة موظف",
+                "table": {
+                    "name": "الاسم",
+                    "email": "البريد الإلكتروني",
+                    "phone": "رقم الهاتف",
+                    "username": "اسم المستخدم",
+                    "joinedDate": "تاريخ الانضمام",
+                    "noData": "لم يتم العثور على موظفين."
+                }
+            },
+            "memberships": {
+                "title": "عضويات الفروع",
+                "subtitle": "ربط الموظفين المخصصين لفروع متجر معينة",
+                "table": {
+                    "userName": "اسم المستخدم",
+                    "branchName": "اسم الفرع",
+                    "contactEmail": "بريد الاتصال",
+                    "status": "الحالة",
+                    "noData": "لم يتم العثور على عضويات."
+                }
+            },
+            "permissions": {
+                "title": "صلاحيات النظام",
+                "subtitle": "صلاحيات النظام المتاحة ومفاتيح الوصول المعادة بواسطة API",
+                "noData": "لم يتم تحديد صلاحيات."
+            }
+        },
+        "securitySettings": {
+            "loadError": "فشل تحميل إعدادات الأمان.",
+            "passwordMismatch": "كلمات المرور الجديدة غير متطابقة.",
+            "passwordSuccess": "تم تحديث كلمة المرور بنجاح.",
+            "passwordUpdateError": "فشل تحديث كلمة المرور.",
+            "revokeConfirm": "هل أنت تأكد من أنك تريد إلغاء هذه الجلسة؟",
+            "revokeError": "فشل إلغاء الجلسة.",
+            "noCurrentSession": "معلومات الجلسة الحالية غير متوفرة.",
+            "revokeAllConfirm": "هل أنت تأكد من أنك تريد إلغاء جميع الجلسات النشطة الأخرى؟",
+            "revokeAllError": "فشل إلغاء الجلسات.",
+            "changePassword": {
+                "title": "تغيير كلمة المرور",
+                "subtitle": "تأكد من أن حسابك يستخدم كلمة مرور آمنة",
+                "currentPassword": "كلمة المرور الحالية",
+                "newPassword": "كلمة المرور الجديدة",
+                "confirmPassword": "تأكيد كلمة المرور الجديدة",
+                "updating": "جاري التحديث...",
+                "updateBtn": "تحديث كلمة المرور"
+            },
+            "sessions": {
+                "title": "الجلسات النشطة",
+                "subtitle": "إدارة وإلغاء جلسات المتصفح أو الأجهزة النشطة",
+                "revokeAllBtn": "إلغاء جميع الجلسات الأخرى",
+                "revoking": "جاري الإلغاء...",
+                "browserDevice": "متصفح الويب",
+                "currentSession": "الجلسة الحالية",
+                "table": {
+                    "device": "الجهاز / الجلسة",
+                    "created": "تم الإنشاء في",
+                    "expiration": "تاريخ الانتهاء",
+                    "action": "الإجراء",
+                    "noData": "لم يتم العثور على جلسات نشطة."
+                },
+                "revokeBtn": "إلغاء"
+            }
+        },
+        "settingsPage": {
+            "title": "الإعدادات",
+            "description": "إدارة تفاصيل حسابك، هيكل المؤسسة، الفروع، وتفضيلات الأمان.",
+            "nav": {
+                "account": {
+                    "label": "الحساب",
+                    "description": "النشاط التجاري، الملف الشخصي والاشتراك"
+                },
+                "organization": {
+                    "label": "المؤسسة",
+                    "description": "الفروع، الفريق والصلاحيات"
+                },
+                "security": {
+                    "label": "الأمان",
+                    "description": "كلمة المرور، الجلسات والمصادقة"
+                }
+            }
         }
     }
 }
