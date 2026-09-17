@@ -7,12 +7,15 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
     ArrowLeft, Pencil, Trash2, Package, Tag, Building2,
-    DollarSign, CheckCircle2, XCircle, AlertCircle, Loader2
+    AlertCircle, Loader2
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import { useTranslations, useFormatter } from "next-intl";
 
 export default function ProductDetailPage() {
+    const t = useTranslations("dashboard.productDetail");
+    const format = useFormatter();
     const params = useParams();
     const router = useRouter();
     const productId = params.id;
@@ -31,7 +34,7 @@ export default function ProductDetailPage() {
             const res = await fetchApi(`/api/v1/dashboard/products/${productId}`);
             const p = res.data?.product || res.data || res;
 
-            // Map fields to match your backend and JSON schema format
+            // Map fields to match database response schema
             const mappedProduct = {
                 ...p,
                 accountId: p.account_id ?? p.accountId,
@@ -56,27 +59,27 @@ export default function ProductDetailPage() {
 
             setProduct(mappedProduct);
         } catch (err) {
-            setError(err.message || "Failed to load product details.");
+            setError(err.message || t("loadError"));
         } finally {
             setIsLoading(false);
         }
-    }, [productId]);
+    }, [productId, t]);
 
     useEffect(() => {
         loadProduct();
     }, [loadProduct]);
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this product?")) return;
+        if (!confirm(t("deleteConfirm"))) return;
         setIsDeleting(true);
         try {
             await fetchApi(`/api/v1/dashboard/products/${productId}`, {
                 method: "DELETE",
             });
-            toast.success("Product deleted successfully");
+            toast.success(t("deleteSuccess"));
             router.push("/dashboard/products");
         } catch (err) {
-            toast.error(err.message || "Failed to delete product.");
+            toast.error(err.message || t("deleteError"));
             setIsDeleting(false);
         }
     };
@@ -85,64 +88,64 @@ export default function ProductDetailPage() {
         return (
             <div className="max-w-4xl mx-auto space-y-6 pb-16 animate-pulse">
                 {/* Header Skeleton */}
-                <div className="flex items-center justify-between pb-4 border-b border-(--border)">
+                <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
                     <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 bg-(--muted) rounded-lg" />
+                        <div className="w-9 h-9 bg-[var(--muted)] rounded-lg" />
                         <div className="space-y-2">
-                            <div className="h-5 w-40 bg-(--muted) rounded-md" />
-                            <div className="h-3 w-28 bg-(--muted) rounded-md" />
+                            <div className="h-5 w-40 bg-[var(--muted)] rounded-md" />
+                            <div className="h-3 w-28 bg-[var(--muted)] rounded-md" />
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <div className="h-8 w-16 bg-(--muted) rounded-lg" />
-                        <div className="h-8 w-20 bg-(--muted) rounded-lg" />
+                        <div className="h-8 w-16 bg-[var(--muted)] rounded-lg" />
+                        <div className="h-8 w-20 bg-[var(--muted)] rounded-lg" />
                     </div>
                 </div>
 
                 {/* Main Content Skeleton */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
-                        <div className="aspect-square w-full bg-(--muted) rounded-xl" />
+                        <div className="aspect-square w-full bg-[var(--muted)] rounded-xl" />
                         <div className="grid grid-cols-5 gap-2">
-                            <div className="aspect-square bg-(--muted) rounded-lg" />
-                            <div className="aspect-square bg-(--muted) rounded-lg" />
+                            <div className="aspect-square bg-[var(--muted)] rounded-lg" />
+                            <div className="aspect-square bg-[var(--muted)] rounded-lg" />
                         </div>
                     </div>
 
-                    <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-6 shadow-xs flex flex-col justify-between">
+                    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-6 shadow-xs flex flex-col justify-between">
                         <div className="space-y-4">
                             <div className="flex justify-between">
-                                <div className="h-5 w-16 bg-(--muted) rounded-full" />
-                                <div className="h-5 w-12 bg-(--muted) rounded" />
+                                <div className="h-5 w-16 bg-[var(--muted)] rounded-full" />
+                                <div className="h-5 w-12 bg-[var(--muted)] rounded" />
                             </div>
                             <div className="space-y-2 pt-2">
-                                <div className="h-3 w-24 bg-(--muted) rounded" />
-                                <div className="h-12 w-full bg-(--muted) rounded-lg" />
+                                <div className="h-3 w-24 bg-[var(--muted)] rounded" />
+                                <div className="h-12 w-full bg-[var(--muted)] rounded-lg" />
                             </div>
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-(--border)">
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border)]">
                                 <div className="space-y-1">
-                                    <div className="h-3 w-16 bg-(--muted) rounded" />
-                                    <div className="h-4 w-24 bg-(--muted) rounded" />
+                                    <div className="h-3 w-16 bg-[var(--muted)] rounded" />
+                                    <div className="h-4 w-24 bg-[var(--muted)] rounded" />
                                 </div>
                                 <div className="space-y-1">
-                                    <div className="h-3 w-16 bg-(--muted) rounded" />
-                                    <div className="h-4 w-24 bg-(--muted) rounded" />
+                                    <div className="h-3 w-16 bg-[var(--muted)] rounded" />
+                                    <div className="h-4 w-24 bg-[var(--muted)] rounded" />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-(--border)">
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border)]">
                                 <div className="space-y-1">
-                                    <div className="h-3 w-20 bg-(--muted) rounded" />
-                                    <div className="h-6 w-16 bg-(--muted) rounded" />
+                                    <div className="h-3 w-20 bg-[var(--muted)] rounded" />
+                                    <div className="h-6 w-16 bg-[var(--muted)] rounded" />
                                 </div>
                                 <div className="space-y-1">
-                                    <div className="h-3 w-20 bg-(--muted) rounded" />
-                                    <div className="h-6 w-16 bg-(--muted) rounded" />
+                                    <div className="h-3 w-20 bg-[var(--muted)] rounded" />
+                                    <div className="h-6 w-16 bg-[var(--muted)] rounded" />
                                 </div>
                             </div>
                         </div>
-                        <div className="pt-4 border-t border-(--border) flex justify-between">
-                            <div className="h-3 w-28 bg-(--muted) rounded" />
-                            <div className="h-3 w-28 bg-(--muted) rounded" />
+                        <div className="pt-4 border-t border-[var(--border)] flex justify-between">
+                            <div className="h-3 w-28 bg-[var(--muted)] rounded" />
+                            <div className="h-3 w-28 bg-[var(--muted)] rounded" />
                         </div>
                     </div>
                 </div>
@@ -153,16 +156,16 @@ export default function ProductDetailPage() {
     if (error || !product) {
         return (
             <div className="max-w-4xl mx-auto p-6 space-y-4">
-                <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center gap-3 text-(--destructive)">
+                <div className="p-4 bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 rounded-xl flex items-center gap-3 text-[var(--destructive)]">
                     <AlertCircle className="w-5 h-5 shrink-0" />
-                    <p className="text-sm font-semibold">{error || "Product not found."}</p>
+                    <p className="text-sm font-semibold">{error || t("notFound")}</p>
                 </div>
                 <Link
                     href="/dashboard/products"
-                    className="inline-flex items-center gap-2 text-xs font-medium text-(--muted-foreground) hover:text-(--foreground)"
+                    className="inline-flex items-center gap-2 text-xs font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Products</span>
+                    <span>{t("backToProducts")}</span>
                 </Link>
             </div>
         );
@@ -174,35 +177,35 @@ export default function ProductDetailPage() {
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-16">
             {/* Top Navigation Bar */}
-            <div className="flex items-center justify-between pb-4 border-b border-(--border)">
+            <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
                 <div className="flex items-center gap-4">
                     <Link
                         href="/dashboard/products"
-                        className="p-2 border border-(--border) rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors"
+                        className="p-2 border border-[var(--border)] rounded-lg hover:bg-[var(--muted)] text-[var(--muted-foreground)] transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
                     </Link>
                     <div>
                         <h1 className="text-xl font-bold tracking-tight">{product.name}</h1>
-                        <p className="text-xs font-mono text-(--muted-foreground)">Slug: {product.slug}</p>
+                        <p className="text-xs font-mono text-[var(--muted-foreground)]">{t("slug")}: {product.slug}</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <Link
                         href={`/dashboard/products/${productId}/edit`}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-(--border) hover:bg-(--muted) rounded-lg text-xs font-medium transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] hover:bg-[var(--muted)] rounded-lg text-xs font-medium transition-colors"
                     >
                         <Pencil className="w-3.5 h-3.5" />
-                        <span>Edit</span>
+                        <span>{t("edit")}</span>
                     </Link>
                     <button
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-(--destructive)/10 hover:bg-(--destructive)/20 text-(--destructive) rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[var(--destructive)]/10 hover:bg-[var(--destructive)]/20 text-[var(--destructive)] rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
                     >
                         {isDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                        <span>Delete</span>
+                        <span>{t("delete")}</span>
                     </button>
                 </div>
             </div>
@@ -211,11 +214,11 @@ export default function ProductDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Photo Gallery Viewer */}
                 <div className="space-y-3">
-                    <div className="aspect-square rounded-xl border border-(--border) bg-(--muted) overflow-hidden flex items-center justify-center">
+                    <div className="aspect-square rounded-xl border border-[var(--border)] bg-[var(--muted)] overflow-hidden flex items-center justify-center">
                         {activePhoto ? (
                             <img src={activePhoto} alt={product.name} className="w-full h-full object-cover" />
                         ) : (
-                            <Package className="w-12 h-12 text-(--muted-foreground)" />
+                            <Package className="w-12 h-12 text-[var(--muted-foreground)]" />
                         )}
                     </div>
                     {photos.length > 1 && (
@@ -224,7 +227,7 @@ export default function ProductDetailPage() {
                                 <button
                                     key={photo.id}
                                     onClick={() => setSelectedPhotoIndex(idx)}
-                                    className={`aspect-square rounded-lg border overflow-hidden bg-(--muted) transition-all ${selectedPhotoIndex === idx ? "ring-2 ring-(--primary) border-transparent" : "border-(--border) opacity-70 hover:opacity-100"
+                                    className={`aspect-square rounded-lg border overflow-hidden bg-[var(--muted)] transition-all ${selectedPhotoIndex === idx ? "ring-2 ring-[var(--primary)] border-transparent" : "border-[var(--border)] opacity-70 hover:opacity-100"
                                         }`}
                                 >
                                     <img src={photo.url} alt="" className="w-full h-full object-cover" />
@@ -235,79 +238,79 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Product Metadata Card */}
-                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-6 shadow-xs flex flex-col justify-between">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-6 shadow-xs flex flex-col justify-between">
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${product.status === "active" ? "bg-(--success)/10 text-(--success)" : "bg-(--muted) text-(--muted-foreground)"
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${product.status === "active" ? "bg-[var(--success)]/10 text-[var(--success)]" : "bg-[var(--muted)] text-[var(--muted-foreground)]"
                                 }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${product.status === "active" ? "bg-(--success)" : "bg-(--muted-foreground)"}`} />
-                                {product.status}
+                                <span className={`w-1.5 h-1.5 rounded-full ${product.status === "active" ? "bg-[var(--success)]" : "bg-[var(--muted-foreground)]"}`} />
+                                {product.status === "active" ? t("statusActive") : t("statusInactive")}
                             </span>
-                            <span className="px-2 py-0.5 rounded bg-(--primary)/10 text-(--primary) text-[10px] font-mono uppercase font-semibold">
-                                {product.type}
+                            <span className="px-2 py-0.5 rounded bg-[var(--primary)]/10 text-[var(--primary)] text-[10px] font-mono uppercase font-semibold">
+                                {product.type === "public" ? t("typePublic") : t("typePrivate")}
                             </span>
                         </div>
 
                         <div>
-                            <h3 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Description</h3>
-                            <p className="text-sm text-(--foreground) mt-1">
-                                {product.description || "No description provided."}
+                            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("description")}</h3>
+                            <p className="text-sm text-[var(--foreground)] mt-1">
+                                {product.description || t("noDescription")}
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-(--border)">
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border)]">
                             <div>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground) flex items-center gap-1">
-                                    <Building2 className="w-3.5 h-3.5" /> Branch
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] flex items-center gap-1">
+                                    <Building2 className="w-3.5 h-3.5" /> {t("branch")}
                                 </span>
-                                <p className="text-sm font-medium text-(--foreground) mt-0.5">
+                                <p className="text-sm font-medium text-[var(--foreground)] mt-0.5">
                                     {product.branchName || product.branch_name || "N/A"}
                                 </p>
                             </div>
                             <div>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground) flex items-center gap-1">
-                                    <Tag className="w-3.5 h-3.5" /> Category
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)] flex items-center gap-1">
+                                    <Tag className="w-3.5 h-3.5" /> {t("category")}
                                 </span>
-                                <p className="text-sm font-medium text-(--foreground) mt-0.5">
+                                <p className="text-sm font-medium text-[var(--foreground)] mt-0.5">
                                     {product.categoryName || product.category_name || "N/A"}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-(--border)">
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border)]">
                             <div>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Cost Price</span>
-                                <p className="text-base font-mono font-semibold text-(--foreground) mt-0.5">
-                                    ${Number(product.costPrice || 0).toFixed(2)}
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("costPrice")}</span>
+                                <p className="text-base font-mono font-semibold text-[var(--foreground)] mt-0.5">
+                                    {Number(product.costPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
                                 </p>
                             </div>
                             <div>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Selling Price</span>
-                                <p className="text-base font-mono font-semibold text-(--primary) mt-0.5">
-                                    ${Number(product.sellingPrice || 0).toFixed(2)}
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("sellingPrice")}</span>
+                                <p className="text-base font-mono font-semibold text-[var(--primary)] mt-0.5">
+                                    {Number(product.sellingPrice || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
                                 </p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-(--border)">
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border)]">
                             <div>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Stock</span>
-                                <p className="text-base font-mono font-semibold text-(--foreground) mt-0.5">
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("stock")}</span>
+                                <p className="text-base font-mono font-semibold text-[var(--foreground)] mt-0.5">
                                     {product.stock}
                                 </p>
                             </div>
                             <div>
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-(--muted-foreground)">Low Stock Threshold</span>
-                                <p className="text-base font-mono font-semibold text-(--muted-foreground) mt-0.5">
+                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("lowStockThreshold")}</span>
+                                <p className="text-base font-mono font-semibold text-[var(--muted-foreground)] mt-0.5">
                                     {product.lowStockThreshold}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-4 border-t border-(--border) text-[11px] font-mono text-(--muted-foreground) flex justify-between">
-                        <span>Created: {new Date(product.createdAt).toLocaleDateString()}</span>
-                        <span>Updated: {new Date(product.updatedAt).toLocaleDateString()}</span>
+                    <div className="pt-4 border-t border-[var(--border)] text-[11px] font-mono text-[var(--muted-foreground)] flex justify-between">
+                        <span>{t("created")}: {product.createdAt ? format.dateTime(new Date(product.createdAt), { dateStyle: "short" }) : "N/A"}</span>
+                        <span>{t("updated")}: {product.updatedAt ? format.dateTime(new Date(product.updatedAt), { dateStyle: "short" }) : "N/A"}</span>
                     </div>
                 </div>
             </div>

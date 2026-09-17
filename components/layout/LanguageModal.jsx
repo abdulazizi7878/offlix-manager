@@ -27,7 +27,7 @@ export function LanguageModal() {
         localStorage.setItem("preferred_language", code);
 
         // Set language cookie or query param if your i18n setup uses cookies/routing
-        document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000`;
+        document.cookie = `locale=${code}; path=/; max-age=31536000`;
 
         setIsOpen(false);
         router.refresh();

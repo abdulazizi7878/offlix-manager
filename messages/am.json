@@ -661,6 +661,31 @@
                 "createError": "ምርቱን መፍጠር አልተቻለም።"
             },
             "successMessage": "ምርቱ በትክክል ተፈጥሯል!"
+        },
+        "productDetail": {
+            "edit": "አስተካክል",
+            "delete": "ሰርዝ",
+            "slug": "ስለግ (Slug)",
+            "description": "መግለጫ",
+            "noDescription": "ምንም መግለጫ አልተሰጠም።",
+            "branch": "ቅርንጫፍ",
+            "category": "ምድብ",
+            "costPrice": "የግዥ ዋጋ",
+            "sellingPrice": "የመሸጫ ዋጋ",
+            "stock": "የእቃ ብዛት",
+            "lowStockThreshold": "አነስተኛ ክምችት መጠን",
+            "created": "ተፈጠረ",
+            "updated": "ተሻሻለ",
+            "backToProducts": "ወደ ምርቶች ተመለስ",
+            "notFound": "ምርቱ አልተገኘም።",
+            "deleteConfirm": "ይህንን ምርት እርግጠኛ ሆነው መሰረዝ ይፈልጋሉ?",
+            "deleteSuccess": "ምርቱ በትክክል ተሰርዟል",
+            "deleteError": "ምርቱን መሰረዝ አልተቻለም።",
+            "loadError": "የምርቱን ዝርዝር መጫን አልተቻለም።",
+            "statusActive": "ንቁ",
+            "statusInactive": "ኢ-ንቁ",
+            "typePublic": "ህዝባዊ",
+            "typePrivate": "ግልጽ ያልሆነ"
         }
     }
 }
