@@ -5,9 +5,15 @@ import { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, AlertCircle, ShoppingCart, Clock } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
+import { useTranslations } from "next-intl";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(relativeTime);
 
 export default function PurchaseDetailPage({ params }) {
+    const t = useTranslations("dashboard.purchaseDetail");
+
     const resolvedParams = use(params);
     const purchaseId = resolvedParams.purchaseId;
 
@@ -25,9 +31,7 @@ export default function PurchaseDetailPage({ params }) {
 
                 setPurchase({
                     ...detail,
-                    productId: detail.product_id ?? detail.productId,
                     productName: detail.product_name ?? detail.productName ?? detail.product?.name,
-                    branchId: detail.branch_id ?? detail.branchId,
                     branchName: detail.branch_name ?? detail.branchName ?? detail.branch?.name,
                     costPrice: Number(detail.cost_price ?? detail.costPrice ?? 0),
                     quantity: Number(detail.quantity ?? 0),
@@ -39,7 +43,7 @@ export default function PurchaseDetailPage({ params }) {
                     notes: detail.notes,
                 });
             } catch (err) {
-                setError(err.message || "Failed to load purchase details.");
+                setError(err.message || t("loadError"));
             } finally {
                 setIsLoading(false);
             }
@@ -47,95 +51,101 @@ export default function PurchaseDetailPage({ params }) {
         if (purchaseId) {
             fetchDetail();
         }
-    }, [purchaseId]);
+    }, [purchaseId, t]);
 
     return (
         <div className="space-y-6 pb-16 max-w-3xl mx-auto">
-            <div className="flex items-center gap-4 pb-4 border-b border-(--border)">
+            <div className="flex items-center gap-4 pb-4 border-b border-[var(--border)]">
                 <Link
                     href="/dashboard/products/purchases"
-                    className="p-2 border border-(--border) rounded-lg hover:bg-(--muted) text-(--foreground) transition-colors"
+                    className="p-2 border border-[var(--border)] rounded-lg hover:bg-[var(--muted)] text-[var(--foreground)] transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </Link>
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight">Purchase Record</h1>
-                    <p className="text-xs text-(--muted-foreground) font-mono">ID: {purchaseId}</p>
+                    <h1 className="text-xl font-bold tracking-tight">{t("title")}</h1>
                 </div>
             </div>
 
             {isLoading ? (
                 <div className="p-12 flex justify-center items-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-(--primary)" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" />
                 </div>
             ) : error ? (
-                <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center gap-3 text-(--destructive)">
+                <div className="p-4 bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 rounded-xl flex items-center gap-3 text-[var(--destructive)]">
                     <AlertCircle className="w-5 h-5 shrink-0" />
                     <p className="text-sm font-semibold">{error}</p>
                 </div>
             ) : purchase ? (
-                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-6 shadow-xs">
-                    <div className="flex items-center justify-between pb-4 border-b border-(--border)">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-6 shadow-xs">
+                    <div className="flex items-center justify-between pb-4 border-b border-[var(--border)]">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-(--primary)/10 text-(--primary) flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 text-[var(--primary)] flex items-center justify-center">
                                 <ShoppingCart className="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 className="font-bold text-base text-(--foreground)">{purchase.productName || "N/A"}</h3>
-                                <p className="text-xs text-(--muted-foreground) font-mono">Product ID: {purchase.productId || "N/A"}</p>
+                                <h3 className="font-bold text-base text-[var(--foreground)]">{purchase.productName || "N/A"}</h3>
                             </div>
                         </div>
-                        <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-(--muted) text-(--foreground)">
+                        <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-mono font-semibold bg-[var(--muted)] text-[var(--foreground)]">
                             {purchase.paymentSource || "N/A"}
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-(--border) text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-[var(--border)] text-sm">
                         <div>
-                            <p className="text-xs text-(--muted-foreground)">Branch Location</p>
-                            <p className="font-medium text-(--foreground) mt-0.5">{purchase.branchName || "N/A"}</p>
+                            <p className="text-xs text-[var(--muted-foreground)]">{t("branchLocation")}</p>
+                            <p className="font-medium text-[var(--foreground)] mt-0.5">{purchase.branchName || "N/A"}</p>
                         </div>
                         <div>
-                            <p className="text-xs text-(--muted-foreground)">Acquisition Date</p>
-                            <p className="font-medium text-(--foreground) mt-0.5 flex items-center gap-1.5">
-                                <Clock className="w-3.5 h-3.5 text-(--muted-foreground)" />
-                                {purchase.createdAt ? dayjs(purchase.createdAt).format("YYYY-MM-DD HH:mm") : "N/A"}
+                            <p className="text-xs text-[var(--muted-foreground)]">{t("acquisitionDate")}</p>
+                            <div className="font-medium text-[var(--foreground)] mt-0.5 flex items-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-[var(--muted-foreground)]" />
+                                <span>{purchase.createdAt ? dayjs(purchase.createdAt).format("YYYY-MM-DD HH:mm") : "N/A"}</span>
+                                {purchase.createdAt && (
+                                    <span className="text-xs text-[var(--muted-foreground)]">
+                                        ({dayjs(purchase.createdAt).fromNow()})
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 pb-4 border-b border-[var(--border)] font-mono">
+                        <div className="bg-[var(--muted)]/30 p-4 rounded-xl">
+                            <p className="text-[11px] text-[var(--muted-foreground)] uppercase tracking-wider">{t("quantity")}</p>
+                            <p className="text-xl font-bold mt-1 text-[var(--foreground)]">{purchase.quantity}</p>
+                        </div>
+                        <div className="bg-[var(--muted)]/30 p-4 rounded-xl">
+                            <p className="text-[11px] text-[var(--muted-foreground)] uppercase tracking-wider">{t("costPrice")}</p>
+                            <p className="text-xl font-bold mt-1 text-[var(--foreground)]">
+                                {purchase.costPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
+                            </p>
+                        </div>
+                        <div className="bg-[var(--muted)]/30 p-4 rounded-xl">
+                            <p className="text-[11px] text-[var(--muted-foreground)] uppercase tracking-wider">{t("totalCost")}</p>
+                            <p className="text-xl font-bold mt-1 text-[var(--primary)]">
+                                {purchase.totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETB
                             </p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 pb-4 border-b border-(--border) font-mono">
-                        <div className="bg-(--muted)/30 p-4 rounded-xl">
-                            <p className="text-[11px] text-(--muted-foreground) uppercase tracking-wider">Quantity</p>
-                            <p className="text-xl font-bold mt-1 text-(--foreground)">{purchase.quantity}</p>
-                        </div>
-                        <div className="bg-(--muted)/30 p-4 rounded-xl">
-                            <p className="text-[11px] text-(--muted-foreground) uppercase tracking-wider">Cost Price</p>
-                            <p className="text-xl font-bold mt-1 text-(--foreground)">${purchase.costPrice.toFixed(2)}</p>
-                        </div>
-                        <div className="bg-(--muted)/30 p-4 rounded-xl">
-                            <p className="text-[11px] text-(--muted-foreground) uppercase tracking-wider">Total Cost</p>
-                            <p className="text-xl font-bold mt-1 text-(--primary)">${purchase.totalCost.toFixed(2)}</p>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2 pb-4 border-b border-(--border)">
-                        <p className="text-xs font-semibold text-(--muted-foreground) uppercase tracking-wider">Notes / Remarks</p>
-                        <p className="text-sm bg-(--muted)/20 p-4 rounded-xl border border-(--border) text-(--foreground)">
-                            {purchase.notes || "No notes provided for this inventory purchase entry."}
+                    <div className="space-y-2 pb-4 border-b border-[var(--border)]">
+                        <p className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">{t("notes")}</p>
+                        <p className="text-sm bg-[var(--muted)]/20 p-4 rounded-xl border border-[var(--border)] text-[var(--foreground)]">
+                            {purchase.notes || t("noNotes")}
                         </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-(--muted-foreground) pt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-[var(--muted-foreground)] pt-1">
                         <div>
-                            Created by: <span className="font-medium text-(--foreground)">{purchase.createdBy || "System"}</span>
-                            {purchase.createdByUserEmail && <span className="text-(--muted-foreground) ml-1">({purchase.createdByUserEmail})</span>}
+                            {t("createdBy")}: <span className="font-medium text-[var(--foreground)]">{purchase.createdBy || "System"}</span>
+                            {purchase.createdByUserEmail && <span className="text-[var(--muted-foreground)] ml-1">({purchase.createdByUserEmail})</span>}
                         </div>
-                        <p>Purchase ID: <span className="font-mono">{purchase.id}</span></p>
                     </div>
                 </div>
             ) : (
-                <div className="p-12 text-center text-(--muted-foreground)">Purchase record not found.</div>
+                <div className="p-12 text-center text-[var(--muted-foreground)]">{t("notFound")}</div>
             )}
         </div>
     );

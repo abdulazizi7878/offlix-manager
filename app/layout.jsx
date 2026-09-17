@@ -31,6 +31,15 @@ export const metadata = {
     "offlix manger",
     "offlix erp",
     "offlix pos",
+    "business manager",
+    "business management",
+    "business management software",
+    "business management system",
+    "business management app",
+    "business management platform",
+    "business management tool",
+    "business management tools",
+    "business management software",
 
     // High-Intent Regional Phrases (Ethiopia Focus)
     "best business management system in ethiopia",

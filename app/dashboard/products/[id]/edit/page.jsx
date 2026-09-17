@@ -1,3 +1,5 @@
+// file: app/dashboard/products/[id]/edit/page.jsx
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -6,8 +8,11 @@ import Link from "next/link";
 import { ArrowLeft, Upload, X, Loader2, AlertCircle, Trash2 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function EditProductPage() {
+    const t = useTranslations("dashboard.productEdit");
+    const tDetail = useTranslations("dashboard.productDetail");
     const params = useParams();
     const router = useRouter();
     const productId = params.id;
@@ -103,11 +108,11 @@ export default function EditProductPage() {
             });
 
         } catch (err) {
-            setError(err.message || "Failed to load product for editing.");
+            setError(err.message || t("loadError"));
         } finally {
             setIsLoading(false);
         }
-    }, [productId]);
+    }, [productId, t]);
 
     useEffect(() => {
         loadData();
@@ -140,7 +145,7 @@ export default function EditProductPage() {
         const totalCurrentCount = existingPhotos.length + newFiles.length;
 
         if (totalCurrentCount + files.length > 6) {
-            toast.error("Maximum 6 photos allowed in total.");
+            toast.error(t("maxPhotosError"));
             if (fileInputRef.current) fileInputRef.current.value = "";
             return;
         }
@@ -150,11 +155,11 @@ export default function EditProductPage() {
 
         for (const file of files) {
             if (!file.type.startsWith("image/")) {
-                toast.error(`${file.name} is not an image.`);
+                toast.error(t("invalidImageError", { name: file.name }));
                 continue;
             }
             if (file.size > 5 * 1024 * 1024) {
-                toast.error(`${file.name} is larger than 5MB.`);
+                toast.error(t("sizeError", { name: file.name }));
                 continue;
             }
             validFiles.push(file);
@@ -180,7 +185,7 @@ export default function EditProductPage() {
 
     const deleteExistingPhoto = async (photoId) => {
         if (type === "public" && (existingPhotos.length + newFiles.length === 1)) {
-            toast.error("Public products must have at least one photo.");
+            toast.error(t("publicPhotoRequired"));
             return;
         }
         setDeletingPhotoId(photoId);
@@ -189,10 +194,10 @@ export default function EditProductPage() {
                 method: "DELETE",
             });
             setExistingPhotos((prev) => prev.filter((p) => p.id !== photoId));
-            toast.success("Photo removed.");
+            toast.success(t("photoRemoved"));
         } catch (err) {
             setExistingPhotos((prev) => prev.filter((p) => p.id !== photoId));
-            toast.success("Photo removed.");
+            toast.success(t("photoRemoved"));
         } finally {
             setDeletingPhotoId(null);
         }
@@ -206,7 +211,7 @@ export default function EditProductPage() {
             type === "public" &&
             existingPhotos.length + newFiles.length === 0
         ) {
-            setError("Public products require at least one photo.");
+            setError(t("publicPhotoRequired"));
             return;
         }
 
@@ -281,7 +286,7 @@ export default function EditProductPage() {
                 setIsUploadingPhotos(false);
             }
 
-            toast.success("Product updated successfully!");
+            toast.success(t("updateSuccess"));
             await loadData();
 
         } catch (error) {
@@ -304,11 +309,11 @@ export default function EditProductPage() {
     if (isLoading) {
         return (
             <div className="max-w-4xl mx-auto space-y-6 pb-16 animate-pulse">
-                <div className="flex items-center gap-4 pb-4 border-b border-(--border)">
-                    <div className="w-9 h-9 bg-(--muted) rounded-lg" />
+                <div className="flex items-center gap-4 pb-4 border-b border-[var(--border)]">
+                    <div className="w-9 h-9 bg-[var(--muted)] rounded-lg" />
                     <div className="space-y-2">
-                        <div className="h-5 w-32 bg-(--muted) rounded-md" />
-                        <div className="h-3 w-48 bg-(--muted) rounded-md" />
+                        <div className="h-5 w-32 bg-[var(--muted)] rounded-md" />
+                        <div className="h-3 w-48 bg-[var(--muted)] rounded-md" />
                     </div>
                 </div>
             </div>
@@ -317,62 +322,62 @@ export default function EditProductPage() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-16">
-            <div className="flex items-center gap-4 pb-4 border-b border-(--border)">
+            <div className="flex items-center gap-4 pb-4 border-b border-[var(--border)]">
                 <Link
                     href={`/dashboard/products/${productId}`}
-                    className="p-2 border border-(--border) rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors"
+                    className="p-2 border border-[var(--border)] rounded-lg hover:bg-[var(--muted)] text-[var(--muted-foreground)] transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                 </Link>
                 <div>
-                    <h1 className="text-xl font-bold tracking-tight">Edit Product</h1>
-                    <p className="text-xs text-(--muted-foreground)">Modify inventory attributes and photo gallery.</p>
+                    <h1 className="text-xl font-bold tracking-tight">{t("title")}</h1>
+                    <p className="text-xs text-[var(--muted-foreground)]">{t("subtitle")}</p>
                 </div>
             </div>
 
             {error && (
-                <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center gap-3 text-(--destructive)">
+                <div className="p-4 bg-[var(--destructive)]/10 border border-[var(--destructive)]/20 rounded-xl flex items-center gap-3 text-[var(--destructive)]">
                     <AlertCircle className="w-5 h-5 shrink-0" />
                     <p className="text-xs font-semibold">{error}</p>
                 </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">General Information</h2>
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-4 shadow-xs">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("generalInfo")}</h2>
 
                     <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Product Name *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("productName")} *</label>
                             <input
                                 type="text"
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm focus:outline-none"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-(--foreground)">Description</label>
+                        <label className="text-xs font-medium text-[var(--foreground)]">{t("description")}</label>
                         <textarea
                             rows={3}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                            className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm focus:outline-none"
                         />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Branch *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("branch")} *</label>
                             <select
                                 value={branchId}
                                 onChange={(e) => setBranchId(e.target.value)}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm focus:outline-none"
                             >
-                                <option value="">Select Branch</option>
+                                <option value="">{t("selectBranch")}</option>
                                 {branches.map((b) => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
@@ -380,13 +385,13 @@ export default function EditProductPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Category *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("category")} *</label>
                             <select
                                 value={categoryId}
                                 onChange={(e) => setCategoryId(e.target.value)}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm focus:outline-none"
                             >
-                                <option value="">Select Category</option>
+                                <option value="">{t("selectCategory")}</option>
                                 {categories.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
@@ -394,25 +399,25 @@ export default function EditProductPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Product Type *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("productType")} *</label>
                             <select
                                 value={type}
                                 onChange={(e) => setType(e.target.value)}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm focus:outline-none"
                             >
-                                <option value="public">Public</option>
-                                <option value="private">Private</option>
+                                <option value="public">{tDetail("typePublic")}</option>
+                                <option value="private">{tDetail("typePrivate")}</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Pricing & Status</h2>
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-4 shadow-xs">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("pricingStatus")}</h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Cost Price ($)</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("costPrice")}</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -420,12 +425,12 @@ export default function EditProductPage() {
                                 value={costPrice}
                                 onChange={(e) => setCostPrice(e.target.value)}
                                 onWheel={(e) => e.currentTarget.blur()}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm font-mono focus:outline-none"
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Selling Price ($) *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("sellingPrice")} *</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -434,30 +439,30 @@ export default function EditProductPage() {
                                 value={sellingPrice}
                                 onChange={(e) => setSellingPrice(e.target.value)}
                                 onWheel={(e) => e.currentTarget.blur()}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm font-mono focus:outline-none"
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Status *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("status")} *</label>
                             <select
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm focus:outline-none"
                             >
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="active">{tDetail("statusActive")}</option>
+                                <option value="inactive">{tDetail("statusInactive")}</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Inventory</h2>
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-4 shadow-xs">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("inventory")}</h2>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Stock *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("stock")} *</label>
                             <input
                                 type="number"
                                 min={0}
@@ -467,12 +472,12 @@ export default function EditProductPage() {
                                 onChange={(e) => setStock(e.target.value)}
                                 onWheel={(e) => e.currentTarget.blur()}
                                 placeholder="0"
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm font-mono focus:outline-none"
                             />
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-(--foreground)">Low Stock Threshold *</label>
+                            <label className="text-xs font-medium text-[var(--foreground)]">{t("lowStockThreshold")} *</label>
                             <input
                                 type="number"
                                 min={0}
@@ -482,30 +487,30 @@ export default function EditProductPage() {
                                 onChange={(e) => setLowStockThreshold(e.target.value)}
                                 onWheel={(e) => e.currentTarget.blur()}
                                 placeholder="5"
-                                className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-lg text-sm font-mono focus:outline-none"
+                                className="w-full px-3 py-2 bg-[var(--background)] border border-[var(--border)] rounded-lg text-sm font-mono focus:outline-none"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                    <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">Manage Photos</h2>
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-4 shadow-xs">
+                    <h2 className="text-sm font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">{t("managePhotos")}</h2>
 
                     <div className="space-y-2">
-                        <p className="text-xs text-(--muted-foreground)">Existing Photos</p>
+                        <p className="text-xs text-[var(--muted-foreground)]">{t("existingPhotos")}</p>
                         <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                             {existingPhotos.map((photo, idx) => {
                                 const isDeleting = deletingPhotoId === photo.id;
                                 return (
                                     <div
                                         key={photo.id}
-                                        className={`relative group aspect-square rounded-lg border border-(--border) overflow-hidden bg-(--muted) transition-all duration-300 transform ${isDeleting ? "scale-90 opacity-0 animate-pulse" : "scale-100 opacity-100"
+                                        className={`relative group aspect-square rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--muted)] transition-all duration-300 transform ${isDeleting ? "scale-90 opacity-0 animate-pulse" : "scale-100 opacity-100"
                                             }`}
                                     >
                                         <img src={photo.url} alt="" className="w-full h-full object-cover" />
                                         {idx === 0 && !isDeleting && (
-                                            <span className="absolute top-1 left-1 bg-(--primary) text-(--primary-foreground) text-[9px] font-bold px-1.5 py-0.5 rounded">
-                                                MAIN
+                                            <span className="absolute top-1 left-1 bg-[var(--primary)] text-[var(--primary-foreground)] text-[9px] font-bold px-1.5 py-0.5 rounded">
+                                                {t("mainTag")}
                                             </span>
                                         )}
                                         <button
@@ -525,16 +530,16 @@ export default function EditProductPage() {
                                 );
                             })}
                             {existingPhotos.length === 0 && (
-                                <p className="text-xs text-(--muted-foreground) italic col-span-full">No existing photos.</p>
+                                <p className="text-xs text-[var(--muted-foreground)] italic col-span-full">{t("noExistingPhotos")}</p>
                             )}
                         </div>
                     </div>
 
-                    <div className="space-y-2 pt-4 border-t border-(--border)">
-                        <p className="text-xs text-(--muted-foreground)">Add New Photos</p>
+                    <div className="space-y-2 pt-4 border-t border-[var(--border)]">
+                        <p className="text-xs text-[var(--muted-foreground)]">{t("addNewPhotos")}</p>
                         <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                             {newPreviews.map((src, idx) => (
-                                <div key={idx} className="relative group aspect-square rounded-lg border border-(--border) overflow-hidden bg-(--muted) transition-all duration-300 animate-in fade-in zoom-in-95 shadow-sm">
+                                <div key={idx} className="relative group aspect-square rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--muted)] transition-all duration-300 animate-in fade-in zoom-in-95 shadow-sm">
                                     <img src={src} alt="New Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                     <button
                                         type="button"
@@ -547,9 +552,9 @@ export default function EditProductPage() {
                             ))}
 
                             {existingPhotos.length + newFiles.length < 6 && (
-                                <label className="border-2 border-dashed border-(--border) hover:border-(--primary) rounded-lg aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50">
+                                <label className="border-2 border-dashed border-[var(--border)] hover:border-[var(--primary)] rounded-lg aspect-square flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]/50">
                                     <Upload className="w-5 h-5 animate-bounce" />
-                                    <span className="text-[10px] font-medium">Add Photo</span>
+                                    <span className="text-[10px] font-medium">{t("addPhoto")}</span>
                                     <input
                                         ref={fileInputRef}
                                         type="file"
@@ -567,17 +572,17 @@ export default function EditProductPage() {
                 <div className="flex items-center justify-end gap-3">
                     <Link
                         href={`/dashboard/products/${productId}`}
-                        className="px-4 py-2 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted)"
+                        className="px-4 py-2 border border-[var(--border)] rounded-lg text-xs font-medium hover:bg-[var(--muted)]"
                     >
-                        Cancel
+                        {t("cancel")}
                     </Link>
                     <button
                         type="submit"
                         disabled={isSaving || !isDirty}
-                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-5 py-2 rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-2 bg-[var(--primary)] text-[var(--primary-foreground)] px-5 py-2 rounded-lg text-xs font-medium hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {(isSaving || isUploadingPhotos) && <Loader2 className="w-4 h-4 animate-spin" />}
-                        <span>{isUploadingPhotos ? "Uploading Photos..." : "Update Product"}</span>
+                        <span>{isUploadingPhotos ? t("uploadingPhotos") : t("updateProduct")}</span>
                     </button>
                 </div>
             </form>
