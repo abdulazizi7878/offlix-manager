@@ -1,10 +1,9 @@
-// file: app/dashboard/money/transactions/page.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRightLeft, Plus, Search, ArrowUpRight, ArrowDownLeft, AlertCircle, ChevronLeft, ChevronRight, Calendar, Filter } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ArrowRightLeft, Plus, Search, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import dayjs from "dayjs";
@@ -13,6 +12,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
 export default function TransactionsPage() {
+    const t = useTranslations("dashboard.transactionsPage");
     const [transactions, setTransactions] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -61,8 +61,8 @@ export default function TransactionsPage() {
             setAccounts(accRes.data?.data ?? []);
 
         } catch (err) {
-            setError(err.message || "Failed to load transactions.");
-            toast.error("Failed to load transactions");
+            setError(err.message || t("messages.loadError"));
+            toast.error(t("messages.loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -78,18 +78,18 @@ export default function TransactionsPage() {
     const handleCreateTransaction = async (e) => {
         e.preventDefault();
         if (!formData.money_account_id) {
-            toast.error("Please select a money account");
+            toast.error(t("messages.selectAccount"));
             return;
         }
         if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) {
-            toast.error("Please enter a valid amount");
+            toast.error(t("messages.invalidAmount"));
             return;
         }
 
         // Validate max 2 decimal places
         const parts = formData.amount.split(".");
         if (parts[1] && parts[1].length > 2) {
-            toast.error("Amounts can support a maximum of 2 decimal places");
+            toast.error(t("messages.maxDecimals"));
             return;
         }
 
@@ -105,7 +105,7 @@ export default function TransactionsPage() {
                     description: formData.description
                 })
             });
-            toast.success("Transaction recorded successfully");
+            toast.success(t("messages.createSuccess"));
             setIsCreateModalOpen(false);
             setFormData({
                 money_account_id: "",
@@ -117,7 +117,7 @@ export default function TransactionsPage() {
             });
             loadData(page);
         } catch (err) {
-            toast.error(err.message || "Failed to record transaction");
+            toast.error(err.message || t("messages.createError"));
         } finally {
             setIsSubmitting(false);
         }
@@ -131,9 +131,9 @@ export default function TransactionsPage() {
                         <ArrowRightLeft className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                         <p className="text-sm text-(--muted-foreground) mt-0.5">
-                            Track all incoming and outgoing financial movements.
+                            {t("subtitle")}
                         </p>
                     </div>
                 </div>
@@ -142,7 +142,7 @@ export default function TransactionsPage() {
                     className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>New Transaction</span>
+                    <span>{t("newTransaction")}</span>
                 </button>
             </div>
 
@@ -152,7 +152,7 @@ export default function TransactionsPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
                     <input
                         type="text"
-                        placeholder="Search description..."
+                        placeholder={t("searchPlaceholder")}
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                         className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
@@ -163,7 +163,7 @@ export default function TransactionsPage() {
                     onChange={(e) => { setAccountFilter(e.target.value); setPage(1); }}
                     className="px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
-                    <option value="">All Accounts</option>
+                    <option value="">{t("allAccounts")}</option>
                     {accounts.map(acc => (
                         <option key={acc.id} value={acc.id}>{acc.name}</option>
                     ))}
@@ -173,30 +173,30 @@ export default function TransactionsPage() {
                     onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
                     className="px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
-                    <option value="">All Types</option>
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                    <option value="deposit">Deposit</option>
-                    <option value="withdrawal">Withdrawal</option>
-                    <option value="payment">Payment</option>
-                    <option value="settlement">Settlement</option>
-                    <option value="other">Other</option>
+                    <option value="">{t("allTypes")}</option>
+                    <option value="income">{t("types.income")}</option>
+                    <option value="expense">{t("types.expense")}</option>
+                    <option value="deposit">{t("types.deposit")}</option>
+                    <option value="withdrawal">{t("types.withdrawal")}</option>
+                    <option value="payment">{t("types.payment")}</option>
+                    <option value="settlement">{t("types.settlement")}</option>
+                    <option value="other">{t("types.other")}</option>
                 </select>
                 <select
                     value={directionFilter}
                     onChange={(e) => { setDirectionFilter(e.target.value); setPage(1); }}
                     className="px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
-                    <option value="">All Directions</option>
-                    <option value="in">Money In</option>
-                    <option value="out">Money Out</option>
+                    <option value="">{t("allDirections")}</option>
+                    <option value="in">{t("moneyIn")}</option>
+                    <option value="out">{t("moneyOut")}</option>
                 </select>
             </div>
 
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
                     <span className="text-sm font-medium">{error}</span>
-                    <button onClick={() => loadData(page)} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">Retry</button>
+                    <button onClick={() => loadData(page)} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">{t("retry")}</button>
                 </div>
             )}
 
@@ -212,15 +212,15 @@ export default function TransactionsPage() {
                         <ArrowRightLeft className="w-6 h-6" />
                     </div>
                     <div className="max-w-sm mx-auto space-y-1">
-                        <h2 className="text-lg font-semibold">No transactions found</h2>
-                        <p className="text-xs text-(--muted-foreground)">Record your first transaction to start tracking cash flow.</p>
+                        <h2 className="text-lg font-semibold">{t("emptyState.title")}</h2>
+                        <p className="text-xs text-(--muted-foreground)">{t("emptyState.subtitle")}</p>
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                     >
                         <Plus className="w-4 h-4" />
-                        <span>New Transaction</span>
+                        <span>{t("newTransaction")}</span>
                     </button>
                 </div>
             )}
@@ -232,12 +232,12 @@ export default function TransactionsPage() {
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
                                     <tr>
-                                        <th className="px-6 py-3.5">Type / Description</th>
-                                        <th className="px-6 py-3.5">Account</th>
-                                        <th className="px-6 py-3.5">Direction</th>
-                                        <th className="px-6 py-3.5">Amount</th>
-                                        <th className="px-6 py-3.5">Date</th>
-                                        <th className="px-6 py-3.5 text-right">Action</th>
+                                        <th className="px-6 py-3.5">{t("table.typeDescription")}</th>
+                                        <th className="px-6 py-3.5">{t("table.account")}</th>
+                                        <th className="px-6 py-3.5">{t("table.direction")}</th>
+                                        <th className="px-6 py-3.5">{t("table.amount")}</th>
+                                        <th className="px-6 py-3.5">{t("table.date")}</th>
+                                        <th className="px-6 py-3.5 text-right">{t("table.action")}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-(--border)">
@@ -252,22 +252,22 @@ export default function TransactionsPage() {
                                                             {isIn ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                                                         </div>
                                                         <div>
-                                                            <p className="font-medium capitalize">{tx.type}</p>
-                                                            <p className="text-xs text-(--muted-foreground) truncate max-w-xs">{tx.description || "No description"}</p>
+                                                            <p className="font-medium capitalize">{t(`types.${tx.type}`, { defaultValue: tx.type })}</p>
+                                                            <p className="text-xs text-(--muted-foreground) truncate max-w-xs">{tx.description || t("noDescription")}</p>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-xs font-medium">
-                                                    {tx.money_account_name || tx.money_account?.name || "Account"}
+                                                    {tx.money_account_name || tx.money_account?.name || t("accountFallback")}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase ${isIn ? "bg-(--success)/10 text-(--success)" : "bg-(--destructive)/10 text-(--destructive)"}`}>
-                                                        {tx.direction || (isIn ? "In" : "Out")}
+                                                        {tx.direction ? (tx.direction === "in" ? t("moneyIn") : t("moneyOut")) : (isIn ? t("moneyIn") : t("moneyOut"))}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 font-semibold">
                                                     <span className={isIn ? "text-(--success)" : "text-(--destructive)"}>
-                                                        {isIn ? "+" : "-"}{Number(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                                                        {isIn ? "+" : "-"}{Number(tx.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("etb")}</span>
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-xs text-(--muted-foreground)">
@@ -285,7 +285,7 @@ export default function TransactionsPage() {
                                                         href={`/dashboard/money/transactions/${tx.id}`}
                                                         className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors"
                                                     >
-                                                        Details
+                                                        {t("details")}
                                                     </Link>
                                                 </td>
                                             </tr>
@@ -303,57 +303,57 @@ export default function TransactionsPage() {
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
                     <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-lg p-6 space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between pb-4 border-b border-(--border)">
-                            <h2 className="text-lg font-bold">Record Transaction</h2>
+                            <h2 className="text-lg font-bold">{t("modal.title")}</h2>
                             <button onClick={() => setIsCreateModalOpen(false)} className="text-(--muted-foreground) hover:text-(--foreground)">✕</button>
                         </div>
                         <form onSubmit={handleCreateTransaction} className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Type</label>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.type")}</label>
                                     <select
                                         value={formData.type}
                                         onChange={(e) => {
-                                            const t = e.target.value;
-                                            const isInc = ["income", "deposit"].includes(t);
+                                            const tVal = e.target.value;
+                                            const isInc = ["income", "deposit"].includes(tVal);
                                             setFormData({
                                                 ...formData,
-                                                type: t,
+                                                type: tVal,
                                                 direction: isInc ? "in" : "out"
                                             });
                                         }}
                                         className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                                     >
-                                        <option value="expense">Expense</option>
-                                        <option value="income">Income</option>
-                                        <option value="deposit">Deposit</option>
-                                        <option value="withdrawal">Withdrawal</option>
-                                        <option value="payment">Payment</option>
-                                        <option value="settlement">Settlement</option>
-                                        <option value="other">Other</option>
+                                        <option value="expense">{t("types.expense")}</option>
+                                        <option value="income">{t("types.income")}</option>
+                                        <option value="deposit">{t("types.deposit")}</option>
+                                        <option value="withdrawal">{t("types.withdrawal")}</option>
+                                        <option value="payment">{t("types.payment")}</option>
+                                        <option value="settlement">{t("types.settlement")}</option>
+                                        <option value="other">{t("types.other")}</option>
                                     </select>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Direction</label>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.direction")}</label>
                                     <select
                                         value={formData.direction}
                                         onChange={(e) => setFormData({ ...formData, direction: e.target.value })}
                                         className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                                     >
-                                        <option value="in">Money In (Inflow)</option>
-                                        <option value="out">Money Out (Outflow)</option>
+                                        <option value="in">{t("moneyInInflow")}</option>
+                                        <option value="out">{t("moneyOutOutflow")}</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Money Account</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.moneyAccount")}</label>
                                 <select
                                     value={formData.money_account_id}
                                     onChange={(e) => setFormData({ ...formData, money_account_id: e.target.value })}
                                     required
                                     className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                                 >
-                                    <option value="">Select Money Account</option>
+                                    <option value="">{t("selectMoneyAccount")}</option>
                                     {accounts.map(acc => (
                                         <option key={acc.id} value={acc.id}>{acc.name} ({acc.type})</option>
                                     ))}
@@ -362,7 +362,7 @@ export default function TransactionsPage() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Amount (ETB)</label>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.amount")}</label>
                                     <input
                                         type="number"
                                         step="0.01"
@@ -374,7 +374,7 @@ export default function TransactionsPage() {
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Date</label>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.date")}</label>
                                     <input
                                         type="date"
                                         value={formData.date}
@@ -386,10 +386,10 @@ export default function TransactionsPage() {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Description / Notes</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.description")}</label>
                                 <textarea
                                     rows="2"
-                                    placeholder="Add notes or description..."
+                                    placeholder={t("modal.descriptionPlaceholder")}
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
@@ -402,14 +402,14 @@ export default function TransactionsPage() {
                                     onClick={() => setIsCreateModalOpen(false)}
                                     className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
                                 >
-                                    Cancel
+                                    {t("modal.cancel")}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
                                     className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50"
                                 >
-                                    {isSubmitting ? "Recording..." : "Record Transaction"}
+                                    {isSubmitting ? t("modal.submitting") : t("newTransaction")}
                                 </button>
                             </div>
                         </form>

@@ -1,14 +1,14 @@
-// file: app/dashboard/money/accounts/page.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Wallet, Plus, Search, Landmark, Smartphone, CreditCard, RefreshCw, AlertCircle, CheckCircle2, XCircle, Pencil } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Wallet, Plus, Search, Landmark, Smartphone, CreditCard, AlertCircle, CheckCircle2, XCircle, Pencil } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
 export default function MoneyAccountsPage() {
+    const t = useTranslations("dashboard.moneyAccountsPage");
     const [accounts, setAccounts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -35,8 +35,8 @@ export default function MoneyAccountsPage() {
             const res = await fetchApi(`/api/v1/dashboard/money/accounts?${params.toString()}`);
             setAccounts(res.data?.data || res.data?.accounts || res.data || []);
         } catch (err) {
-            setError(err.message || "Failed to load money accounts.");
-            toast.error("Failed to load money accounts");
+            setError(err.message || t("messages.loadError"));
+            toast.error(t("messages.loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -52,7 +52,7 @@ export default function MoneyAccountsPage() {
     const handleCreateAccount = async (e) => {
         e.preventDefault();
         if (!formData.name.trim()) {
-            toast.error("Account name is required");
+            toast.error(t("messages.nameRequired"));
             return;
         }
 
@@ -62,12 +62,12 @@ export default function MoneyAccountsPage() {
                 method: "POST",
                 body: JSON.stringify(formData)
             });
-            toast.success("Money account created successfully");
+            toast.success(t("messages.createSuccess"));
             setIsCreateModalOpen(false);
             setFormData({ name: "", type: "cash", is_active: true });
             loadAccounts();
         } catch (err) {
-            toast.error(err.message || "Failed to create money account");
+            toast.error(err.message || t("messages.createError"));
         } finally {
             setIsSubmitting(false);
         }
@@ -95,9 +95,9 @@ export default function MoneyAccountsPage() {
                         <Wallet className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Money Accounts</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                         <p className="text-sm text-(--muted-foreground) mt-0.5">
-                            Manage physical cash vaults, bank accounts, and mobile wallets.
+                            {t("subtitle")}
                         </p>
                     </div>
                 </div>
@@ -106,7 +106,7 @@ export default function MoneyAccountsPage() {
                     className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>Create Account</span>
+                    <span>{t("createAccount")}</span>
                 </button>
             </div>
 
@@ -116,7 +116,7 @@ export default function MoneyAccountsPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
                     <input
                         type="text"
-                        placeholder="Search accounts by name..."
+                        placeholder={t("searchPlaceholder")}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
@@ -128,10 +128,10 @@ export default function MoneyAccountsPage() {
                         onChange={(e) => setTypeFilter(e.target.value)}
                         className="w-full sm:w-48 px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="">All Types</option>
-                        <option value="cash">Cash</option>
-                        <option value="bank">Bank</option>
-                        <option value="mobile_money">Mobile Money</option>
+                        <option value="">{t("allTypes")}</option>
+                        <option value="cash">{t("cash")}</option>
+                        <option value="bank">{t("bank")}</option>
+                        <option value="mobile_money">{t("mobileMoney")}</option>
                     </select>
                 </div>
             </div>
@@ -143,7 +143,7 @@ export default function MoneyAccountsPage() {
                         <AlertCircle className="w-5 h-5 shrink-0" />
                         <span className="text-sm font-medium">{error}</span>
                     </div>
-                    <button onClick={loadAccounts} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">Retry</button>
+                    <button onClick={loadAccounts} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">{t("retry")}</button>
                 </div>
             )}
 
@@ -163,15 +163,15 @@ export default function MoneyAccountsPage() {
                         <Wallet className="w-6 h-6" />
                     </div>
                     <div className="max-w-sm mx-auto space-y-1">
-                        <h2 className="text-lg font-semibold">No money accounts yet</h2>
-                        <p className="text-xs text-(--muted-foreground)">Create your first money account to start tracking business money.</p>
+                        <h2 className="text-lg font-semibold">{t("emptyState.title")}</h2>
+                        <p className="text-xs text-(--muted-foreground)">{t("emptyState.subtitle")}</p>
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                     >
                         <Plus className="w-4 h-4" />
-                        <span>Create Account</span>
+                        <span>{t("createAccount")}</span>
                     </button>
                 </div>
             )}
@@ -188,7 +188,7 @@ export default function MoneyAccountsPage() {
                                     </div>
                                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${acc.status === "active" ? "bg-(--success)/10 text-(--success)" : "bg-(--muted) text-(--muted-foreground)"}`}>
                                         {acc.status === "active" ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                                        {acc.status === "active" ? "Active" : "Inactive"}
+                                        {acc.status === "active" ? t("active") : t("inactive")}
                                     </span>
                                 </div>
                                 <div>
@@ -199,9 +199,9 @@ export default function MoneyAccountsPage() {
 
                             <div className="pt-4 border-t border-(--border) flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] uppercase font-semibold text-(--muted-foreground)">Current Balance</p>
+                                    <p className="text-[10px] uppercase font-semibold text-(--muted-foreground)">{t("currentBalance")}</p>
                                     <p className="text-lg font-bold">
-                                        {Number(acc.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                                        {Number(acc.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("etb")}</span>
                                     </p>
                                 </div>
                                 <Link
@@ -209,7 +209,7 @@ export default function MoneyAccountsPage() {
                                     className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors"
                                 >
                                     <Pencil className="w-3.5 h-3.5" />
-                                    <span>Details</span>
+                                    <span>{t("details")}</span>
                                 </Link>
                             </div>
                         </div>
@@ -222,15 +222,15 @@ export default function MoneyAccountsPage() {
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
                     <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-md p-6 space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between pb-4 border-b border-(--border)">
-                            <h2 className="text-lg font-bold">Create Money Account</h2>
+                            <h2 className="text-lg font-bold">{t("modal.title")}</h2>
                             <button onClick={() => setIsCreateModalOpen(false)} className="text-(--muted-foreground) hover:text-(--foreground)">✕</button>
                         </div>
                         <form onSubmit={handleCreateAccount} className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Account Name</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.accountName")}</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g. Main Cash, CBE, Telebirr"
+                                    placeholder={t("modal.namePlaceholder")}
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     required
@@ -238,15 +238,15 @@ export default function MoneyAccountsPage() {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Account Type</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.accountType")}</label>
                                 <select
                                     value={formData.type}
                                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                                     className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                                 >
-                                    <option value="cash">Cash</option>
-                                    <option value="bank">Bank</option>
-                                    <option value="mobile_money">Mobile Money</option>
+                                    <option value="cash">{t("cash")}</option>
+                                    <option value="bank">{t("bank")}</option>
+                                    <option value="mobile_money">{t("mobileMoney")}</option>
                                 </select>
                             </div>
                             <div className="flex items-center gap-2 pt-2">
@@ -257,7 +257,7 @@ export default function MoneyAccountsPage() {
                                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                                     className="rounded border-(--border) text-(--primary) focus:ring-(--ring)"
                                 />
-                                <label htmlFor="is_active" className="text-sm font-medium">Active Account</label>
+                                <label htmlFor="is_active" className="text-sm font-medium">{t("modal.activeAccount")}</label>
                             </div>
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-(--border)">
                                 <button
@@ -265,14 +265,14 @@ export default function MoneyAccountsPage() {
                                     onClick={() => setIsCreateModalOpen(false)}
                                     className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
                                 >
-                                    Cancel
+                                    {t("modal.cancel")}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
                                     className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50"
                                 >
-                                    {isSubmitting ? "Creating..." : "Create Account"}
+                                    {isSubmitting ? t("modal.submitting") : t("createAccount")}
                                 </button>
                             </div>
                         </form>

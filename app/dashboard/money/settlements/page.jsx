@@ -1,10 +1,9 @@
-// file: app/dashboard/money/settlements/page.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Building2, Search, AlertCircle, Filter } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Building2, Search, Filter } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import dayjs from "dayjs";
@@ -13,6 +12,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
 export default function SettlementsPage() {
+    const t = useTranslations("dashboard.settlementsPage");
+
     const [settlements, setSettlements] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -34,8 +35,8 @@ export default function SettlementsPage() {
 
             setSettlements(settlementsList);
         } catch (err) {
-            setError(err.message || "Failed to load settlements.");
-            toast.error("Failed to load settlements");
+            setError(err.message || t("messages.loadError"));
+            toast.error(t("messages.loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -71,9 +72,9 @@ export default function SettlementsPage() {
                         <Building2 className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Branch Settlements</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                         <p className="text-sm text-(--muted-foreground) mt-0.5">
-                            Manage revenue settlements requested by branches into central money systems.
+                            {t("subtitle")}
                         </p>
                     </div>
                 </div>
@@ -85,7 +86,7 @@ export default function SettlementsPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
                     <input
                         type="text"
-                        placeholder="Search by branch or user..."
+                        placeholder={t("searchPlaceholder")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-9 pr-4 py-2 border border-(--border) rounded-lg text-sm bg-transparent focus:outline-none focus:border-(--primary)"
@@ -94,16 +95,16 @@ export default function SettlementsPage() {
 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="flex items-center gap-2 text-xs text-(--muted-foreground)">
-                        <Filter className="w-3.5 h-3.5" /> Filter Status:
+                        <Filter className="w-3.5 h-3.5" /> {t("filterStatus")}
                     </div>
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="px-3 py-2 border border-(--border) rounded-lg text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="all">All Statuses</option>
-                        <option value="requested">Requested / Pending</option>
-                        <option value="received">Received</option>
+                        <option value="all">{t("allStatuses")}</option>
+                        <option value="requested">{t("requestedPending")}</option>
+                        <option value="received">{t("received")}</option>
                     </select>
                 </div>
             </div>
@@ -111,7 +112,9 @@ export default function SettlementsPage() {
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
                     <span className="text-sm font-medium">{error}</span>
-                    <button onClick={loadSettlements} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">Retry</button>
+                    <button onClick={loadSettlements} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">
+                        {t("retry")}
+                    </button>
                 </div>
             )}
 
@@ -127,8 +130,8 @@ export default function SettlementsPage() {
                         <Building2 className="w-6 h-6" />
                     </div>
                     <div className="max-w-sm mx-auto space-y-1">
-                        <h2 className="text-lg font-semibold">No settlements found</h2>
-                        <p className="text-xs text-(--muted-foreground)">Try adjusting your search or filter options.</p>
+                        <h2 className="text-lg font-semibold">{t("noSettlementsTitle")}</h2>
+                        <p className="text-xs text-(--muted-foreground)">{t("noSettlementsSubtitle")}</p>
                     </div>
                 </div>
             )}
@@ -139,15 +142,15 @@ export default function SettlementsPage() {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
                                 <tr>
-                                    <th className="px-6 py-3.5">Branch</th>
-                                    <th className="px-6 py-3.5">Original</th>
-                                    <th className="px-6 py-3.5">Accepted</th>
-                                    <th className="px-6 py-3.5">Remaining</th>
-                                    <th className="px-6 py-3.5">Status</th>
-                                    <th className="px-6 py-3.5">Requested By</th>
-                                    <th className="px-6 py-3.5">Receiver</th>
-                                    <th className="px-6 py-3.5">Requested Date</th>
-                                    <th className="px-6 py-3.5 text-right">Action</th>
+                                    <th className="px-6 py-3.5">{t("table.branch")}</th>
+                                    <th className="px-6 py-3.5">{t("table.original")}</th>
+                                    <th className="px-6 py-3.5">{t("table.accepted")}</th>
+                                    <th className="px-6 py-3.5">{t("table.remaining")}</th>
+                                    <th className="px-6 py-3.5">{t("table.status")}</th>
+                                    <th className="px-6 py-3.5">{t("table.requestedBy")}</th>
+                                    <th className="px-6 py-3.5">{t("table.receiver")}</th>
+                                    <th className="px-6 py-3.5">{t("table.requestedDate")}</th>
+                                    <th className="px-6 py-3.5 text-right">{t("table.action")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border)">
@@ -161,30 +164,30 @@ export default function SettlementsPage() {
                                     return (
                                         <tr key={st.id} className="hover:bg-(--muted)/30 transition-colors">
                                             <td className="px-6 py-4 font-medium">
-                                                {st.branch?.name || st.branch_name || "Branch"}
+                                                {st.branch?.name || st.branch_name || t("table.branch")}
                                             </td>
                                             <td className="px-6 py-4 font-semibold">
-                                                {orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                                                {orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("table.etb")}</span>
                                             </td>
                                             <td className="px-6 py-4 text-(--success) font-semibold">
-                                                {acc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">ETB</span>
+                                                {acc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">{t("table.etb")}</span>
                                             </td>
                                             <td className="px-6 py-4 font-semibold text-(--destructive)">
-                                                {rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">ETB</span>
+                                                {rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">{t("table.etb")}</span>
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase ${isDone ? "bg-(--success)/10 text-(--success)" : "bg-(--primary)/10 text-(--primary)"}`}>
-                                                    {isDone ? "Received" : (st.status || "Pending")}
+                                                    {isDone ? t("table.receivedStatus") : (st.status || t("table.pending"))}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-xs font-medium">
-                                                {st.requested_by_name || "N/A"}
+                                                {st.requested_by_name || t("table.na")}
                                             </td>
                                             <td className="px-6 py-4 text-xs font-medium">
-                                                {st.received_by_name || "N/A"}
+                                                {st.received_by_name || t("table.na")}
                                             </td>
                                             <td className="px-6 py-4 text-xs text-(--muted-foreground)">
-                                                <div>{reqDate ? dayjs(reqDate).format("DD/MM/YYYY") : "N/A"}</div>
+                                                <div>{reqDate ? dayjs(reqDate).format("DD/MM/YYYY") : t("table.na")}</div>
                                                 <div className="text-[10px]">{reqDate ? `(${dayjs(reqDate).fromNow()})` : ""}</div>
                                             </td>
                                             <td className="px-6 py-4 text-right">
@@ -192,7 +195,7 @@ export default function SettlementsPage() {
                                                     href={`/dashboard/money/settlements/${st.id}`}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors"
                                                 >
-                                                    {isDone ? "View History" : "Accept Funds"}
+                                                    {isDone ? t("table.viewHistory") : t("table.acceptFunds")}
                                                 </Link>
                                             </td>
                                         </tr>

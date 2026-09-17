@@ -4,11 +4,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus, Users, MoreHorizontal, Pencil, AlertCircle, RefreshCcw, ChevronLeft, ChevronRight, CheckCircle2, XCircle, UserCheck, ShieldCheck, Mail, Phone, Calendar, Search } from "lucide-react";
+import { Plus, Users, Pencil, AlertCircle, RefreshCcw, ChevronLeft, ChevronRight, ShieldCheck, XCircle, Mail, Phone, Calendar, Search } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
-import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export default function UsersOverviewPage() {
+    const t = useTranslations("dashboard.usersPage");
     const [users, setUsers] = useState([]);
     const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1, hasNextPage: false, hasPreviousPage: false });
     const [currentPage, setCurrentPage] = useState(1);
@@ -34,7 +35,7 @@ export default function UsersOverviewPage() {
                 setPagination(data.pagination);
             }
         } catch (err) {
-            setError(err.message || "Failed to load employees.");
+            setError(err.message || t("loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -57,9 +58,9 @@ export default function UsersOverviewPage() {
                         <Users className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Employees</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                         <p className="text-sm text-(--muted-foreground) mt-0.5">
-                            Manage employees belonging to your business account.
+                            {t("subtitle")}
                         </p>
                     </div>
                 </div>
@@ -68,7 +69,7 @@ export default function UsersOverviewPage() {
                     className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity focus:outline-none focus:ring-2 focus:ring-(--ring)"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>Add employee</span>
+                    <span>{t("addEmployee")}</span>
                 </Link>
             </div>
 
@@ -79,7 +80,7 @@ export default function UsersOverviewPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
                         <input
                             type="text"
-                            placeholder="Search employee name, email, phone..."
+                            placeholder={t("searchPlaceholder")}
                             value={search}
                             onChange={(e) => {
                                 setSearch(e.target.value);
@@ -97,7 +98,7 @@ export default function UsersOverviewPage() {
                     <div className="flex items-center gap-3">
                         <AlertCircle className="w-5 h-5 shrink-0" />
                         <div>
-                            <p className="text-sm font-semibold">Unable to load employees</p>
+                            <p className="text-sm font-semibold">{t("errorTitle")}</p>
                             <p className="text-xs opacity-90">{error}</p>
                         </div>
                     </div>
@@ -106,7 +107,7 @@ export default function UsersOverviewPage() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-(--background) border border-(--border) text-(--foreground) text-xs font-medium rounded-lg hover:bg-(--muted) transition-colors"
                     >
                         <RefreshCcw className="w-3.5 h-3.5" />
-                        <span>Retry</span>
+                        <span>{t("retry")}</span>
                     </button>
                 </div>
             )}
@@ -146,9 +147,9 @@ export default function UsersOverviewPage() {
                         <Users className="w-6 h-6" />
                     </div>
                     <div className="max-w-sm mx-auto space-y-1">
-                        <h2 className="text-lg font-semibold">No employees found</h2>
+                        <h2 className="text-lg font-semibold">{t("emptyTitle")}</h2>
                         <p className="text-xs text-(--muted-foreground)">
-                            Try clearing your search or add a new employee to start managing your team.
+                            {t("emptyDescription")}
                         </p>
                     </div>
                     <Link
@@ -156,7 +157,7 @@ export default function UsersOverviewPage() {
                         className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                     >
                         <Plus className="w-4 h-4" />
-                        <span>Add employee</span>
+                        <span>{t("addEmployee")}</span>
                     </Link>
                 </div>
             )}
@@ -169,12 +170,12 @@ export default function UsersOverviewPage() {
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
                                     <tr>
-                                        <th className="px-6 py-3.5">Name</th>
-                                        <th className="px-6 py-3.5">Phone</th>
-                                        <th className="px-6 py-3.5">Email</th>
-                                        <th className="px-6 py-3.5">Verified</th>
-                                        <th className="px-6 py-3.5">Created</th>
-                                        <th className="px-6 py-3.5 text-right">Actions</th>
+                                        <th className="px-6 py-3.5">{t("table.name")}</th>
+                                        <th className="px-6 py-3.5">{t("table.phone")}</th>
+                                        <th className="px-6 py-3.5">{t("table.email")}</th>
+                                        <th className="px-6 py-3.5">{t("table.verified")}</th>
+                                        <th className="px-6 py-3.5">{t("table.created")}</th>
+                                        <th className="px-6 py-3.5 text-right">{t("table.actions")}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-(--border)">
@@ -200,7 +201,7 @@ export default function UsersOverviewPage() {
                                                 <td className="px-6 py-4 text-xs text-(--muted-foreground)">
                                                     <div className="flex items-center gap-1.5">
                                                         <Mail className="w-3.5 h-3.5 text-(--muted-foreground)/70 shrink-0" />
-                                                        <span className="truncate">{user.email || "No email"}</span>
+                                                        <span className="truncate">{user.email || t("table.noEmail")}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
@@ -209,13 +210,13 @@ export default function UsersOverviewPage() {
                                                         : "bg-(--muted) text-(--muted-foreground)"
                                                         }`}>
                                                         {isVerified ? <ShieldCheck className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                                                        {isVerified ? "Verified" : "Unverified"}
+                                                        {isVerified ? t("table.verifiedStatus") : t("table.unverifiedStatus")}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-xs text-(--muted-foreground)">
                                                     <div className="flex items-center gap-1.5">
                                                         <Calendar className="w-3.5 h-3.5 text-(--muted-foreground)/70 shrink-0" />
-                                                        <span>{user.created_at ? new Date(user.created_at).toLocaleDateString() : "Recently"}</span>
+                                                        <span>{user.created_at ? new Date(user.created_at).toLocaleDateString() : t("table.recently")}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
@@ -225,7 +226,7 @@ export default function UsersOverviewPage() {
                                                             className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium text-(--foreground) hover:bg-(--muted) transition-colors"
                                                         >
                                                             <Pencil className="w-3.5 h-3.5" />
-                                                            <span>View / Edit</span>
+                                                            <span>{t("table.viewEdit")}</span>
                                                         </Link>
                                                     </div>
                                                 </td>
@@ -241,7 +242,7 @@ export default function UsersOverviewPage() {
                     {pagination.totalPages > 1 && (
                         <div className="flex items-center justify-between px-2">
                             <p className="text-xs text-(--muted-foreground)">
-                                Page <span className="font-semibold text-(--foreground)">{pagination.page}</span> of <span className="font-semibold text-(--foreground)">{pagination.totalPages}</span> ({pagination.total} total)
+                                {t("pagination.page")} <span className="font-semibold text-(--foreground)">{pagination.page}</span> {t("pagination.of")} <span className="font-semibold text-(--foreground)">{pagination.totalPages}</span> ({pagination.total} {t("pagination.total")})
                             </p>
                             <div className="flex items-center gap-2">
                                 <button
@@ -250,14 +251,14 @@ export default function UsersOverviewPage() {
                                     className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) bg-(--card) text-xs font-medium rounded-lg disabled:opacity-50 hover:bg-(--muted) transition-colors"
                                 >
                                     <ChevronLeft className="w-3.5 h-3.5" />
-                                    <span>Previous</span>
+                                    <span>{t("pagination.previous")}</span>
                                 </button>
                                 <button
                                     onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))}
                                     disabled={!pagination.hasNextPage && currentPage >= pagination.totalPages}
                                     className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) bg-(--card) text-xs font-medium rounded-lg disabled:opacity-50 hover:bg-(--muted) transition-colors"
                                 >
-                                    <span>Next</span>
+                                    <span>{t("pagination.next")}</span>
                                     <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                             </div>

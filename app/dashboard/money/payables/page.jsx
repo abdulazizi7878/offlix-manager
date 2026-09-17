@@ -1,14 +1,15 @@
-// file: app/dashboard/money/payables/page.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { TrendingDown, Plus, Search, AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { TrendingDown, Plus, Search } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
 export default function PayablesPage() {
+    const t = useTranslations("dashboard.payablesPage");
+
     const [payables, setPayables] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -54,8 +55,8 @@ export default function PayablesPage() {
             setPayables(payList);
             setAccounts(accList);
         } catch (err) {
-            setError(err.message || "Failed to load payables.");
-            toast.error("Failed to load payables");
+            setError(err.message || t("messages.loadError"));
+            toast.error(t("messages.loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -71,17 +72,17 @@ export default function PayablesPage() {
     const handleCreatePayable = async (e) => {
         e.preventDefault();
         if (!formData.supplier_name.trim()) {
-            toast.error("Supplier name is required");
+            toast.error(t("messages.supplierRequired"));
             return;
         }
         if (!formData.amount || isNaN(formData.amount) || Number(formData.amount) <= 0) {
-            toast.error("Please enter a valid amount");
+            toast.error(t("messages.invalidAmount"));
             return;
         }
 
         const parts = formData.amount.split(".");
         if (parts[1] && parts[1].length > 2) {
-            toast.error("Amounts can support a maximum of 2 decimal places");
+            toast.error(t("messages.decimalLimit"));
             return;
         }
 
@@ -96,12 +97,12 @@ export default function PayablesPage() {
                     dueDate: formData.due_date || null
                 })
             });
-            toast.success("Payable created successfully");
+            toast.success(t("messages.createSuccess"));
             setIsCreateModalOpen(false);
             setFormData({ supplier_name: "", amount: "", due_date: "", notes: "" });
             loadData();
         } catch (err) {
-            toast.error(err.message || "Failed to create payable");
+            toast.error(err.message || t("messages.createFailed"));
         } finally {
             setIsSubmitting(false);
         }
@@ -115,9 +116,9 @@ export default function PayablesPage() {
                         <TrendingDown className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Payables (Money Owed)</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                         <p className="text-sm text-(--muted-foreground) mt-0.5">
-                            Manage supplier bills and outgoing payment obligations.
+                            {t("subtitle")}
                         </p>
                     </div>
                 </div>
@@ -126,7 +127,7 @@ export default function PayablesPage() {
                     className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>Create Payable</span>
+                    <span>{t("createPayable")}</span>
                 </button>
             </div>
 
@@ -135,7 +136,7 @@ export default function PayablesPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
                     <input
                         type="text"
-                        placeholder="Search supplier..."
+                        placeholder={t("searchPlaceholder")}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
@@ -146,18 +147,20 @@ export default function PayablesPage() {
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="w-full sm:w-48 px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
-                    <option value="">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="partial">Partial</option>
-                    <option value="paid">Paid</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="">{t("allStatuses")}</option>
+                    <option value="pending">{t("statusPending")}</option>
+                    <option value="partial">{t("statusPartial")}</option>
+                    <option value="paid">{t("statusPaid")}</option>
+                    <option value="cancelled">{t("statusCancelled")}</option>
                 </select>
             </div>
 
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
                     <span className="text-sm font-medium">{error}</span>
-                    <button onClick={loadData} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">Retry</button>
+                    <button onClick={loadData} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">
+                        {t("retry")}
+                    </button>
                 </div>
             )}
 
@@ -171,15 +174,15 @@ export default function PayablesPage() {
                         <TrendingDown className="w-6 h-6" />
                     </div>
                     <div className="max-w-sm mx-auto space-y-1">
-                        <h2 className="text-lg font-semibold">No payables found</h2>
-                        <p className="text-xs text-(--muted-foreground)">Create a payable when your business owes money to a supplier.</p>
+                        <h2 className="text-lg font-semibold">{t("noPayablesTitle")}</h2>
+                        <p className="text-xs text-(--muted-foreground)">{t("noPayablesSubtitle")}</p>
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
                     >
                         <Plus className="w-4 h-4" />
-                        <span>Create Payable</span>
+                        <span>{t("createPayable")}</span>
                     </button>
                 </div>
             )}
@@ -190,12 +193,12 @@ export default function PayablesPage() {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
                                 <tr>
-                                    <th className="px-6 py-3.5">Supplier</th>
-                                    <th className="px-6 py-3.5">Original</th>
-                                    <th className="px-6 py-3.5">Remaining</th>
-                                    <th className="px-6 py-3.5">Status</th>
-                                    <th className="px-6 py-3.5">Due Date</th>
-                                    <th className="px-6 py-3.5 text-right">Action</th>
+                                    <th className="px-6 py-3.5">{t("table.supplier")}</th>
+                                    <th className="px-6 py-3.5">{t("table.original")}</th>
+                                    <th className="px-6 py-3.5">{t("table.remaining")}</th>
+                                    <th className="px-6 py-3.5">{t("table.status")}</th>
+                                    <th className="px-6 py-3.5">{t("table.dueDate")}</th>
+                                    <th className="px-6 py-3.5 text-right">{t("table.action")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border)">
@@ -205,17 +208,17 @@ export default function PayablesPage() {
                                     return (
                                         <tr key={p.id} className="hover:bg-(--muted)/30 transition-colors">
                                             <td className="px-6 py-4 font-medium">{p.supplier_name || p.name}</td>
-                                            <td className="px-6 py-4 font-semibold">{orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span></td>
-                                            <td className="px-6 py-4 font-semibold text-(--destructive)">{rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">ETB</span></td>
+                                            <td className="px-6 py-4 font-semibold">{orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("table.etb")}</span></td>
+                                            <td className="px-6 py-4 font-semibold text-(--destructive)">{rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">{t("table.etb")}</span></td>
                                             <td className="px-6 py-4">
                                                 <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase bg-(--primary)/10 text-(--primary)">
-                                                    {p.status || "pending"}
+                                                    {p.status || t("table.pending")}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">{p.due_date ? new Date(p.due_date).toLocaleDateString() : "No due date"}</td>
+                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">{p.due_date ? new Date(p.due_date).toLocaleDateString() : t("table.noDueDate")}</td>
                                             <td className="px-6 py-4 text-right">
                                                 <Link href={`/dashboard/money/payables/${p.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors">
-                                                    View / Pay
+                                                    {t("table.viewPay")}
                                                 </Link>
                                             </td>
                                         </tr>
@@ -231,15 +234,15 @@ export default function PayablesPage() {
                 <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
                     <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-md p-6 space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between pb-4 border-b border-(--border)">
-                            <h2 className="text-lg font-bold">Create Payable</h2>
+                            <h2 className="text-lg font-bold">{t("modal.title")}</h2>
                             <button onClick={() => setIsCreateModalOpen(false)} className="text-(--muted-foreground) hover:text-(--foreground)">✕</button>
                         </div>
                         <form onSubmit={handleCreatePayable} className="space-y-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Supplier Name</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.supplierName")}</label>
                                 <input
                                     type="text"
-                                    placeholder="Supplier name..."
+                                    placeholder={t("modal.supplierPlaceholder")}
                                     value={formData.supplier_name}
                                     onChange={(e) => setFormData({ ...formData, supplier_name: e.target.value })}
                                     required
@@ -247,11 +250,11 @@ export default function PayablesPage() {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Amount (ETB)</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.amount")}</label>
                                 <input
                                     type="number"
                                     step="0.01"
-                                    placeholder="0.00"
+                                    placeholder={t("modal.amountPlaceholder")}
                                     value={formData.amount}
                                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                                     required
@@ -259,7 +262,7 @@ export default function PayablesPage() {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Due Date</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.dueDate")}</label>
                                 <input
                                     type="date"
                                     value={formData.due_date}
@@ -268,18 +271,22 @@ export default function PayablesPage() {
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Notes</label>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("modal.notes")}</label>
                                 <textarea
                                     rows="2"
-                                    placeholder="Notes..."
+                                    placeholder={t("modal.notesPlaceholder")}
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                                 />
                             </div>
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-(--border)">
-                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium">Cancel</button>
-                                <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium">{isSubmitting ? "Creating..." : "Create"}</button>
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium">
+                                    {t("modal.cancel")}
+                                </button>
+                                <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium">
+                                    {isSubmitting ? t("modal.creating") : t("modal.create")}
+                                </button>
                             </div>
                         </form>
                     </div>

@@ -1,37 +1,27 @@
-// file: app/dashboard/money/accounts/[moneyAccountId]/page.jsx
-
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { useParams, useRouter } from "next/navigation";
-
 import Link from "next/link";
-
+import { useTranslations } from "next-intl";
 import {
     Wallet,
     ArrowLeft,
     AlertCircle,
     Save,
 } from "lucide-react";
-
 import { fetchApi } from "@/lib/api/client";
-
 import { toast } from "sonner";
 
 export default function MoneyAccountDetailsPage() {
+    const t = useTranslations("dashboard.editMoneyAccountPage");
     const params = useParams();
-
     const router = useRouter();
-
     const moneyAccountId = params?.moneyAccountId;
 
     const [account, setAccount] = useState(null);
-
     const [isLoading, setIsLoading] = useState(true);
-
     const [isSaving, setIsSaving] = useState(false);
-
     const [error, setError] = useState(null);
 
     const [formData, setFormData] = useState({
@@ -42,7 +32,7 @@ export default function MoneyAccountDetailsPage() {
 
     useEffect(() => {
         if (!moneyAccountId) {
-            setError("Money account ID is missing.");
+            setError(t("messages.missingId"));
             setIsLoading(false);
             return;
         }
@@ -68,11 +58,11 @@ export default function MoneyAccountDetailsPage() {
             } catch (err) {
                 setError(
                     err.message ||
-                    "Failed to load account details."
+                    t("messages.loadError")
                 );
 
                 toast.error(
-                    "Failed to load account details"
+                    t("messages.loadError")
                 );
             } finally {
                 setIsLoading(false);
@@ -86,7 +76,7 @@ export default function MoneyAccountDetailsPage() {
         e.preventDefault();
 
         if (!moneyAccountId) {
-            toast.error("Money account ID is missing.");
+            toast.error(t("messages.missingId"));
             return;
         }
 
@@ -106,7 +96,7 @@ export default function MoneyAccountDetailsPage() {
             );
 
             toast.success(
-                "Account updated successfully"
+                t("messages.updateSuccess")
             );
 
             router.push(
@@ -115,7 +105,7 @@ export default function MoneyAccountDetailsPage() {
         } catch (err) {
             toast.error(
                 err.message ||
-                "Failed to update account"
+                t("messages.updateError")
             );
         } finally {
             setIsSaving(false);
@@ -143,7 +133,7 @@ export default function MoneyAccountDetailsPage() {
                     href="/dashboard/money/accounts"
                     className="inline-block px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm"
                 >
-                    Back to Accounts
+                    {t("backToAccounts")}
                 </Link>
             </div>
         );
@@ -162,11 +152,11 @@ export default function MoneyAccountDetailsPage() {
 
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">
-                            Edit Account
+                            {t("title")}
                         </h1>
 
                         <p className="text-sm text-(--muted-foreground)">
-                            Manage account information and status.
+                            {t("subtitle")}
                         </p>
                     </div>
                 </div>
@@ -176,7 +166,7 @@ export default function MoneyAccountDetailsPage() {
                 <div className="flex items-center justify-between p-4 bg-(--muted)/30 rounded-lg border border-(--border)">
                     <div>
                         <p className="text-xs uppercase font-semibold text-(--muted-foreground)">
-                            Derived Balance
+                            {t("derivedBalance")}
                         </p>
 
                         <p className="text-2xl font-bold mt-1">
@@ -187,7 +177,7 @@ export default function MoneyAccountDetailsPage() {
                                 maximumFractionDigits: 2,
                             })}{" "}
                             <span className="text-sm font-normal text-(--muted-foreground)">
-                                ETB
+                                {t("etb")}
                             </span>
                         </p>
                     </div>
@@ -203,7 +193,7 @@ export default function MoneyAccountDetailsPage() {
                 >
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                            Account Name
+                            {t("accountName")}
                         </label>
 
                         <input
@@ -222,7 +212,7 @@ export default function MoneyAccountDetailsPage() {
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                            Account Type
+                            {t("accountType")}
                         </label>
 
                         <select
@@ -236,22 +226,22 @@ export default function MoneyAccountDetailsPage() {
                             className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                         >
                             <option value="cash">
-                                Cash
+                                {t("cash")}
                             </option>
 
                             <option value="bank">
-                                Bank
+                                {t("bank")}
                             </option>
 
                             <option value="mobile_money">
-                                Mobile Money
+                                {t("mobileMoney")}
                             </option>
                         </select>
                     </div>
 
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                            Account Status
+                            {t("accountStatus")}
                         </label>
 
                         <select
@@ -265,11 +255,11 @@ export default function MoneyAccountDetailsPage() {
                             className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                         >
                             <option value="active">
-                                Active
+                                {t("active")}
                             </option>
 
                             <option value="inactive">
-                                Inactive
+                                {t("inactive")}
                             </option>
                         </select>
                     </div>
@@ -279,7 +269,7 @@ export default function MoneyAccountDetailsPage() {
                             href="/dashboard/money/accounts"
                             className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
                         >
-                            Cancel
+                            {t("cancel")}
                         </Link>
 
                         <button
@@ -291,8 +281,8 @@ export default function MoneyAccountDetailsPage() {
 
                             <span>
                                 {isSaving
-                                    ? "Saving..."
-                                    : "Save Changes"}
+                                    ? t("saving")
+                                    : t("saveChanges")}
                             </span>
                         </button>
                     </div>

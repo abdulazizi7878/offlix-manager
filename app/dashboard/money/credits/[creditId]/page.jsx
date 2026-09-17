@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { useParams } from "next/navigation";
-
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import {
     TrendingUp,
@@ -18,106 +17,56 @@ import {
 } from "lucide-react";
 
 import { fetchApi } from "@/lib/api/client";
-
 import { toast } from "sonner";
-
 import dayjs from "dayjs";
-
 import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
 export default function CreditDetailsPage() {
+    const t = useTranslations("dashboard.creditDetailsPage");
+    const creditsT = useTranslations("dashboard.creditsPage");
     const params = useParams();
-
     const creditId = params.creditId;
 
-    const [credit, setCredit] =
-        useState(null);
+    const [credit, setCredit] = useState(null);
+    const [accounts, setAccounts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
 
-    const [accounts, setAccounts] =
-        useState([]);
-
-    const [isLoading, setIsLoading] =
-        useState(true);
-
-    const [isSubmitting, setIsSubmitting] =
-        useState(false);
-
-    const [error, setError] =
-        useState(null);
-
-    const [receiveFull, setReceiveFull] =
-        useState(true);
-
-    const [amount, setAmount] =
-        useState("");
-
-    const [moneyAccountId, setMoneyAccountId] =
-        useState("");
-
-    const [notes, setNotes] =
-        useState("");
+    const [receiveFull, setReceiveFull] = useState(true);
+    const [amount, setAmount] = useState("");
+    const [moneyAccountId, setMoneyAccountId] = useState("");
+    const [notes, setNotes] = useState("");
 
     const loadData = async () => {
         setIsLoading(true);
         setError(null);
 
         try {
-            const [cRes, accRes] =
-                await Promise.all([
-                    fetchApi(
-                        `/api/v1/dashboard/money/credits/${creditId}`
-                    ),
-                    fetchApi(
-                        "/api/v1/dashboard/money/accounts"
-                    ),
-                ]);
+            const [cRes, accRes] = await Promise.all([
+                fetchApi(`/api/v1/dashboard/money/credits/${creditId}`),
+                fetchApi("/api/v1/dashboard/money/accounts"),
+            ]);
 
-            const cData =
-                cRes.data?.data ??
-                cRes.data ??
-                cRes;
-
+            const cData = cRes.data?.data ?? cRes.data ?? cRes;
             setCredit(cData);
 
-            const accRaw =
-                accRes.data?.data ??
-                accRes.data ??
-                {};
-
-            const accList =
-                Array.isArray(accRaw)
-                    ? accRaw
-                    : (
-                        Array.isArray(
-                            accRaw.data
-                        )
-                            ? accRaw.data
-                            : (
-                                accRes.data
-                                    ?.accounts ??
-                                []
-                            )
-                    );
+            const accRaw = accRes.data?.data ?? accRes.data ?? {};
+            const accList = Array.isArray(accRaw)
+                ? accRaw
+                : Array.isArray(accRaw.data)
+                    ? accRaw.data
+                    : accRes.data?.accounts ?? [];
 
             setAccounts(accList);
 
-            const rem = Number(
-                cData.remaining_amount ??
-                cData.amount
-            );
-
+            const rem = Number(cData.remaining_amount ?? cData.amount);
             setAmount(rem.toString());
         } catch (err) {
-            setError(
-                err.message ||
-                "Failed to load credit details."
-            );
-
-            toast.error(
-                "Failed to load credit details"
-            );
+            setError(err.message || t("messages.loadError"));
+            toast.error(t("messages.loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -129,67 +78,37 @@ export default function CreditDetailsPage() {
         }
     }, [creditId]);
 
-    const handleReceivePayment = async (
-        e
-    ) => {
+    const isMoneyIn = credit?.direction === "in";
+
+    const handleReceivePayment = async (e) => {
         e.preventDefault();
 
         if (!moneyAccountId) {
             toast.error(
                 isMoneyIn
-                    ? "Please select a payment account"
-                    : "Please select a receiving money account"
+                    ? t("messages.selectPaymentAccount")
+                    : t("messages.selectReceivingAccount")
             );
-
             return;
         }
 
-        const orig =
-            Number(credit?.amount || 0);
+        const orig = Number(credit?.amount || 0);
+        const rem = Number(credit?.remaining_amount ?? orig);
+        const targetAmount = receiveFull ? rem : Number(amount);
 
-        const rem =
-            Number(
-                credit?.remaining_amount ??
-                orig
-            );
-
-        const targetAmount =
-            receiveFull
-                ? rem
-                : Number(amount);
-
-        if (
-            isNaN(targetAmount) ||
-            targetAmount <= 0
-        ) {
-            toast.error(
-                "Please enter a valid amount"
-            );
-
+        if (isNaN(targetAmount) || targetAmount <= 0) {
+            toast.error(t("messages.invalidAmount"));
             return;
         }
 
         if (targetAmount > rem) {
-            toast.error(
-                "Amount cannot exceed remaining credit amount"
-            );
-
+            toast.error(t("messages.exceedsRemaining"));
             return;
         }
 
-        const parts =
-            targetAmount
-                .toString()
-                .split(".");
-
-        if (
-            parts[1] &&
-            parts[1].length > 2
-        ) {
-            toast.error(
-                "Amounts can support a maximum of 2 decimal places"
-            );
-
+        const parts = targetAmount.toString().split(".");
+        if (parts[1] && parts[1].length > 2) {
+            toast.error(t("messages.decimalLimit"));
             return;
         }
 
@@ -200,37 +119,26 @@ export default function CreditDetailsPage() {
                 `/api/v1/dashboard/money/credits/${creditId}/payments`,
                 {
                     method: "POST",
-
                     body: JSON.stringify({
                         moneyAccountId,
-                        amount:
-                            receiveFull
-                                ? undefined
-                                : targetAmount,
+                        amount: receiveFull ? undefined : targetAmount,
                         full: receiveFull,
-                        notes:
-                            notes.trim() ||
-                            null,
+                        notes: notes.trim() || null,
                     }),
                 }
             );
 
             toast.success(
                 isMoneyIn
-                    ? "Payment made successfully"
-                    : "Payment received successfully"
+                    ? t("messages.paymentSuccess")
+                    : t("messages.receiveSuccess")
             );
 
             setNotes("");
-
             setMoneyAccountId("");
-
             loadData();
         } catch (err) {
-            toast.error(
-                err.message ||
-                "Failed to process payment"
-            );
+            toast.error(err.message || t("messages.processFailed"));
         } finally {
             setIsSubmitting(false);
         }
@@ -248,49 +156,24 @@ export default function CreditDetailsPage() {
         return (
             <div className="p-12 text-center bg-(--card) border border-(--border) rounded-xl space-y-4">
                 <AlertCircle className="w-10 h-10 text-(--destructive) mx-auto" />
-
-                <p className="text-sm font-semibold">
-                    {error ||
-                        "Credit not found"}
-                </p>
-
+                <p className="text-sm font-semibold">{error || t("notFound")}</p>
                 <Link
                     href="/dashboard/money/credits"
                     className="inline-block px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm"
                 >
-                    Back to Credits
+                    {t("backToCredits")}
                 </Link>
             </div>
         );
     }
 
-    const orig =
-        Number(credit.amount || 0);
-
-    const rem =
-        Number(
-            credit.remaining_amount ??
-            orig
-        );
-
-    const received =
-        orig - rem;
-
-    const isPaid =
-        rem <= 0 ||
-        credit.status === "paid";
-
-    const isMoneyIn =
-        credit.direction === "in";
-
-    const dueDate =
-        credit.due_date;
-
-    const createdAt =
-        credit.created_at;
-
-    const updatedAt =
-        credit.updated_at;
+    const orig = Number(credit.amount || 0);
+    const rem = Number(credit.remaining_amount ?? orig);
+    const received = orig - rem;
+    const isPaid = rem <= 0 || credit.status === "paid";
+    const dueDate = credit.due_date;
+    const createdAt = credit.created_at;
+    const updatedAt = credit.updated_at;
 
     return (
         <div className="space-y-6 max-w-3xl mx-auto">
@@ -307,8 +190,7 @@ export default function CreditDetailsPage() {
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-2xl font-bold tracking-tight">
-                                {credit.customer_name ||
-                                    credit.name}
+                                {credit.customer_name || credit.name}
                             </h1>
 
                             <span
@@ -317,15 +199,12 @@ export default function CreditDetailsPage() {
                                         : "bg-(--primary)/10 text-(--primary)"
                                     }`}
                             >
-                                {credit.status ||
-                                    "pending"}
+                                {credit.status ? creditsT(`statuses.${credit.status}`) : creditsT("statuses.pending")}
                             </span>
                         </div>
 
                         <p className="text-sm text-(--muted-foreground) mt-0.5">
-                            {isMoneyIn
-                                ? "Money In Credit & Payment Management"
-                                : "Money Out Credit & Payment Management"}
+                            {isMoneyIn ? t("moneyInSub") : t("moneyOutSub")}
                         </p>
                     </div>
                 </div>
@@ -334,7 +213,7 @@ export default function CreditDetailsPage() {
             {/* Credit Information */}
             <div className="bg-(--card) border border-(--border) rounded-xl p-5 space-y-4 shadow-xs">
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                    Credit Information
+                    {t("info.title")}
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
@@ -349,7 +228,7 @@ export default function CreditDetailsPage() {
 
                         <div>
                             <span className="text-xs text-(--muted-foreground) block">
-                                Direction
+                                {t("info.direction")}
                             </span>
 
                             <span
@@ -358,9 +237,7 @@ export default function CreditDetailsPage() {
                                         : "text-(--destructive)"
                                     }`}
                             >
-                                {isMoneyIn
-                                    ? "Money In"
-                                    : "Money Out"}
+                                {isMoneyIn ? creditsT("moneyIn") : creditsT("moneyOut")}
                             </span>
                         </div>
                     </div>
@@ -371,12 +248,11 @@ export default function CreditDetailsPage() {
 
                         <div>
                             <span className="text-xs text-(--muted-foreground) block">
-                                Created By
+                                {t("info.createdBy")}
                             </span>
 
                             <span className="font-medium">
-                                {credit.created_by_name ||
-                                    "System User"}
+                                {credit.created_by_name || t("info.systemUser")}
                             </span>
                         </div>
                     </div>
@@ -387,19 +263,13 @@ export default function CreditDetailsPage() {
 
                         <div>
                             <span className="text-xs text-(--muted-foreground) block">
-                                Due Date
+                                {t("info.dueDate")}
                             </span>
 
                             <span className="font-medium">
                                 {dueDate
-                                    ? `${dayjs(
-                                        dueDate
-                                    ).format(
-                                        "DD/MM/YYYY"
-                                    )} (${dayjs(
-                                        dueDate
-                                    ).fromNow()})`
-                                    : "No due date"}
+                                    ? `${dayjs(dueDate).format("DD/MM/YYYY")} (${dayjs(dueDate).fromNow()})`
+                                    : t("info.noDueDate")}
                             </span>
                         </div>
                     </div>
@@ -410,19 +280,13 @@ export default function CreditDetailsPage() {
 
                         <div>
                             <span className="text-xs text-(--muted-foreground) block">
-                                Created At
+                                {t("info.createdAt")}
                             </span>
 
                             <span className="font-medium">
                                 {createdAt
-                                    ? `${dayjs(
-                                        createdAt
-                                    ).format(
-                                        "DD/MM/YYYY HH:mm"
-                                    )} (${dayjs(
-                                        createdAt
-                                    ).fromNow()})`
-                                    : "N/A"}
+                                    ? `${dayjs(createdAt).format("DD/MM/YYYY HH:mm")} (${dayjs(createdAt).fromNow()})`
+                                    : t("info.na")}
                             </span>
                         </div>
                     </div>
@@ -433,19 +297,13 @@ export default function CreditDetailsPage() {
 
                         <div>
                             <span className="text-xs text-(--muted-foreground) block">
-                                Last Updated
+                                {t("info.lastUpdated")}
                             </span>
 
                             <span className="font-medium">
                                 {updatedAt
-                                    ? `${dayjs(
-                                        updatedAt
-                                    ).format(
-                                        "DD/MM/YYYY HH:mm"
-                                    )} (${dayjs(
-                                        updatedAt
-                                    ).fromNow()})`
-                                    : "N/A"}
+                                    ? `${dayjs(updatedAt).format("DD/MM/YYYY HH:mm")} (${dayjs(updatedAt).fromNow()})`
+                                    : t("info.na")}
                             </span>
                         </div>
                     </div>
@@ -457,7 +315,7 @@ export default function CreditDetailsPage() {
 
                         <div>
                             <span className="text-xs text-(--muted-foreground) block">
-                                Description / Notes
+                                {t("info.description")}
                             </span>
 
                             <p className="text-sm text-(--foreground) mt-0.5">
@@ -472,60 +330,43 @@ export default function CreditDetailsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-1">
                     <span className="text-xs uppercase font-semibold text-(--muted-foreground)">
-                        Original Amount
+                        {t("summary.original")}
                     </span>
 
                     <p className="text-xl font-bold">
-                        {orig.toLocaleString(
-                            undefined,
-                            {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            }
-                        )}{" "}
-                        <span className="text-xs font-normal">
-                            ETB
-                        </span>
+                        {orig.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-xs font-normal">{t("summary.etb")}</span>
                     </p>
                 </div>
 
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-1">
                     <span className="text-xs uppercase font-semibold text-(--muted-foreground)">
-                        {isMoneyIn
-                            ? "Received Amount"
-                            : "Returned Amount"}
+                        {isMoneyIn ? t("summary.received") : t("summary.returned")}
                     </span>
 
                     <p className="text-xl font-bold text-(--success)">
-                        {received.toLocaleString(
-                            undefined,
-                            {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            }
-                        )}{" "}
-                        <span className="text-xs font-normal">
-                            ETB
-                        </span>
+                        {received.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-xs font-normal">{t("summary.etb")}</span>
                     </p>
                 </div>
 
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 space-y-1">
                     <span className="text-xs uppercase font-semibold text-(--muted-foreground)">
-                        Remaining Amount
+                        {t("summary.remaining")}
                     </span>
 
                     <p className="text-xl font-bold text-(--destructive)">
-                        {rem.toLocaleString(
-                            undefined,
-                            {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            }
-                        )}{" "}
-                        <span className="text-xs font-normal">
-                            ETB
-                        </span>
+                        {rem.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })}{" "}
+                        <span className="text-xs font-normal">{t("summary.etb")}</span>
                     </p>
                 </div>
             </div>
@@ -535,56 +376,32 @@ export default function CreditDetailsPage() {
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 shadow-xs space-y-6">
                     <h2 className="text-base font-semibold">
                         {isMoneyIn
-                            ? "Make Payment"
-                            : "Receive Payment"}
+                            ? t("paymentForm.makePayment")
+                            : t("paymentForm.receivePayment")}
                     </h2>
 
-                    <form
-                        onSubmit={
-                            handleReceivePayment
-                        }
-                        className="space-y-4"
-                    >
+                    <form onSubmit={handleReceivePayment} className="space-y-4">
                         {/* Account */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
                                 {isMoneyIn
-                                    ? "Payment Account"
-                                    : "Receiving Account"}
+                                    ? t("paymentForm.paymentAccount")
+                                    : t("paymentForm.receivingAccount")}
                             </label>
 
                             <select
-                                value={
-                                    moneyAccountId
-                                }
-                                onChange={(e) =>
-                                    setMoneyAccountId(
-                                        e.target
-                                            .value
-                                    )
-                                }
+                                value={moneyAccountId}
+                                onChange={(e) => setMoneyAccountId(e.target.value)}
                                 required
                                 className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                             >
-                                <option value="">
-                                    Select Account
-                                </option>
+                                <option value="">{t("paymentForm.selectAccount")}</option>
 
-                                {accounts.map(
-                                    (acc) => (
-                                        <option
-                                            key={
-                                                acc.id
-                                            }
-                                            value={
-                                                acc.id
-                                            }
-                                        >
-                                            {acc.name}{" "}
-                                            ({acc.type})
-                                        </option>
-                                    )
-                                )}
+                                {accounts.map((acc) => (
+                                    <option key={acc.id} value={acc.id}>
+                                        {acc.name} ({acc.type})
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -593,25 +410,15 @@ export default function CreditDetailsPage() {
                             <input
                                 type="checkbox"
                                 id="receive_full"
-                                checked={
-                                    receiveFull
-                                }
-                                onChange={(e) =>
-                                    setReceiveFull(
-                                        e.target
-                                            .checked
-                                    )
-                                }
+                                checked={receiveFull}
+                                onChange={(e) => setReceiveFull(e.target.checked)}
                                 className="rounded border-(--border) text-(--primary) focus:ring-(--ring)"
                             />
 
-                            <label
-                                htmlFor="receive_full"
-                                className="text-sm font-medium"
-                            >
+                            <label htmlFor="receive_full" className="text-sm font-medium">
                                 {isMoneyIn
-                                    ? `Pay full remaining amount (${rem.toLocaleString()} ETB)`
-                                    : `Receive full remaining amount (${rem.toLocaleString()} ETB)`}
+                                    ? t("paymentForm.payFull", { amount: rem.toLocaleString() })
+                                    : t("paymentForm.receiveFull", { amount: rem.toLocaleString() })}
                             </label>
                         </div>
 
@@ -620,8 +427,8 @@ export default function CreditDetailsPage() {
                             <div className="space-y-1.5">
                                 <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
                                     {isMoneyIn
-                                        ? "Payment Amount (ETB)"
-                                        : "Received Amount (ETB)"}
+                                        ? t("paymentForm.paymentAmount")
+                                        : t("paymentForm.receivedAmount")}
                                 </label>
 
                                 <input
@@ -629,15 +436,8 @@ export default function CreditDetailsPage() {
                                     step="0.01"
                                     min="0.01"
                                     max={rem}
-                                    value={
-                                        amount
-                                    }
-                                    onChange={(e) =>
-                                        setAmount(
-                                            e.target
-                                                .value
-                                        )
-                                    }
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
                                     required
                                     className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                                 />
@@ -647,23 +447,14 @@ export default function CreditDetailsPage() {
                         {/* Notes */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                                Notes
+                                {t("paymentForm.notes")}
                             </label>
 
                             <textarea
                                 rows="2"
-                                placeholder={
-                                    isMoneyIn
-                                        ? "Payment notes..."
-                                        : "Payment notes..."
-                                }
+                                placeholder={t("paymentForm.notesPlaceholder")}
                                 value={notes}
-                                onChange={(e) =>
-                                    setNotes(
-                                        e.target
-                                            .value
-                                    )
-                                }
+                                onChange={(e) => setNotes(e.target.value)}
                                 className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                             />
                         </div>
@@ -672,16 +463,14 @@ export default function CreditDetailsPage() {
                         <div className="flex justify-end pt-2">
                             <button
                                 type="submit"
-                                disabled={
-                                    isSubmitting
-                                }
+                                disabled={isSubmitting}
                                 className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50"
                             >
                                 {isSubmitting
-                                    ? "Processing..."
+                                    ? t("paymentForm.processing")
                                     : isMoneyIn
-                                        ? "Make Payment"
-                                        : "Receive Payment"}
+                                        ? t("paymentForm.submitPayment")
+                                        : t("paymentForm.submitReceive")}
                             </button>
                         </div>
                     </form>
@@ -690,72 +479,45 @@ export default function CreditDetailsPage() {
 
             {/* Payment History */}
             <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
-                <h3 className="text-base font-semibold">
-                    Payment History
-                </h3>
+                <h3 className="text-base font-semibold">{t("history.title")}</h3>
 
-                {(!credit.payments &&
-                    !credit.history) ||
-                    (
-                        credit.payments ||
-                        credit.history ||
-                        []
-                    ).length === 0 ? (
+                {(!credit.payments && !credit.history) ||
+                    (credit.payments || credit.history || []).length === 0 ? (
                     <p className="text-xs text-(--muted-foreground) py-4 text-center">
-                        No payment records yet.
+                        {t("history.noRecords")}
                     </p>
                 ) : (
                     <div className="space-y-3">
-                        {(
-                            credit.payments ||
-                            credit.history ||
-                            []
-                        ).map(
-                            (pay, i) => {
-                                const payDate =
-                                    pay.created_at ||
-                                    pay.date;
+                        {(credit.payments || credit.history || []).map((pay, i) => {
+                            const payDate = pay.created_at || pay.date;
 
-                                return (
-                                    <div
-                                        key={i}
-                                        className="flex items-center justify-between p-3 rounded-lg border border-(--border) bg-(--muted)/20"
-                                    >
-                                        <div>
-                                            <p className="text-sm font-medium">
-                                                {Number(
-                                                    pay.amount
-                                                ).toLocaleString()}{" "}
-                                                ETB to{" "}
-                                                <span className="text-(--primary)">
-                                                    {pay
-                                                        .money_account
-                                                        ?.name ||
-                                                        "Account"}
-                                                </span>
-                                            </p>
+                            return (
+                                <div
+                                    key={i}
+                                    className="flex items-center justify-between p-3 rounded-lg border border-(--border) bg-(--muted)/20"
+                                >
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            {Number(pay.amount).toLocaleString()}{" "}
+                                            {t("history.etb")} {t("history.to")}{" "}
+                                            <span className="text-(--primary)">
+                                                {pay.money_account?.name || t("history.account")}
+                                            </span>
+                                        </p>
 
-                                            <p className="text-xs text-(--muted-foreground)">
-                                                {pay.notes ||
-                                                    "No notes"}{" "}
-                                                •{" "}
-                                                {payDate
-                                                    ? `${dayjs(
-                                                        payDate
-                                                    ).format(
-                                                        "DD/MM/YYYY"
-                                                    )} (${dayjs(
-                                                        payDate
-                                                    ).fromNow()})`
-                                                    : ""}
-                                            </p>
-                                        </div>
-
-                                        <CheckCircle2 className="w-5 h-5 text-(--success)" />
+                                        <p className="text-xs text-(--muted-foreground)">
+                                            {pay.notes || t("history.noNotes")}{" "}
+                                            •{" "}
+                                            {payDate
+                                                ? `${dayjs(payDate).format("DD/MM/YYYY")} (${dayjs(payDate).fromNow()})`
+                                                : ""}
+                                        </p>
                                     </div>
-                                );
-                            }
-                        )}
+
+                                    <CheckCircle2 className="w-5 h-5 text-(--success)" />
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -766,7 +528,7 @@ export default function CreditDetailsPage() {
                     href="/dashboard/money/credits"
                     className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
                 >
-                    Back to Credits
+                    {t("backToCredits")}
                 </Link>
             </div>
         </div>

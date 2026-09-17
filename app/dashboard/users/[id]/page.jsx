@@ -5,13 +5,15 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Users, AlertCircle, CheckCircle2, XCircle, Pencil } from "lucide-react";
+import { ArrowLeft, AlertCircle, CheckCircle2, XCircle, Pencil } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { useTranslations } from "next-intl";
 
 export default function UserDetailsPage({ params }) {
+    const t = useTranslations("dashboard.userDetailsPage");
     const unwrappedParams = use(params);
     const id = unwrappedParams.id;
     const router = useRouter();
@@ -37,7 +39,7 @@ export default function UserDetailsPage({ params }) {
                 email: userData.email || "",
             });
         } catch (err) {
-            setError(err.message || "Failed to load employee details.");
+            setError(err.message || t("loadError"));
         } finally {
             setIsLoading(false);
         }
@@ -50,11 +52,11 @@ export default function UserDetailsPage({ params }) {
     const handleUpdate = async (e) => {
         e.preventDefault();
         if (!formData.name.trim()) {
-            setFormErrors({ name: "Name is required." });
+            setFormErrors({ name: t("validation.nameRequired") });
             return;
         }
         if (!formData.phone.trim()) {
-            setFormErrors({ phone: "Phone is required." });
+            setFormErrors({ phone: t("validation.phoneRequired") });
             return;
         }
 
@@ -75,7 +77,7 @@ export default function UserDetailsPage({ params }) {
                 body: JSON.stringify(payload),
             });
 
-            toast.success("Employee updated successfully.");
+            toast.success(t("updateSuccess"));
             const updatedUser = res.data?.user || res.data;
             setUser(updatedUser);
             setIsEditing(false);
@@ -84,7 +86,7 @@ export default function UserDetailsPage({ params }) {
             if (err.fields) {
                 setFormErrors(err.fields);
             } else {
-                toast.error(err.message || "Failed to update employee.");
+                toast.error(err.message || t("updateError"));
             }
         } finally {
             setIsSubmitting(false);
@@ -104,20 +106,20 @@ export default function UserDetailsPage({ params }) {
         return (
             <div className="max-w-xl mx-auto p-6 bg-(--card) border border-(--border) rounded-xl text-center space-y-4">
                 <AlertCircle className="w-10 h-10 text-(--destructive) mx-auto" />
-                <h1 className="text-lg font-semibold">Unable to load employee</h1>
-                <p className="text-xs text-(--muted-foreground)">{error || "Employee not found."}</p>
+                <h1 className="text-lg font-semibold">{t("errorState.title")}</h1>
+                <p className="text-xs text-(--muted-foreground)">{error || t("errorState.notFound")}</p>
                 <div className="flex items-center justify-center gap-3">
                     <Link
                         href="/dashboard/users"
                         className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted)"
                     >
-                        Back to Employees
+                        {t("errorState.back")}
                     </Link>
                     <button
                         onClick={fetchUserDetails}
                         className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-90"
                     >
-                        Retry
+                        {t("errorState.retry")}
                     </button>
                 </div>
             </div>
@@ -133,13 +135,13 @@ export default function UserDetailsPage({ params }) {
                     <Link
                         href="/dashboard/users"
                         className="p-2 border border-(--border) rounded-lg text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted) transition-colors"
-                        aria-label="Back to employees"
+                        aria-label={t("backAria")}
                     >
                         <ArrowLeft className="w-4 h-4" />
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">{user.name}</h1>
-                        <p className="text-sm text-(--muted-foreground)">Employee account details and information.</p>
+                        <p className="text-sm text-(--muted-foreground)">{t("subtitle")}</p>
                     </div>
                 </div>
 
@@ -149,7 +151,7 @@ export default function UserDetailsPage({ params }) {
                         className="inline-flex items-center gap-1.5 px-3 py-2 border border-(--border) bg-(--card) text-(--foreground) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
                     >
                         <Pencil className="w-4 h-4" />
-                        <span>Edit Employee</span>
+                        <span>{t("editEmployee")}</span>
                     </button>
                 )}
             </div>
@@ -158,42 +160,42 @@ export default function UserDetailsPage({ params }) {
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 shadow-xs space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Verification Status</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("details.verificationStatus")}</span>
                             <div className="mt-1">
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${isVerified ? "bg-(--success)/10 text-(--success)" : "bg-(--muted) text-(--muted-foreground)"
                                     }`}>
                                     {isVerified ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                                    {isVerified ? "Verified" : "Unverified"}
+                                    {isVerified ? t("details.verified") : t("details.unverified")}
                                 </span>
                             </div>
                         </div>
 
                         <div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Employee ID</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("details.employeeId")}</span>
                             <p className="mt-1 text-sm font-mono">{user.id}</p>
                         </div>
 
                         <div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Phone Number</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("details.phoneNumber")}</span>
                             <p className="mt-1 text-sm font-mono">{user.phone}</p>
                         </div>
 
                         <div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Email Address</span>
-                            <p className="mt-1 text-sm">{user.email || "No email provided"}</p>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("details.emailAddress")}</span>
+                            <p className="mt-1 text-sm">{user.email || t("details.noEmail")}</p>
                         </div>
 
                         <div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Created At</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("details.createdAt")}</span>
                             <p className="mt-1 text-xs text-(--muted-foreground)">
-                                {user.created_at ? new Date(user.created_at).toLocaleString() : "N/A"}
+                                {user.created_at ? new Date(user.created_at).toLocaleString() : t("details.na")}
                             </p>
                         </div>
 
                         <div>
-                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">Updated At</span>
+                            <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("details.updatedAt")}</span>
                             <p className="mt-1 text-xs text-(--muted-foreground)">
-                                {user.updated_at ? new Date(user.updated_at).toLocaleString() : "N/A"}
+                                {user.updated_at ? new Date(user.updated_at).toLocaleString() : t("details.na")}
                             </p>
                         </div>
                     </div>
@@ -202,7 +204,7 @@ export default function UserDetailsPage({ params }) {
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 shadow-xs">
                     <form onSubmit={handleUpdate} className="space-y-4">
                         <Input
-                            label="Full Name"
+                            label={t("form.fullName")}
                             value={formData.name}
                             onChange={(e) => {
                                 setFormData({ ...formData, name: e.target.value });
@@ -214,7 +216,7 @@ export default function UserDetailsPage({ params }) {
                         />
 
                         <Input
-                            label="Phone Number"
+                            label={t("form.phone")}
                             type="tel"
                             value={formData.phone}
                             onChange={(e) => {
@@ -227,7 +229,7 @@ export default function UserDetailsPage({ params }) {
                         />
 
                         <Input
-                            label="Email Address"
+                            label={t("form.email")}
                             type="email"
                             value={formData.email}
                             onChange={(e) => {
@@ -252,10 +254,10 @@ export default function UserDetailsPage({ params }) {
                                 className="px-4 py-2 border border-(--border) text-(--foreground) text-sm font-medium rounded-lg hover:bg-(--muted) transition-colors"
                                 disabled={isSubmitting}
                             >
-                                Cancel
+                                {t("form.cancel")}
                             </button>
                             <Button type="submit" isLoading={isSubmitting}>
-                                Save Changes
+                                {t("form.save")}
                             </Button>
                         </div>
                     </form>

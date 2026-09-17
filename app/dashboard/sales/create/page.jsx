@@ -1,10 +1,9 @@
-// file: app/dashboard/sales/create/page.jsx
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
     ArrowLeft,
     ShoppingCart,
@@ -17,6 +16,7 @@ import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
 export default function CreateSalePage() {
+    const t = useTranslations("dashboard.createSalePage");
     const router = useRouter();
 
     const [branches, setBranches] = useState([]);
@@ -57,8 +57,7 @@ export default function CreateSalePage() {
                 );
             } catch (err) {
                 setError(
-                    err.message ||
-                    "Failed to load form requirements."
+                    err.message || t("messages.loadError")
                 );
             } finally {
                 setIsLoading(false);
@@ -66,7 +65,7 @@ export default function CreateSalePage() {
         }
 
         loadBranches();
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         if (!branchId) {
@@ -101,7 +100,7 @@ export default function CreateSalePage() {
                 if (!isMounted) return;
 
                 setProductsError(
-                    err.message || "Failed to load products for this branch."
+                    err.message || t("messages.loadProductsError")
                 );
                 setProducts([]);
             } finally {
@@ -125,7 +124,7 @@ export default function CreateSalePage() {
             isMounted = false;
             controller.abort();
         };
-    }, [branchId]);
+    }, [branchId, t]);
 
     const getProductStock = (productId) => {
         const product = products.find(
@@ -290,10 +289,9 @@ export default function CreateSalePage() {
         const newItems = [...items];
 
         if (field === "productId") {
-            // Prevent duplicate products in the same sale
             const isDuplicate = newItems.some((item, i) => i !== index && item.productId === value);
             if (isDuplicate && value !== "") {
-                toast.error("This product is already added to the sale.");
+                toast.error(t("messages.duplicateProduct"));
                 return;
             }
 
@@ -329,9 +327,7 @@ export default function CreateSalePage() {
             );
 
             if (availableQuantity <= 0) {
-                toast.error(
-                    "There is no remaining stock for this product."
-                );
+                toast.error(t("messages.noRemainingStock"));
                 return;
             }
 
@@ -399,10 +395,7 @@ export default function CreateSalePage() {
                     maxQuantity;
 
                 toast.error(
-                    `Only ${maxQuantity} unit${maxQuantity === 1
-                        ? ""
-                        : "s"
-                    } available for this row.`
+                    t("messages.quantityAvailableRow", { maxQuantity })
                 );
 
                 setItems(newItems);
@@ -476,11 +469,11 @@ export default function CreateSalePage() {
                     );
 
                 throw new Error(
-                    `"${product?.name || "Product"}" only has ${stock} unit${stock === 1 ? "" : "s"
-                    } in stock, but ${requestedQuantity} ${requestedQuantity === 1
-                        ? "is"
-                        : "are"
-                    } requested.`
+                    t("messages.stockExceeded", {
+                        name: product?.name || "Product",
+                        stock,
+                        requested: requestedQuantity
+                    })
                 );
             }
         }
@@ -520,16 +513,12 @@ export default function CreateSalePage() {
         e.preventDefault();
 
         if (items.length === 0) {
-            toast.error(
-                "Add at least one product."
-            );
+            toast.error(t("messages.addOneProduct"));
             return;
         }
 
         if (!branchId) {
-            toast.error(
-                "Please select a branch."
-            );
+            toast.error(t("messages.selectBranchError"));
             return;
         }
 
@@ -559,18 +548,14 @@ export default function CreateSalePage() {
                 ) ||
                 finalPaidAmount <= 0
             ) {
-                toast.error(
-                    "Enter a valid partial payment amount."
-                );
+                toast.error(t("messages.invalidPartial"));
                 return;
             }
 
             if (
                 finalPaidAmount >= saleTotal
             ) {
-                toast.error(
-                    "A partial payment must be less than the sale total."
-                );
+                toast.error(t("messages.partialLessThanTotal"));
                 return;
             }
         }
@@ -579,9 +564,7 @@ export default function CreateSalePage() {
             paymentType !== "credit" &&
             !paymentMethod
         ) {
-            toast.error(
-                "Please select a payment method."
-            );
+            toast.error(t("messages.selectPaymentMethod"));
             return;
         }
 
@@ -631,9 +614,7 @@ export default function CreateSalePage() {
                 }
             );
 
-            toast.success(
-                "Sale created successfully"
-            );
+            toast.success(t("messages.createSuccess"));
 
             const createdSale = response.data || response;
             const newSaleId = createdSale.id || createdSale._id;
@@ -645,8 +626,7 @@ export default function CreateSalePage() {
             }
         } catch (err) {
             toast.error(
-                err.message ||
-                "Failed to create sale."
+                err.message || t("messages.createError")
             );
 
             setIsSubmitting(false);
@@ -693,11 +673,11 @@ export default function CreateSalePage() {
 
                 <div>
                     <h1 className="text-xl font-bold tracking-tight">
-                        Create New Sale
+                        {t("title")}
                     </h1>
 
                     <p className="text-xs text-(--muted-foreground)">
-                        Record a sale transaction, items, and payment terms.
+                        {t("subtitle")}
                     </p>
                 </div>
             </div>
@@ -709,14 +689,14 @@ export default function CreateSalePage() {
                 {/* Sale Details */}
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                        Sale Details
+                        {t("saleDetails")}
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Branch */}
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-(--muted-foreground)">
-                                Branch
+                                {t("branch")}
                             </label>
 
                             <select
@@ -733,7 +713,7 @@ export default function CreateSalePage() {
                                 required
                             >
                                 <option value="" className="bg-slate-900 text-slate-100 py-2">
-                                    Select branch
+                                    {t("selectBranch")}
                                 </option>
 
                                 {branches.map(
@@ -759,13 +739,12 @@ export default function CreateSalePage() {
                         {/* Customer */}
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-(--muted-foreground)">
-                                Customer Name
-                                (Optional)
+                                {t("customerName")}
                             </label>
 
                             <input
                                 type="text"
-                                placeholder="Customer name"
+                                placeholder={t("customerPlaceholder")}
                                 value={
                                     customerName
                                 }
@@ -783,10 +762,10 @@ export default function CreateSalePage() {
                     {/* Notes */}
                     <div className="space-y-1">
                         <label className="text-xs font-medium text-(--muted-foreground)">
-                            Notes (Optional)
+                            {t("notes")}
                         </label>
                         <textarea
-                            placeholder="Add any additional sale notes here..."
+                            placeholder={t("notesPlaceholder")}
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={2}
@@ -800,11 +779,11 @@ export default function CreateSalePage() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                                Products / Items
+                                {t("productsItems")}
                             </h2>
 
                             <p className="text-xs text-(--muted-foreground) mt-1">
-                                Quantities are limited by available stock.
+                                {t("stockLimitation")}
                             </p>
                         </div>
 
@@ -818,18 +797,18 @@ export default function CreateSalePage() {
                         >
                             <Plus className="w-3.5 h-3.5" />
 
-                            Add Item
+                            {t("addItem")}
                         </button>
                     </div>
 
                     {!branchId ? (
                         <div className="p-4 rounded-lg bg-(--muted)/50 border border-(--border) text-center text-xs text-(--muted-foreground)">
-                            Please select a branch first to load products.
+                            {t("selectBranchFirst")}
                         </div>
                     ) : isProductsLoading ? (
                         <div className="p-8 flex items-center justify-center gap-2 text-xs text-(--muted-foreground)">
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            Loading products for this branch...
+                            {t("loadingProducts")}
                         </div>
                     ) : productsError ? (
                         <div className="p-4 rounded-lg bg-(--destructive)/10 border border-(--destructive)/20 text-xs text-(--destructive)">
@@ -837,7 +816,7 @@ export default function CreateSalePage() {
                         </div>
                     ) : products.length === 0 ? (
                         <div className="p-4 rounded-lg bg-(--muted)/50 border border-(--border) text-center text-xs text-(--muted-foreground)">
-                            No products available for this branch.
+                            {t("noProducts")}
                         </div>
                     ) : (
                         <div className="space-y-4">
@@ -897,7 +876,7 @@ export default function CreateSalePage() {
                                                     required
                                                 >
                                                     <option value="" className="bg-slate-900 text-slate-100 py-2">
-                                                        Select product
+                                                        {t("selectProduct")}
                                                     </option>
 
                                                     {products.map(
@@ -937,8 +916,8 @@ export default function CreateSalePage() {
                                                                     {getProductPrice(
                                                                         product
                                                                     ).toLocaleString()}{" "}
-                                                                    birr,
-                                                                    stock:{" "}
+                                                                    {t("birr")},
+                                                                    {t("stock")}:{" "}
                                                                     {
                                                                         productStock
                                                                     }
@@ -952,7 +931,7 @@ export default function CreateSalePage() {
                                                 <div className="flex items-center gap-2 w-full sm:w-auto">
                                                     {/* Quantity */}
                                                     <div className="flex-1 sm:w-20">
-                                                        <span className="text-[10px] text-(--muted-foreground) sm:hidden">Qty</span>
+                                                        <span className="text-[10px] text-(--muted-foreground) sm:hidden">{t("qty")}</span>
                                                         <input
                                                             type="number"
                                                             min="1"
@@ -960,7 +939,7 @@ export default function CreateSalePage() {
                                                                 maxQuantity
                                                             }
                                                             step="1"
-                                                            placeholder="Qty"
+                                                            placeholder={t("qty")}
                                                             value={
                                                                 item.quantity
                                                             }
@@ -983,12 +962,12 @@ export default function CreateSalePage() {
 
                                                     {/* Price */}
                                                     <div className="flex-1 sm:w-28">
-                                                        <span className="text-[10px] text-(--muted-foreground) sm:hidden">Price</span>
+                                                        <span className="text-[10px] text-(--muted-foreground) sm:hidden">{t("price")}</span>
                                                         <input
                                                             type="number"
                                                             step="0.01"
                                                             min="0"
-                                                            placeholder="Price"
+                                                            placeholder={t("price")}
                                                             value={
                                                                 item.pricePerItem
                                                             }
@@ -1011,7 +990,7 @@ export default function CreateSalePage() {
 
                                                     {/* Line Total Display */}
                                                     <div className="hidden md:block w-28 text-right font-mono text-xs font-semibold">
-                                                        {lineTotal.toLocaleString()} birr
+                                                        {lineTotal.toLocaleString()} {t("birr")}
                                                     </div>
 
                                                     {/* Remove */}
@@ -1036,14 +1015,14 @@ export default function CreateSalePage() {
                                             {item.productId && (
                                                 <div className="flex items-center justify-between pl-1 text-xs pt-1 border-t border-(--border)/50">
                                                     <span className="text-(--muted-foreground)">
-                                                        Stock:{" "}
+                                                        {t("stock")}:{" "}
                                                         <span className="font-medium text-(--foreground)">
                                                             {stock}
                                                         </span>
                                                     </span>
 
                                                     <span className="text-(--muted-foreground)">
-                                                        In this sale:{" "}
+                                                        {t("inThisSale")}:{" "}
                                                         <span className="font-medium text-(--foreground)">
                                                             {totalProductQuantity}
                                                         </span>
@@ -1058,7 +1037,7 @@ export default function CreateSalePage() {
                                                                 : "text-(--muted-foreground)"
                                                         }
                                                     >
-                                                        Remaining:{" "}
+                                                        {t("remaining")}:{" "}
                                                         <span className="font-medium">
                                                             {maxQuantity}
                                                         </span>
@@ -1075,12 +1054,12 @@ export default function CreateSalePage() {
                     {/* Total */}
                     <div className="pt-4 border-t border-(--border) flex justify-between items-center">
                         <span className="text-sm font-semibold">
-                            Total Sale Amount:
+                            {t("totalSaleAmount")}:
                         </span>
 
                         <span className="text-lg font-mono font-bold text-(--primary)">
                             {saleTotal.toLocaleString()}{" "}
-                            birr
+                            {t("birr")}
                         </span>
                     </div>
                 </div>
@@ -1088,14 +1067,14 @@ export default function CreateSalePage() {
                 {/* Payment Terms */}
                 <div className="bg-(--card) border border-(--border) rounded-xl p-6 space-y-4 shadow-xs">
                     <h2 className="text-sm font-semibold uppercase tracking-wider text-(--muted-foreground)">
-                        Payment Terms
+                        {t("paymentTerms")}
                     </h2>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Payment Type */}
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-(--muted-foreground)">
-                                Payment Status
+                                {t("paymentStatus")}
                             </label>
 
                             <select
@@ -1112,15 +1091,15 @@ export default function CreateSalePage() {
                                 required
                             >
                                 <option value="paid" className="bg-slate-900 text-slate-100 py-2">
-                                    Paid
+                                    {t("paid")}
                                 </option>
 
                                 <option value="partial" className="bg-slate-900 text-slate-100 py-2">
-                                    Partial
+                                    {t("partial")}
                                 </option>
 
                                 <option value="credit" className="bg-slate-900 text-slate-100 py-2">
-                                    Credit (Unpaid)
+                                    {t("credit")}
                                 </option>
                             </select>
                         </div>
@@ -1130,7 +1109,7 @@ export default function CreateSalePage() {
                             "credit" && (
                                 <div className="space-y-1">
                                     <label className="text-xs font-medium text-(--muted-foreground)">
-                                        Payment Method
+                                        {t("paymentMethod")}
                                     </label>
 
                                     <select
@@ -1147,11 +1126,11 @@ export default function CreateSalePage() {
                                         required
                                     >
                                         <option value="cash" className="bg-slate-900 text-slate-100 py-2">
-                                            Cash
+                                            {t("cash")}
                                         </option>
 
                                         <option value="bank" className="bg-slate-900 text-slate-100 py-2">
-                                            Bank
+                                            {t("bank")}
                                         </option>
                                     </select>
                                 </div>
@@ -1162,7 +1141,7 @@ export default function CreateSalePage() {
                             "partial" && (
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-xs font-medium text-(--muted-foreground)">
-                                        Paid Amount (birr)
+                                        {t("paidAmount")}
                                     </label>
 
                                     <input
@@ -1173,7 +1152,7 @@ export default function CreateSalePage() {
                                             saleTotal ||
                                             undefined
                                         }
-                                        placeholder="Amount paid now"
+                                        placeholder={t("paidAmountPlaceholder")}
                                         value={
                                             paidAmount
                                         }
@@ -1188,7 +1167,7 @@ export default function CreateSalePage() {
                                     />
 
                                     <p className="text-xs text-(--muted-foreground)">
-                                        Remaining Balance:{" "}
+                                        {t("remainingBalance")}:{" "}
                                         <span className="font-semibold text-rose-500 font-mono">
                                             {Math.max(
                                                 0,
@@ -1198,7 +1177,7 @@ export default function CreateSalePage() {
                                                     0
                                                 )
                                             ).toLocaleString()}{" "}
-                                            birr
+                                            {t("birr")}
                                         </span>
                                     </p>
                                 </div>
@@ -1210,7 +1189,7 @@ export default function CreateSalePage() {
                         "credit" && (
                             <div className="p-3 rounded-lg bg-(--muted)/50 border border-(--border)">
                                 <p className="text-xs text-(--muted-foreground)">
-                                    No payment will be recorded now. The full sale amount will be added to credit receivables.
+                                    {t("creditInfo")}
                                 </p>
                             </div>
                         )}
@@ -1222,7 +1201,7 @@ export default function CreateSalePage() {
                         href="/dashboard/sales"
                         className="px-4 py-2 border border-(--border) rounded-xl text-sm font-medium hover:bg-(--muted) transition-colors"
                     >
-                        Cancel
+                        {t("cancel")}
                     </Link>
 
                     <button
@@ -1239,7 +1218,7 @@ export default function CreateSalePage() {
                         )}
 
                         <span>
-                            Complete Sale
+                            {t("completeSale")}
                         </span>
                     </button>
                 </div>

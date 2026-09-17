@@ -1,26 +1,18 @@
-// file: app/dashboard/sales/page.jsx
-
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
     Plus,
     Search,
-    Filter,
-    Calendar,
     ChevronLeft,
     ChevronRight,
-    ArrowUpDown,
     CheckCircle2,
     Clock,
     AlertCircle,
     FileText,
-    TrendingUp,
-    DollarSign,
-    Building2,
-    User,
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import dayjs from "dayjs";
@@ -29,6 +21,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
 export default function SalesOverviewPage() {
+    const t = useTranslations("dashboard.salesPage");
     const router = useRouter();
     const [sales, setSales] = useState([]);
     const [summary, setSummary] = useState({
@@ -123,11 +116,11 @@ export default function SalesOverviewPage() {
                 setTotalPages(data.totalPages);
             }
         } catch (err) {
-            setError(err.message || "Failed to load sales data.");
+            setError(err.message || t("loadError"));
         } finally {
             setIsLoading(false);
         }
-    }, [search, branchId, employeeId, paymentStatus, selectedDate, page]);
+    }, [search, branchId, employeeId, paymentStatus, selectedDate, page, t]);
 
     useEffect(() => {
         loadFilterOptions();
@@ -148,19 +141,19 @@ export default function SalesOverviewPage() {
             case "paid":
                 return (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                        <CheckCircle2 className="w-3 h-3" /> Paid
+                        <CheckCircle2 className="w-3 h-3" /> {t("statusPaid")}
                     </span>
                 );
             case "partial":
                 return (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                        <Clock className="w-3 h-3" /> Partial
+                        <Clock className="w-3 h-3" /> {t("statusPartial")}
                     </span>
                 );
             case "credit":
                 return (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">
-                        <AlertCircle className="w-3 h-3" /> Credit
+                        <AlertCircle className="w-3 h-3" /> {t("statusCredit")}
                     </span>
                 );
             default:
@@ -177,9 +170,9 @@ export default function SalesOverviewPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Sales</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                     <p className="text-sm text-(--muted-foreground)">
-                        Manage transactions, track payments, and review sales records.
+                        {t("subtitle")}
                     </p>
                 </div>
 
@@ -188,36 +181,36 @@ export default function SalesOverviewPage() {
                     className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-(--primary) text-(--primary-foreground) rounded-xl text-sm font-medium hover:opacity-95 transition-opacity shadow-xs"
                 >
                     <Plus className="w-4 h-4" />
-                    <span>Create Sale</span>
+                    <span>{t("createSale")}</span>
                 </Link>
             </div>
 
             {/* Sales Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
-                    <span className="text-xs font-medium text-(--muted-foreground)">Total Sales</span>
+                    <span className="text-xs font-medium text-(--muted-foreground)">{t("totalSales")}</span>
                     <div className="text-xl font-bold font-mono">{summary.totalSales}</div>
                 </div>
 
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
-                    <span className="text-xs font-medium text-(--muted-foreground)">Total Revenue</span>
+                    <span className="text-xs font-medium text-(--muted-foreground)">{t("totalRevenue")}</span>
                     <div className="text-xl font-bold font-mono text-(--primary)">
-                        {Number(summary.totalRevenue || 0).toLocaleString()} birr
+                        {Number(summary.totalRevenue || 0).toLocaleString()} {t("birr")}
                     </div>
                 </div>
 
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
-                    <span className="text-xs font-medium text-(--muted-foreground)">Paid</span>
+                    <span className="text-xs font-medium text-(--muted-foreground)">{t("paid")}</span>
                     <div className="text-xl font-bold font-mono text-emerald-500">{summary.paid}</div>
                 </div>
 
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
-                    <span className="text-xs font-medium text-(--muted-foreground)">Partial</span>
+                    <span className="text-xs font-medium text-(--muted-foreground)">{t("partial")}</span>
                     <div className="text-xl font-bold font-mono text-amber-500">{summary.partial}</div>
                 </div>
 
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
-                    <span className="text-xs font-medium text-(--muted-foreground)">Credit</span>
+                    <span className="text-xs font-medium text-(--muted-foreground)">{t("credit")}</span>
                     <div className="text-xl font-bold font-mono text-rose-500">{summary.credit}</div>
                 </div>
             </div>
@@ -229,7 +222,7 @@ export default function SalesOverviewPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-(--muted-foreground)" />
                         <input
                             type="text"
-                            placeholder="Search customer, ID..."
+                            placeholder={t("searchPlaceholder")}
                             value={search}
                             onChange={(e) => {
                                 setSearch(e.target.value);
@@ -249,7 +242,7 @@ export default function SalesOverviewPage() {
                         }}
                         className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--background) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="">All Branches</option>
+                        <option value="">{t("allBranches")}</option>
                         {branches.map((b) => (
                             <option key={b.id} value={b.id}>
                                 {b.name}
@@ -265,7 +258,7 @@ export default function SalesOverviewPage() {
                         }}
                         className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--background) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="">All Employees</option>
+                        <option value="">{t("allEmployees")}</option>
                         {employees.map((emp) => (
                             <option key={emp.id} value={emp.id}>
                                 {emp.name || emp.username}
@@ -281,10 +274,10 @@ export default function SalesOverviewPage() {
                         }}
                         className="w-full px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--background) text-(--foreground) focus:outline-none focus:border-(--primary)"
                     >
-                        <option value="">All Payment Statuses</option>
-                        <option value="paid">Paid</option>
-                        <option value="partial">Partial</option>
-                        <option value="credit">Credit</option>
+                        <option value="">{t("allPaymentStatuses")}</option>
+                        <option value="paid">{t("statusPaid")}</option>
+                        <option value="partial">{t("statusPartial")}</option>
+                        <option value="credit">{t("statusCredit")}</option>
                     </select>
 
                     <div className="flex items-center gap-2">
@@ -305,7 +298,7 @@ export default function SalesOverviewPage() {
                                 }}
                                 className="text-xs text-(--muted-foreground) hover:text-(--foreground) underline shrink-0"
                             >
-                                Clear
+                                {t("clear")}
                             </button>
                         )}
                     </div>
@@ -316,7 +309,7 @@ export default function SalesOverviewPage() {
                         onClick={handleSelectToday}
                         className="px-3 py-1.5 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-xl text-xs font-medium transition-colors border border-(--border)"
                     >
-                        Select Today
+                        {t("selectToday")}
                     </button>
                 </div>
             </div>
@@ -326,7 +319,7 @@ export default function SalesOverviewPage() {
                 {isLoading ? (
                     <div className="p-12 text-center space-y-3">
                         <div className="w-6 h-6 border-2 border-(--primary) border-t-transparent rounded-full animate-spin mx-auto" />
-                        <p className="text-xs text-(--muted-foreground)">Loading sales records...</p>
+                        <p className="text-xs text-(--muted-foreground)">{t("loading")}</p>
                     </div>
                 ) : error ? (
                     <div className="p-8 text-center space-y-3 text-(--destructive)">
@@ -336,15 +329,15 @@ export default function SalesOverviewPage() {
                             onClick={loadSales}
                             className="px-3 py-1.5 bg-(--muted) text-(--foreground) rounded-lg text-xs font-medium hover:opacity-80"
                         >
-                            Try Again
+                            {t("tryAgain")}
                         </button>
                     </div>
                 ) : sales.length === 0 ? (
                     <div className="p-12 text-center space-y-3">
                         <FileText className="w-10 h-10 text-(--muted-foreground) mx-auto opacity-40" />
-                        <h3 className="text-sm font-semibold">No sales found</h3>
+                        <h3 className="text-sm font-semibold">{t("noSalesFound")}</h3>
                         <p className="text-xs text-(--muted-foreground)">
-                            Try clearing filters or record a new sale transaction.
+                            {t("noSalesDesc")}
                         </p>
                     </div>
                 ) : (
@@ -352,13 +345,13 @@ export default function SalesOverviewPage() {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-(--border) bg-(--muted)/30 text-xs font-medium text-(--muted-foreground)">
-                                    <th className="py-3 px-4">Sale ID / Date</th>
-                                    <th className="py-3 px-4">Branch</th>
-                                    <th className="py-3 px-4">Customer</th>
-                                    <th className="py-3 px-4">Employee</th>
-                                    <th className="py-3 px-4 text-right">Total</th>
-                                    <th className="py-3 px-4">Status</th>
-                                    <th className="py-3 px-4 text-right">Actions</th>
+                                    <th className="py-3 px-4">{t("colSaleIdDate")}</th>
+                                    <th className="py-3 px-4">{t("colBranch")}</th>
+                                    <th className="py-3 px-4">{t("colCustomer")}</th>
+                                    <th className="py-3 px-4">{t("colEmployee")}</th>
+                                    <th className="py-3 px-4 text-right">{t("colTotal")}</th>
+                                    <th className="py-3 px-4">{t("colStatus")}</th>
+                                    <th className="py-3 px-4 text-right">{t("colActions")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-(--border) text-sm">
@@ -367,7 +360,7 @@ export default function SalesOverviewPage() {
                                     const dateStr = sale.createdAt || sale.created_at || sale.date;
 
                                     const branchName = sale.branch_name || sale.branchName || sale.branch?.name || "—";
-                                    const customer = sale.customerName || sale.customer_name || "Walk-in";
+                                    const customer = sale.customerName || sale.customer_name || t("walkIn");
                                     const empName = sale.employee_name || sale.employeeName || sale.employee?.name || sale.employee?.username || "—";
 
                                     const total = Number(sale.totalAmount || sale.total_amount || 0);
@@ -399,7 +392,7 @@ export default function SalesOverviewPage() {
                                                 {empName}
                                             </td>
                                             <td className="py-3 px-4 text-right font-mono font-semibold text-xs">
-                                                {total.toLocaleString()} birr
+                                                {total.toLocaleString()} {t("birr")}
                                             </td>
                                             <td className="py-3 px-4">
                                                 {getStatusBadge(status)}
@@ -409,7 +402,7 @@ export default function SalesOverviewPage() {
                                                     href={`/dashboard/sales/${id}`}
                                                     className="inline-flex items-center px-2.5 py-1 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-lg text-xs font-medium transition-colors"
                                                 >
-                                                    View
+                                                    {t("view")}
                                                 </Link>
                                             </td>
                                         </tr>
@@ -423,7 +416,7 @@ export default function SalesOverviewPage() {
                 {totalPages > 1 && (
                     <div className="p-4 border-t border-(--border) flex items-center justify-between">
                         <span className="text-xs text-(--muted-foreground)">
-                            Page {page} of {totalPages}
+                            {t("pageIndicator", { page, totalPages })}
                         </span>
                         <div className="flex items-center gap-2">
                             <button
