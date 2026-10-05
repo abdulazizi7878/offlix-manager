@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -21,6 +21,7 @@ import {
   ChevronRight,
   LogOut,
   User,
+  Search,
 } from "lucide-react";
 
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
@@ -42,6 +43,9 @@ export default function DashboardLayout({ children }) {
 
   const [user, setUser] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Sidebar resizing state
   const [sidebarWidth, setSidebarWidth] = useState(288);
@@ -68,8 +72,9 @@ export default function DashboardLayout({ children }) {
       setIsUsersOpen(true);
     }
 
-    // Close mobile drawer when route changes
+    // Close mobile drawer and search when route changes
     setIsSidebarOpen(false);
+    setSearchQuery("");
   }, [pathname]);
 
   /*
@@ -196,6 +201,47 @@ export default function DashboardLayout({ children }) {
 
   const breadcrumbs = getBreadcrumbs();
 
+  // Navigation Items for Search Filter
+  const navigationItems = [
+    { label: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { label: t("nav.branches"), href: "/dashboard/branches", icon: GitBranch },
+    { label: `${t("nav.branches")} - ${t("nav.create")}`, href: "/dashboard/branches/create", icon: GitBranch },
+    { label: t("nav.products"), href: "/dashboard/products", icon: Package },
+    { label: `${t("nav.products")} - ${t("nav.create")}`, href: "/dashboard/products/create", icon: Package },
+    { label: `${t("nav.products")} - ${t("nav.purchases")}`, href: "/dashboard/products/purchases", icon: Package },
+    { label: t("nav.sales"), href: "/dashboard/sales", icon: ShoppingCart },
+    { label: `${t("nav.sales")} - ${t("nav.create")}`, href: "/dashboard/sales/create", icon: ShoppingCart },
+    { label: t("nav.money"), href: "/dashboard/money", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.accounts")}`, href: "/dashboard/money/accounts", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.transactions")}`, href: "/dashboard/money/transactions", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.transfers")}`, href: "/dashboard/money/transfers", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.settlements")}`, href: "/dashboard/money/settlements", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.payables")}`, href: "/dashboard/money/payables", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.credit")}`, href: "/dashboard/money/credits", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.totalMoney")}`, href: "/dashboard/money/total-money", icon: Receipt },
+    { label: t("nav.users"), href: "/dashboard/users", icon: Users },
+    { label: `${t("nav.users")} - ${t("nav.create")}`, href: "/dashboard/users/create", icon: Users },
+    { label: t("nav.reports"), href: "/dashboard/reports", icon: BarChart3 },
+    { label: t("nav.settings"), href: "/dashboard/settings", icon: Settings },
+  ];
+
+  const filteredNavItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return navigationItems;
+
+    return navigationItems.filter(
+      (item) =>
+        item.label.toLowerCase().includes(query) ||
+        item.href.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
+  const handleNavigateToRoute = (href) => {
+    router.push(href);
+    setSearchQuery("");
+    setIsSidebarOpen(false);
+  };
+
   if (authChecking) {
     return (
       <div className="h-screen bg-(--background) text-(--foreground) flex items-center justify-center">
@@ -211,7 +257,7 @@ export default function DashboardLayout({ children }) {
   }
 
   return (
-    <div className="h-screen bg-(--background) text-(--foreground) flex overflow-hidden antialiased selection:bg-(--primary) selection:text-(--primary-foreground)">
+    <div className="h-screen bg-(--background) text-(--foreground) flex overflow-hidden antialiased selection:bg-(--primary) selection:text-(--primary-foreground) relative">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div
@@ -744,23 +790,11 @@ export default function DashboardLayout({ children }) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Top Bar */}
-        <header className="h-16 px-6 bg-(--card) border-b border-(--border) flex items-center justify-between shrink-0 z-30 sticky top-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
+        {/* Top Bar (Hidden on Mobile) */}
+        <header className="hidden md:flex h-16 px-6 bg-(--card) border-b border-(--border) items-center justify-between shrink-0 z-30 sticky top-0">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2 -ml-2 text-(--muted-foreground) hover:text-(--foreground) rounded-lg hover:bg-(--muted) outline-none border-0"
-              aria-label="Open sidebar"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            <h1 className="text-base font-semibold tracking-tight md:hidden">
-              {t("brandName")}
-            </h1>
-
-            <nav className="hidden md:flex items-center space-x-2 text-sm font-medium">
+            <nav className="flex items-center space-x-2 text-sm font-medium">
               {breadcrumbs.map((crumb, index) => {
                 const isLast = index === breadcrumbs.length - 1;
 
@@ -794,25 +828,331 @@ export default function DashboardLayout({ children }) {
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <ThemeSwitcher />
-
-            <div className="flex md:hidden items-center ml-1">
-              <div className="w-8 h-8 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-xs shrink-0 border border-(--border)">
-                {user?.name ? (
-                  user.name.charAt(0).toUpperCase()
-                ) : (
-                  <User className="w-3.5 h-3.5" />
-                )}
-              </div>
-            </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 pb-28 md:pb-8 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>
+
+        {/* Mobile Floating Bottom Control */}
+        <div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40">
+          <div className="flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-2xl rounded-full p-2 px-4 text-(--foreground)">
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2.5 rounded-full hover:bg-(--muted) text-(--foreground) transition-colors cursor-pointer"
+              aria-label="Open Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            <div className="w-[1px] h-5 bg-(--border)" />
+
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              className="flex items-center gap-2 py-2 px-3.5 rounded-full bg-(--foreground) text-(--background) font-semibold text-xs transition-transform active:scale-95 cursor-pointer shadow-sm"
+              aria-label="Open Mobile Menu"
+            >
+              <Menu className="w-4 h-4" />
+              <span>Menu</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Full-Screen Overlay for Menu & Search */}
+        {isSidebarOpen && (
+          <div className="md:hidden fixed inset-0 z-50 bg-(--background) flex flex-col p-6 overflow-hidden animate-in fade-in duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-(--border) shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs overflow-hidden shrink-0">
+                  <Image
+                    src="/images/logo.png"
+                    width={36}
+                    height={36}
+                    alt={`${t("brandName")} Logo`}
+                    className="rounded-md object-cover"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-bold text-base tracking-tight">{t("brandName")}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-(--primary)">
+                    {user?.name || t("manager")}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <LanguageSwitcher />
+                <ThemeSwitcher />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSidebarOpen(false);
+                    setSearchQuery("");
+                  }}
+                  className="p-2 rounded-full border border-(--border) hover:bg-(--muted) text-(--foreground) transition-colors cursor-pointer"
+                  aria-label="Close menu"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Search Bar */}
+            <div className="pt-4 pb-2 shrink-0">
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 absolute left-3.5 text-(--muted-foreground) pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={t("nav.overview")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-9 py-2.5 text-sm bg-(--card) border border-(--border) rounded-xl text-(--foreground) placeholder-(--muted-foreground) focus:outline-none focus:ring-1 focus:ring-(--primary) transition-all"
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 text-(--muted-foreground) hover:text-(--foreground) cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Navigation / Filtered Search Results */}
+            <nav className="flex-1 overflow-y-auto py-4 space-y-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {searchQuery.trim() !== "" ? (
+                filteredNavItems.length > 0 ? (
+                  filteredNavItems.map((item) => {
+                    const active = isExactActive(item.href);
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => handleNavigateToRoute(item.href)}
+                        className={`
+                          w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-base font-medium transition-colors outline-none cursor-pointer text-left
+                          ${active
+                            ? "bg-(--primary) text-(--primary-foreground) font-semibold shadow-xs"
+                            : "text-(--foreground) hover:bg-(--muted)/60"
+                          }
+                        `}
+                      >
+                        <Icon className={`w-5 h-5 shrink-0 ${active ? "text-(--primary-foreground)" : "text-current"}`} />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="py-12 text-center text-sm text-(--muted-foreground)">
+                    No pages found
+                  </div>
+                )
+              ) : (
+                <>
+                  {/* Dashboard */}
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`
+                      flex items-center gap-3 px-3 py-3 rounded-xl transition-colors
+                      ${isExactActive("/dashboard")
+                        ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                        : "text-(--foreground) hover:bg-(--muted)"
+                      }
+                    `}
+                  >
+                    <LayoutDashboard className="w-5 h-5" />
+                    <span className="text-base">{t("nav.dashboard")}</span>
+                  </Link>
+
+                  {/* Branches */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setIsBranchesOpen(!isBranchesOpen)}
+                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
+                    >
+                      <div className="flex items-center gap-3">
+                        <GitBranch className="w-5 h-5" />
+                        <span>{t("nav.branches")}</span>
+                      </div>
+                      {isBranchesOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                    </button>
+                    {isBranchesOpen && (
+                      <div className="pl-9 space-y-1 py-1">
+                        <Link href="/dashboard/branches" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.overview")}
+                        </Link>
+                        <Link href="/dashboard/branches/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.create")}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Products */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setIsProductsOpen(!isProductsOpen)}
+                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Package className="w-5 h-5" />
+                        <span>{t("nav.products")}</span>
+                      </div>
+                      {isProductsOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                    </button>
+                    {isProductsOpen && (
+                      <div className="pl-9 space-y-1 py-1">
+                        <Link href="/dashboard/products" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.overview")}
+                        </Link>
+                        <Link href="/dashboard/products/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.create")}
+                        </Link>
+                        <Link href="/dashboard/products/purchases" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.purchases")}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sales */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setIsSalesOpen(!isSalesOpen)}
+                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
+                    >
+                      <div className="flex items-center gap-3">
+                        <ShoppingCart className="w-5 h-5" />
+                        <span>{t("nav.sales")}</span>
+                      </div>
+                      {isSalesOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                    </button>
+                    {isSalesOpen && (
+                      <div className="pl-9 space-y-1 py-1">
+                        <Link href="/dashboard/sales" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.overview")}
+                        </Link>
+                        <Link href="/dashboard/sales/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.create")}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Money */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setIsMoneyOpen(!isMoneyOpen)}
+                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Receipt className="w-5 h-5" />
+                        <span>{t("nav.money")}</span>
+                      </div>
+                      {isMoneyOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                    </button>
+                    {isMoneyOpen && (
+                      <div className="pl-9 space-y-1 py-1">
+                        <Link href="/dashboard/money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.overview")}
+                        </Link>
+                        <Link href="/dashboard/money/accounts" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.accounts")}
+                        </Link>
+                        <Link href="/dashboard/money/transactions" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.transactions")}
+                        </Link>
+                        <Link href="/dashboard/money/transfers" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.transfers")}
+                        </Link>
+                        <Link href="/dashboard/money/settlements" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.settlements")}
+                        </Link>
+                        <Link href="/dashboard/money/payables" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.payables")}
+                        </Link>
+                        <Link href="/dashboard/money/credits" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.credit")}
+                        </Link>
+                        <Link href="/dashboard/money/total-money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.totalMoney")}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Users */}
+                  <div className="space-y-1">
+                    <button
+                      onClick={() => setIsUsersOpen(!isUsersOpen)}
+                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Users className="w-5 h-5" />
+                        <span>{t("nav.users")}</span>
+                      </div>
+                      {isUsersOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                    </button>
+                    {isUsersOpen && (
+                      <div className="pl-9 space-y-1 py-1">
+                        <Link href="/dashboard/users" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.overview")}
+                        </Link>
+                        <Link href="/dashboard/users/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
+                          {t("nav.create")}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reports */}
+                  <Link
+                    href="/dashboard/reports"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
+                  >
+                    <BarChart3 className="w-5 h-5" />
+                    <span>{t("nav.reports")}</span>
+                  </Link>
+
+                  {/* Settings */}
+                  <Link
+                    href="/dashboard/settings"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
+                  >
+                    <Settings className="w-5 h-5" />
+                    <span>{t("nav.settings")}</span>
+                  </Link>
+                </>
+              )}
+            </nav>
+
+            {/* Mobile Overlay Footer */}
+            <div className="pt-4 border-t border-(--border) shrink-0">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 font-semibold text-sm transition-colors border-0 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>{t("logout")}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
