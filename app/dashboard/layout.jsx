@@ -428,8 +428,8 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 pb-28 md:pb-8 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        <main className="flex-1 overflow-y-auto  p-6 md:p-8 pb-28 md:pb-8 pt-20 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="max-w-7xl mx-auto ">{children}</div>
         </main>
 
         {/* Mobile Floating Bottom Navigation */}
