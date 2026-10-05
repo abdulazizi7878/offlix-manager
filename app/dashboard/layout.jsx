@@ -19,7 +19,6 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  LogOut,
   User,
   Search,
 } from "lucide-react";
@@ -27,7 +26,6 @@ import {
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import { fetchApi } from "@/lib/api/client";
-import { toast } from "sonner";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -163,21 +161,6 @@ export default function DashboardLayout({ children }) {
     document.body.style.userSelect = "none";
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetchApi("/api/v1/auth/logout", {
-        method: "POST",
-      });
-
-      toast.success(t("loggedOutSuccess"));
-
-      router.push("/login");
-      router.refresh();
-    } catch (err) {
-      toast.error(t("logoutError"));
-    }
-  };
-
   const isExactActive = (path) => pathname === path;
   const isSubActive = (prefix) => pathname.startsWith(prefix);
 
@@ -187,7 +170,6 @@ export default function DashboardLayout({ children }) {
     return segments.map((segment, index) => {
       const href = "/" + segments.slice(0, index + 1).join("/");
 
-      // Attempt to translate path segment using nav keys, or fallback to capitalized string
       const translatedLabel = t.has(`nav.${segment}`)
         ? t(`nav.${segment}`)
         : segment.charAt(0).toUpperCase() + segment.slice(1);
@@ -258,6 +240,13 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="h-screen bg-(--background) text-(--foreground) flex overflow-hidden antialiased selection:bg-(--primary) selection:text-(--primary-foreground) relative">
+      {/* Top Right Floating Switchers */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-lg rounded-full p-1.5 px-3">
+        <LanguageSwitcher />
+        <div className="w-[1px] h-4 bg-(--border)" />
+        <ThemeSwitcher />
+      </div>
+
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div
@@ -748,34 +737,24 @@ export default function DashboardLayout({ children }) {
 
         {/* Sidebar Footer */}
         <div className="p-4 border-t border-(--border) shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-sm shrink-0">
-                {user?.name ? (
-                  user.name.charAt(0).toUpperCase()
-                ) : (
-                  <User className="w-4 h-4" />
-                )}
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {user?.name || t("manager")}
-                </p>
-
-                <p className="text-xs text-(--muted-foreground) truncate">
-                  {user?.email || t("managerAccount")}
-                </p>
-              </div>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-sm shrink-0">
+              {user?.name ? (
+                user.name.charAt(0).toUpperCase()
+              ) : (
+                <User className="w-4 h-4" />
+              )}
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="p-2 text-(--muted-foreground) hover:text-(--destructive) rounded-lg hover:bg-(--muted) outline-none transition-colors border-0"
-              title={t("logout")}
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">
+                {user?.name || t("manager")}
+              </p>
+
+              <p className="text-xs text-(--muted-foreground) truncate">
+                {user?.email || t("managerAccount")}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -824,11 +803,6 @@ export default function DashboardLayout({ children }) {
               })}
             </nav>
           </div>
-
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <ThemeSwitcher />
-          </div>
         </header>
 
         {/* Page Content */}
@@ -868,7 +842,7 @@ export default function DashboardLayout({ children }) {
         {isSidebarOpen && (
           <div className="md:hidden fixed inset-0 z-50 bg-(--background) flex flex-col p-6 overflow-hidden animate-in fade-in duration-200">
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-(--border) shrink-0">
+            <div className="flex items-center justify-between pb-4 border-b border-(--border) shrink-0 pr-28">
               <div className="flex items-center gap-3">
                 <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs overflow-hidden shrink-0">
                   <Image
@@ -887,21 +861,17 @@ export default function DashboardLayout({ children }) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <LanguageSwitcher />
-                <ThemeSwitcher />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSidebarOpen(false);
-                    setSearchQuery("");
-                  }}
-                  className="p-2 rounded-full border border-(--border) hover:bg-(--muted) text-(--foreground) transition-colors cursor-pointer"
-                  aria-label="Close menu"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  setSearchQuery("");
+                }}
+                className="p-2 rounded-full border border-(--border) hover:bg-(--muted) text-(--foreground) transition-colors cursor-pointer"
+                aria-label="Close menu"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
             {/* Mobile Search Bar */}
@@ -1139,18 +1109,6 @@ export default function DashboardLayout({ children }) {
                 </>
               )}
             </nav>
-
-            {/* Mobile Overlay Footer */}
-            <div className="pt-4 border-t border-(--border) shrink-0">
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 font-semibold text-sm transition-colors border-0 cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>{t("logout")}</span>
-              </button>
-            </div>
           </div>
         )}
       </div>
