@@ -33,6 +33,8 @@ export default function DashboardLayout({ children }) {
   const t = useTranslations("dashboard");
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [shouldFocusSearch, setShouldFocusSearch] = useState(false);
+
   const [isBranchesOpen, setIsBranchesOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isSalesOpen, setIsSalesOpen] = useState(false);
@@ -44,110 +46,77 @@ export default function DashboardLayout({ children }) {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef(null);
 
   // Sidebar resizing state
   const [sidebarWidth, setSidebarWidth] = useState(288);
   const isResizingRef = useRef(false);
 
   useEffect(() => {
-    if (pathname.includes("/dashboard/branches")) {
-      setIsBranchesOpen(true);
-    }
+    if (pathname.includes("/dashboard/branches")) setIsBranchesOpen(true);
+    if (pathname.includes("/dashboard/products")) setIsProductsOpen(true);
+    if (pathname.includes("/dashboard/sales")) setIsSalesOpen(true);
+    if (pathname.includes("/dashboard/money")) setIsMoneyOpen(true);
+    if (pathname.includes("/dashboard/users")) setIsUsersOpen(true);
 
-    if (pathname.includes("/dashboard/products")) {
-      setIsProductsOpen(true);
-    }
-
-    if (pathname.includes("/dashboard/sales")) {
-      setIsSalesOpen(true);
-    }
-
-    if (pathname.includes("/dashboard/money")) {
-      setIsMoneyOpen(true);
-    }
-
-    if (pathname.includes("/dashboard/users")) {
-      setIsUsersOpen(true);
-    }
-
-    // Close mobile drawer and search when route changes
     setIsSidebarOpen(false);
     setSearchQuery("");
   }, [pathname]);
 
-  /*
-   * Central authentication check.
-   */
+  // Focus search input on open only if triggered from search button
+  useEffect(() => {
+    if (isSidebarOpen && shouldFocusSearch) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    }
+  }, [isSidebarOpen, shouldFocusSearch]);
+
   useEffect(() => {
     let isMounted = true;
-
     async function loadUser() {
       try {
         const response = await fetchApi("/api/v1/auth/me");
-
         if (!isMounted) return;
-
-        if (
-          response?.success === false &&
-          response?.error?.code === "UNAUTHORIZED"
-        ) {
+        if (response?.success === false && response?.error?.code === "UNAUTHORIZED") {
           router.replace("/login?reason=session-expired");
           return;
         }
-
         const currentUser = response?.data?.user || response?.data;
-
         if (!currentUser) {
           router.replace("/login?reason=session-expired");
           return;
         }
-
         setUser(currentUser);
       } catch (error) {
         if (!isMounted) return;
-
         if (error?.code === "UNAUTHORIZED") {
           router.replace("/login?reason=session-expired");
           return;
         }
-
         console.error("Failed to verify authentication:", error);
       } finally {
-        if (isMounted) {
-          setAuthChecking(false);
-        }
+        if (isMounted) setAuthChecking(false);
       }
     }
-
     loadUser();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [router]);
 
-  // Handle sidebar resizing
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isResizingRef.current) return;
-
       const newWidth = e.clientX;
-
-      if (newWidth >= 220 && newWidth <= 450) {
-        setSidebarWidth(newWidth);
-      }
+      if (newWidth >= 220 && newWidth <= 450) setSidebarWidth(newWidth);
     };
-
     const handleMouseUp = () => {
       if (isResizingRef.current) {
         isResizingRef.current = false;
         document.body.style.userSelect = "";
       }
     };
-
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
-
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
@@ -156,7 +125,6 @@ export default function DashboardLayout({ children }) {
 
   const startResizing = (e) => {
     e.preventDefault();
-
     isResizingRef.current = true;
     document.body.style.userSelect = "none";
   };
@@ -183,7 +151,6 @@ export default function DashboardLayout({ children }) {
 
   const breadcrumbs = getBreadcrumbs();
 
-  // Navigation Items for Search Filter
   const navigationItems = [
     { label: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
     { label: t("nav.branches"), href: "/dashboard/branches", icon: GitBranch },
@@ -210,7 +177,6 @@ export default function DashboardLayout({ children }) {
   const filteredNavItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return navigationItems;
-
     return navigationItems.filter(
       (item) =>
         item.label.toLowerCase().includes(query) ||
@@ -224,15 +190,22 @@ export default function DashboardLayout({ children }) {
     setIsSidebarOpen(false);
   };
 
+  const handleOpenSearch = () => {
+    setShouldFocusSearch(true);
+    setIsSidebarOpen(true);
+  };
+
+  const handleOpenMenu = () => {
+    setShouldFocusSearch(false);
+    setIsSidebarOpen(true);
+  };
+
   if (authChecking) {
     return (
       <div className="h-screen bg-(--background) text-(--foreground) flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-2 border-(--border) border-t-(--primary) rounded-full animate-spin mx-auto" />
-
-          <p className="text-sm text-(--muted-foreground)">
-            {t("checkingSession")}
-          </p>
+          <p className="text-sm text-(--muted-foreground)">{t("checkingSession")}</p>
         </div>
       </div>
     );
@@ -240,74 +213,33 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="h-screen bg-(--background) text-(--foreground) flex overflow-hidden antialiased selection:bg-(--primary) selection:text-(--primary-foreground) relative">
-      {/* Top Right Floating Switchers */}
-      <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-lg rounded-full p-1.5 px-3">
+      {/* Mobile-Only Floating Switchers */}
+      <div className="md:hidden fixed top-4 right-4 z-50 flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-lg rounded-full p-1.5 px-3">
         <LanguageSwitcher />
         <div className="w-[1px] h-4 bg-(--border)" />
         <ThemeSwitcher />
       </div>
 
-      {/* Mobile Backdrop */}
-      {isSidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden backdrop-blur-xs transition-opacity"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <aside
         style={{ width: `${sidebarWidth}px` }}
-        className={`
-          fixed inset-y-0 left-0 z-50 bg-(--card) border-r border-(--border)
-          flex flex-col transition-transform duration-200 ease-in-out
-          md:static md:translate-x-0 shrink-0
-          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-        `}
+        className="hidden md:flex fixed inset-y-0 left-0 z-50 bg-(--card) border-r border-(--border) flex-col transition-transform duration-200 ease-in-out md:static md:translate-x-0 shrink-0"
       >
-        {/* Brand Header */}
         <div className="h-16 px-6 border-b border-(--border) flex items-center justify-between shrink-0">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2.5 rounded-lg p-1 -ml-1"
-          >
+          <Link href="/dashboard" className="flex items-center gap-2.5 rounded-lg p-1 -ml-1">
             <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs overflow-hidden">
-              <Image
-                src="/images/logo.png"
-                width={36}
-                height={36}
-                alt={`${t("brandName")} Logo`}
-                className="rounded-md object-cover"
-              />
+              <Image src="/images/logo.png" width={36} height={36} alt={`${t("brandName")} Logo`} className="rounded-md object-cover" />
             </div>
-
-            <span className="font-bold text-md tracking-tight">
-              {t("brandName")}
-            </span>
+            <span className="font-bold text-md tracking-tight">{t("brandName")}</span>
           </Link>
-
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden p-1.5 text-(--muted-foreground) hover:text-(--foreground) rounded-lg hover:bg-(--muted)"
-            aria-label="Close sidebar"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
-        {/* Navigation */}
+        {/* Sidebar Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 text-sm font-medium [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {/* Dashboard */}
           <Link
             href="/dashboard"
-            className={`
-              flex items-center gap-3 px-3 py-2.5 rounded-lg
-              transition-colors outline-none border-0
-              ${isExactActive("/dashboard")
-                ? "bg-(--primary) text-(--primary-foreground)"
-                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-              }
-            `}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              }`}
           >
             <LayoutDashboard className="w-4 h-4" />
             <span>{t("nav.dashboard")}</span>
@@ -317,56 +249,19 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsBranchesOpen(!isBranchesOpen)}
-              className={`
-                w-full flex items-center justify-between px-3 py-2.5
-                rounded-lg transition-colors outline-none border-0
-                ${isSubActive("/dashboard/branches")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-                }
-              `}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/branches") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <GitBranch className="w-4 h-4" />
                 <span>{t("nav.branches")}</span>
               </div>
-
-              {isBranchesOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+              {isBranchesOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
-
             {isBranchesOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link
-                  href="/dashboard/branches"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/branches")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.overview")}
-                </Link>
-
-                <Link
-                  href="/dashboard/branches/create"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/branches/create")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.create")}
-                </Link>
+                <Link href="/dashboard/branches" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/branches") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href="/dashboard/branches/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/branches/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
               </div>
             )}
           </div>
@@ -375,71 +270,20 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsProductsOpen(!isProductsOpen)}
-              className={`
-                w-full flex items-center justify-between px-3 py-2.5
-                rounded-lg transition-colors outline-none border-0
-                ${isSubActive("/dashboard/products")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-                }
-              `}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/products") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <Package className="w-4 h-4" />
                 <span>{t("nav.products")}</span>
               </div>
-
-              {isProductsOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+              {isProductsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
-
             {isProductsOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link
-                  href="/dashboard/products"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/products")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.overview")}
-                </Link>
-
-                <Link
-                  href="/dashboard/products/create"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/products/create")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.create")}
-                </Link>
-
-                <Link
-                  href="/dashboard/products/purchases"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/products/purchases") ||
-                      pathname.includes("/dashboard/products/purchases")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.purchases")}
-                </Link>
+                <Link href="/dashboard/products" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/products") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href="/dashboard/products/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/products/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
+                <Link href="/dashboard/products/purchases" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/products/purchases") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.purchases")}</Link>
               </div>
             )}
           </div>
@@ -448,56 +292,19 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsSalesOpen(!isSalesOpen)}
-              className={`
-                w-full flex items-center justify-between px-3 py-2.5
-                rounded-lg transition-colors outline-none border-0
-                ${isSubActive("/dashboard/sales")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-                }
-              `}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/sales") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <ShoppingCart className="w-4 h-4" />
                 <span>{t("nav.sales")}</span>
               </div>
-
-              {isSalesOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+              {isSalesOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
-
             {isSalesOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link
-                  href="/dashboard/sales"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/sales")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.overview")}
-                </Link>
-
-                <Link
-                  href="/dashboard/sales/create"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/sales/create")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.create")}
-                </Link>
+                <Link href="/dashboard/sales" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/sales") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href="/dashboard/sales/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/sales/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
               </div>
             )}
           </div>
@@ -506,140 +313,25 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsMoneyOpen(!isMoneyOpen)}
-              className={`
-                w-full flex items-center justify-between px-3 py-2.5
-                rounded-lg transition-colors outline-none border-0
-                ${isSubActive("/dashboard/money")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-                }
-              `}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/money") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <Receipt className="w-4 h-4" />
                 <span>{t("nav.money")}</span>
               </div>
-
-              {isMoneyOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+              {isMoneyOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
-
             {isMoneyOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link
-                  href="/dashboard/money"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.overview")}
-                </Link>
-
-                <Link
-                  href="/dashboard/money/accounts"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money/accounts")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.accounts")}
-                </Link>
-
-                <Link
-                  href="/dashboard/money/transactions"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money/transactions")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.transactions")}
-                </Link>
-
-                <Link
-                  href="/dashboard/money/transfers"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money/transfers")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.transfers")}
-                </Link>
-
-                <Link
-                  href="/dashboard/money/settlements"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money/settlements")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.settlements")}
-                </Link>
-
-                <Link
-                  href="/dashboard/money/payables"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money/payables")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.payables")}
-                </Link>
-
-                <Link
-                  href="/dashboard/money/credits"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money/credits")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.credit")}
-                </Link>
-
-                <Link
-                  href="/dashboard/money/total-money"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/money/total-money")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.totalMoney")}
-                </Link>
+                <Link href="/dashboard/money" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href="/dashboard/money/accounts" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/accounts") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.accounts")}</Link>
+                <Link href="/dashboard/money/transactions" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/transactions") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.transactions")}</Link>
+                <Link href="/dashboard/money/transfers" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/transfers") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.transfers")}</Link>
+                <Link href="/dashboard/money/settlements" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/settlements") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.settlements")}</Link>
+                <Link href="/dashboard/money/payables" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/payables") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.payables")}</Link>
+                <Link href="/dashboard/money/credits" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/credits") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.credit")}</Link>
+                <Link href="/dashboard/money/total-money" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/total-money") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.totalMoney")}</Link>
               </div>
             )}
           </div>
@@ -648,88 +340,29 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsUsersOpen(!isUsersOpen)}
-              className={`
-                w-full flex items-center justify-between px-3 py-2.5
-                rounded-lg transition-colors outline-none border-0
-                ${isSubActive("/dashboard/users")
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-                }
-              `}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/users") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }`}
             >
               <div className="flex items-center gap-3">
                 <Users className="w-4 h-4" />
                 <span>{t("nav.users")}</span>
               </div>
-
-              {isUsersOpen ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
+              {isUsersOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
-
             {isUsersOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link
-                  href="/dashboard/users"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/users")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.overview")}
-                </Link>
-
-                <Link
-                  href="/dashboard/users/create"
-                  className={`
-                    block px-3 py-2 rounded-lg text-xs transition-colors
-                    outline-none border-0
-                    ${isExactActive("/dashboard/users/create")
-                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                      : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"
-                    }
-                  `}
-                >
-                  {t("nav.create")}
-                </Link>
+                <Link href="/dashboard/users" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/users") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href="/dashboard/users/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/users/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
               </div>
             )}
           </div>
 
-          {/* Reports */}
-          <Link
-            href="/dashboard/reports"
-            className={`
-              flex items-center gap-3 px-3 py-2.5 rounded-lg
-              transition-colors outline-none border-0
-              ${isExactActive("/dashboard/reports")
-                ? "bg-(--primary) text-(--primary-foreground)"
-                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-              }
-            `}
-          >
+          <Link href="/dashboard/reports" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard/reports") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
             <BarChart3 className="w-4 h-4" />
             <span>{t("nav.reports")}</span>
           </Link>
 
-          {/* Settings */}
-          <Link
-            href="/dashboard/settings"
-            className={`
-              flex items-center gap-3 px-3 py-2.5 rounded-lg
-              transition-colors outline-none border-0
-              ${isSubActive("/dashboard/settings")
-                ? "bg-(--primary) text-(--primary-foreground)"
-                : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
-              }
-            `}
-          >
+          <Link href="/dashboard/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/settings") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
             <Settings className="w-4 h-4" />
             <span>{t("nav.settings")}</span>
           </Link>
@@ -739,38 +372,24 @@ export default function DashboardLayout({ children }) {
         <div className="p-4 border-t border-(--border) shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-full bg-(--muted) text-(--foreground) flex items-center justify-center font-semibold text-sm shrink-0">
-              {user?.name ? (
-                user.name.charAt(0).toUpperCase()
-              ) : (
-                <User className="w-4 h-4" />
-              )}
+              {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-4 h-4" />}
             </div>
-
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">
-                {user?.name || t("manager")}
-              </p>
-
-              <p className="text-xs text-(--muted-foreground) truncate">
-                {user?.email || t("managerAccount")}
-              </p>
+              <p className="text-sm font-medium truncate">{user?.name || t("manager")}</p>
+              <p className="text-xs text-(--muted-foreground) truncate">{user?.email || t("managerAccount")}</p>
             </div>
           </div>
         </div>
 
         {/* Resizer */}
-        <div
-          onMouseDown={startResizing}
-          className="hidden md:flex absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-(--primary)/50 transition-colors items-center justify-center group"
-          title="Drag to resize sidebar"
-        >
+        <div onMouseDown={startResizing} className="hidden md:flex absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-(--primary)/50 transition-colors items-center justify-center group" title="Drag to resize sidebar">
           <div className="w-0.5 h-8 bg-(--border) group-hover:bg-(--primary) rounded-full" />
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
-        {/* Top Bar (Hidden on Mobile) */}
+        {/* Desktop Header */}
         <header className="hidden md:flex h-16 px-6 bg-(--card) border-b border-(--border) items-center justify-between shrink-0 z-30 sticky top-0">
           <div className="flex items-center gap-4">
             <nav className="flex items-center space-x-2 text-sm font-medium">
@@ -778,10 +397,7 @@ export default function DashboardLayout({ children }) {
                 const isLast = index === breadcrumbs.length - 1;
 
                 return (
-                  <div
-                    key={crumb.href}
-                    className="flex items-center space-x-2"
-                  >
+                  <div key={crumb.href} className="flex items-center space-x-2">
                     {index > 0 && (
                       <ChevronRight className="w-4 h-4 text-(--muted-foreground)" />
                     )}
@@ -803,21 +419,25 @@ export default function DashboardLayout({ children }) {
               })}
             </nav>
           </div>
+
+          {/* Desktop Integrated Switchers */}
+          <div className="flex items-center gap-2 bg-(--muted)/50 border border-(--border) rounded-full p-1 px-3">
+            <LanguageSwitcher />
+            <div className="w-[1px] h-4 bg-(--border)" />
+            <ThemeSwitcher />
+          </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8 pb-28 md:pb-8 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+          <div className="max-w-7xl mx-auto">{children}</div>
         </main>
 
-        {/* Mobile Floating Bottom Control */}
+        {/* Mobile Floating Bottom Navigation */}
         <div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40">
           <div className="flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-2xl rounded-full p-2 px-4 text-(--foreground)">
             <button
               type="button"
-              onClick={() => setIsSidebarOpen(true)}
+              onClick={handleOpenSearch}
               className="p-2.5 rounded-full hover:bg-(--muted) text-(--foreground) transition-colors cursor-pointer"
               aria-label="Open Search"
             >
@@ -828,7 +448,7 @@ export default function DashboardLayout({ children }) {
 
             <button
               type="button"
-              onClick={() => setIsSidebarOpen(true)}
+              onClick={handleOpenMenu}
               className="flex items-center gap-2 py-2 px-3.5 rounded-full bg-(--foreground) text-(--background) font-semibold text-xs transition-transform active:scale-95 cursor-pointer shadow-sm"
               aria-label="Open Mobile Menu"
             >
@@ -845,13 +465,7 @@ export default function DashboardLayout({ children }) {
             <div className="flex items-center justify-between pb-4 border-b border-(--border) shrink-0 pr-28">
               <div className="flex items-center gap-3">
                 <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs overflow-hidden shrink-0">
-                  <Image
-                    src="/images/logo.png"
-                    width={36}
-                    height={36}
-                    alt={`${t("brandName")} Logo`}
-                    className="rounded-md object-cover"
-                  />
+                  <Image src="/images/logo.png" width={36} height={36} alt={`${t("brandName")} Logo`} className="rounded-md object-cover" />
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-base tracking-tight">{t("brandName")}</span>
@@ -879,12 +493,12 @@ export default function DashboardLayout({ children }) {
               <div className="relative flex items-center">
                 <Search className="w-4 h-4 absolute left-3.5 text-(--muted-foreground) pointer-events-none" />
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder={t("nav.overview")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-9 py-2.5 text-sm bg-(--card) border border-(--border) rounded-xl text-(--foreground) placeholder-(--muted-foreground) focus:outline-none focus:ring-1 focus:ring-(--primary) transition-all"
-                  autoFocus
                 />
                 {searchQuery && (
                   <button
@@ -898,7 +512,7 @@ export default function DashboardLayout({ children }) {
               </div>
             </div>
 
-            {/* Navigation / Filtered Search Results */}
+            {/* Navigation & Results */}
             <nav className="flex-1 overflow-y-auto py-4 space-y-1.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {searchQuery.trim() !== "" ? (
                 filteredNavItems.length > 0 ? (
@@ -910,13 +524,8 @@ export default function DashboardLayout({ children }) {
                         key={item.label}
                         type="button"
                         onClick={() => handleNavigateToRoute(item.href)}
-                        className={`
-                          w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-base font-medium transition-colors outline-none cursor-pointer text-left
-                          ${active
-                            ? "bg-(--primary) text-(--primary-foreground) font-semibold shadow-xs"
-                            : "text-(--foreground) hover:bg-(--muted)/60"
-                          }
-                        `}
+                        className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-base font-medium transition-colors outline-none cursor-pointer text-left ${active ? "bg-(--primary) text-(--primary-foreground) font-semibold shadow-xs" : "text-(--foreground) hover:bg-(--muted)/60"
+                          }`}
                       >
                         <Icon className={`w-5 h-5 shrink-0 ${active ? "text-(--primary-foreground)" : "text-current"}`} />
                         <span>{item.label}</span>
@@ -924,34 +533,18 @@ export default function DashboardLayout({ children }) {
                     );
                   })
                 ) : (
-                  <div className="py-12 text-center text-sm text-(--muted-foreground)">
-                    No pages found
-                  </div>
+                  <div className="py-12 text-center text-sm text-(--muted-foreground)">No pages found</div>
                 )
               ) : (
                 <>
-                  {/* Dashboard */}
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setIsSidebarOpen(false)}
-                    className={`
-                      flex items-center gap-3 px-3 py-3 rounded-xl transition-colors
-                      ${isExactActive("/dashboard")
-                        ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                        : "text-(--foreground) hover:bg-(--muted)"
-                      }
-                    `}
-                  >
+                  <Link href="/dashboard" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive("/dashboard") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--foreground) hover:bg-(--muted)"}`}>
                     <LayoutDashboard className="w-5 h-5" />
                     <span className="text-base">{t("nav.dashboard")}</span>
                   </Link>
 
                   {/* Branches */}
                   <div className="space-y-1">
-                    <button
-                      onClick={() => setIsBranchesOpen(!isBranchesOpen)}
-                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
-                    >
+                    <button onClick={() => setIsBranchesOpen(!isBranchesOpen)} className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                       <div className="flex items-center gap-3">
                         <GitBranch className="w-5 h-5" />
                         <span>{t("nav.branches")}</span>
@@ -960,22 +553,15 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isBranchesOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/branches" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.overview")}
-                        </Link>
-                        <Link href="/dashboard/branches/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.create")}
-                        </Link>
+                        <Link href="/dashboard/branches" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href="/dashboard/branches/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
                       </div>
                     )}
                   </div>
 
                   {/* Products */}
                   <div className="space-y-1">
-                    <button
-                      onClick={() => setIsProductsOpen(!isProductsOpen)}
-                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
-                    >
+                    <button onClick={() => setIsProductsOpen(!isProductsOpen)} className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                       <div className="flex items-center gap-3">
                         <Package className="w-5 h-5" />
                         <span>{t("nav.products")}</span>
@@ -984,25 +570,16 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isProductsOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/products" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.overview")}
-                        </Link>
-                        <Link href="/dashboard/products/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.create")}
-                        </Link>
-                        <Link href="/dashboard/products/purchases" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.purchases")}
-                        </Link>
+                        <Link href="/dashboard/products" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href="/dashboard/products/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
+                        <Link href="/dashboard/products/purchases" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.purchases")}</Link>
                       </div>
                     )}
                   </div>
 
                   {/* Sales */}
                   <div className="space-y-1">
-                    <button
-                      onClick={() => setIsSalesOpen(!isSalesOpen)}
-                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
-                    >
+                    <button onClick={() => setIsSalesOpen(!isSalesOpen)} className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                       <div className="flex items-center gap-3">
                         <ShoppingCart className="w-5 h-5" />
                         <span>{t("nav.sales")}</span>
@@ -1011,22 +588,15 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isSalesOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/sales" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.overview")}
-                        </Link>
-                        <Link href="/dashboard/sales/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.create")}
-                        </Link>
+                        <Link href="/dashboard/sales" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href="/dashboard/sales/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
                       </div>
                     )}
                   </div>
 
                   {/* Money */}
                   <div className="space-y-1">
-                    <button
-                      onClick={() => setIsMoneyOpen(!isMoneyOpen)}
-                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
-                    >
+                    <button onClick={() => setIsMoneyOpen(!isMoneyOpen)} className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                       <div className="flex items-center gap-3">
                         <Receipt className="w-5 h-5" />
                         <span>{t("nav.money")}</span>
@@ -1035,40 +605,21 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isMoneyOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.overview")}
-                        </Link>
-                        <Link href="/dashboard/money/accounts" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.accounts")}
-                        </Link>
-                        <Link href="/dashboard/money/transactions" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.transactions")}
-                        </Link>
-                        <Link href="/dashboard/money/transfers" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.transfers")}
-                        </Link>
-                        <Link href="/dashboard/money/settlements" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.settlements")}
-                        </Link>
-                        <Link href="/dashboard/money/payables" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.payables")}
-                        </Link>
-                        <Link href="/dashboard/money/credits" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.credit")}
-                        </Link>
-                        <Link href="/dashboard/money/total-money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.totalMoney")}
-                        </Link>
+                        <Link href="/dashboard/money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href="/dashboard/money/accounts" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.accounts")}</Link>
+                        <Link href="/dashboard/money/transactions" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.transactions")}</Link>
+                        <Link href="/dashboard/money/transfers" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.transfers")}</Link>
+                        <Link href="/dashboard/money/settlements" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.settlements")}</Link>
+                        <Link href="/dashboard/money/payables" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.payables")}</Link>
+                        <Link href="/dashboard/money/credits" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.credit")}</Link>
+                        <Link href="/dashboard/money/total-money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.totalMoney")}</Link>
                       </div>
                     )}
                   </div>
 
                   {/* Users */}
                   <div className="space-y-1">
-                    <button
-                      onClick={() => setIsUsersOpen(!isUsersOpen)}
-                      className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
-                    >
+                    <button onClick={() => setIsUsersOpen(!isUsersOpen)} className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                       <div className="flex items-center gap-3">
                         <Users className="w-5 h-5" />
                         <span>{t("nav.users")}</span>
@@ -1077,32 +628,18 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isUsersOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/users" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.overview")}
-                        </Link>
-                        <Link href="/dashboard/users/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">
-                          {t("nav.create")}
-                        </Link>
+                        <Link href="/dashboard/users" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href="/dashboard/users/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
                       </div>
                     )}
                   </div>
 
-                  {/* Reports */}
-                  <Link
-                    href="/dashboard/reports"
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
-                  >
+                  <Link href="/dashboard/reports" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                     <BarChart3 className="w-5 h-5" />
                     <span>{t("nav.reports")}</span>
                   </Link>
 
-                  {/* Settings */}
-                  <Link
-                    href="/dashboard/settings"
-                    onClick={() => setIsSidebarOpen(false)}
-                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)"
-                  >
+                  <Link href="/dashboard/settings" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                     <Settings className="w-5 h-5" />
                     <span>{t("nav.settings")}</span>
                   </Link>

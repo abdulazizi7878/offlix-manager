@@ -47,7 +47,7 @@ export default function LanguageSwitcher() {
                 aria-expanded={isOpen}
             >
                 <Globe className="w-5 h-5" />
-                <span className="hidden sm:inline">{currentLanguage.native}</span>
+                <span className="sm:inline">{currentLanguage.native}</span>
             </button>
 
             {isOpen && (
