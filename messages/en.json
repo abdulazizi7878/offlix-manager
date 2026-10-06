@@ -324,61 +324,34 @@
             "to": "To:",
             "retry": "Retry",
             "loadError": "Failed to load dashboard overview.",
-            "kpis": {
-                "revenue": "Revenue",
+            "money": {
+                "title": "Money & Balances",
+                "totalBalance": "Total Balance",
+                "liquidBalance": "Liquid Balance",
+                "accountsCount": "Active Accounts"
+            },
+            "sales": {
+                "title": "Sales Overview",
                 "salesCount": "Sales Count",
-                "unitsSold": "Units Sold",
-                "estimatedProfit": "Estimated Profit",
-                "estimatedProfitSubtitle": "Estimated using current product cost prices",
-                "estimatedCogs": "Estimated COGS"
+                "totalSales": "Total Sales",
+                "unpaidSales": "Unpaid Sales"
             },
-            "salesTrend": {
-                "title": "Sales Performance Trend",
-                "subtitle": "Revenue & Units Trend",
-                "totalRevenue": "Total Revenue:",
-                "totalUnitsSold": "Total Units Sold:"
+            "receivables": {
+                "title": "Receivables",
+                "openCount": "Open Invoices",
+                "outstanding": "Outstanding",
+                "overdue": "Overdue"
             },
-            "paymentBreakdown": {
-                "title": "Payment-Status Breakdown",
-                "noBreakdown": "No payment breakdown available",
-                "transactions": "transactions"
-            },
-            "topProducts": {
-                "title": "Top-Selling Products",
-                "subtitle": "Products ranked by sales volume and revenue",
-                "colName": "Product Name",
-                "colUnits": "Units Sold",
-                "colRevenue": "Revenue",
-                "colProfit": "Estimated Profit",
-                "loading": "Loading top products...",
-                "noProducts": "No top-selling products found for this period."
-            },
-            "purchases": {
-                "title": "Purchases Overview",
-                "subtitle": "Inventory acquisition records (purchases do not automatically create money transactions).",
-                "count": "Count",
-                "units": "Units",
-                "cost": "Cost",
-                "trendTitle": "Purchase Trend",
-                "logged": "trend periods logged",
-                "chartFallback": "Purchase acquisition volume chart"
+            "payables": {
+                "title": "Payables",
+                "openCount": "Open Bills",
+                "outstanding": "Outstanding",
+                "overdue": "Overdue"
             },
             "inventory": {
-                "valuationTitle": "Inventory Valuation",
-                "totalProducts": "Total Products",
-                "totalUnits": "Total Units",
-                "costValue": "Cost Value",
-                "retailValue": "Retail Value",
-                "outOfStock": "Out of Stock",
-                "lowStock": "Low Stock",
-                "alertsTitle": "Inventory Alerts",
-                "alertsSubtitle": "Prioritizing out-of-stock and low-stock products",
-                "colBranch": "Branch ID",
-                "colStock": "Current Stock",
-                "colThreshold": "Threshold",
-                "colAlertType": "Alert Type",
-                "loadingAlerts": "Loading alerts...",
-                "noAlerts": "No inventory alerts at this time."
+                "title": "Inventory Alerts",
+                "lowStock": "Low Stock Items",
+                "outOfStock": "Out of Stock Items"
             },
             "recentSales": {
                 "title": "Recent Sales",
@@ -388,53 +361,12 @@
                 "colTotal": "Total Amount",
                 "colStatus": "Payment Status",
                 "colCreatedBy": "Created By",
-                "colDate": "Date (Relative)",
+                "colDate": "Date",
                 "colAction": "Action",
                 "walkIn": "Walk-in",
                 "view": "View",
                 "loading": "Loading recent sales...",
                 "noSales": "No recent sales records found."
-            },
-            "money": {
-                "title": "Account-wide money flow",
-                "subtitle": "Note: Money transactions are account-scope and exclude internal money transfers.",
-                "moneyIn": "Money In",
-                "moneyOut": "Money Out",
-                "netFlow": "Net Money Flow"
-            },
-            "receivables": {
-                "title": "Money owed to the business",
-                "subtitle": "Account-level receivables tracking",
-                "openCount": "Open Count",
-                "outstanding": "Outstanding",
-                "overdue": "Overdue"
-            },
-            "payables": {
-                "title": "Money the business owes",
-                "subtitle": "Account-level payables tracking",
-                "openCount": "Open Count",
-                "outstanding": "Outstanding",
-                "overdue": "Overdue"
-            },
-            "settlements": {
-                "title": "Settlements",
-                "subtitle": "Branch-aware settlement activity",
-                "pendingCount": "Pending Settlements",
-                "requestedCount": "Requested Settlements",
-                "receivedCount": "Received Settlements",
-                "pendingAmount": "Pending Amount"
-            },
-            "branchPerformance": {
-                "title": "Branch Performance",
-                "subtitle": "Comparative performance metrics across all active branches",
-                "colBranchName": "Branch Name",
-                "colSalesCount": "Sales Count",
-                "colRevenue": "Revenue",
-                "colUnitsSold": "Units Sold",
-                "colCogs": "Estimated COGS",
-                "colProfit": "Estimated Profit",
-                "loading": "Loading branch performance...",
-                "noData": "No branch performance data available."
             },
             "birr": "birr",
             "status": {

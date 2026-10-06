@@ -307,7 +307,7 @@
         },
         "overviewPage": {
             "title": "አጠቃላይ እይታ",
-            "subtitle": "የንግድ ስራዎን አፈጻጸም እና እንቅስቃሴ ይከታተሉ።",
+            "subtitle": "የንግድዎን አፈፃፀምና እንቅስቃሴ ይከታተሉ።",
             "periodLabel": "የጊዜ ገደብ",
             "periods": {
                 "today": "ዛሬ",
@@ -318,129 +318,61 @@
                 "all_time": "ሁሉንም ጊዜ",
                 "custom": "የተወሰነ የጊዜ ገደብ"
             },
-            "allBranches": "ሁሉም ቅርንጫፎች",
+            "allBranches": "ሁሉንም ቅርንጫፎች",
             "refresh": "ያድሱ",
             "from": "ከ:",
             "to": "እስከ:",
-            "retry": "እንደገና ይሞክሩ",
-            "loadError": "የዳሽቦርድ መረጃዎችን መጫን አልተቻለም።",
-            "kpis": {
-                "revenue": "ጠቅላላ ገቢ",
+            "retry": "ድጋሚ ሞክር",
+            "loadError": "የዳሽቦርድ አጠቃላይ እይታን መጫን አልተቻለም።",
+            "money": {
+                "title": "የገንዘብና ሂሳብ ሁኔታ",
+                "totalBalance": "ጠቅላላ ቀሪ ሂሳብ",
+                "liquidBalance": "ዝግጁ ገንዘብ (ሊኪውድ)",
+                "accountsCount": "ንቁ የሂሳብ አካውንቶች"
+            },
+            "sales": {
+                "title": "የሽያጭ አጠቃላይ እይታ",
                 "salesCount": "የሽያጭ ብዛት",
-                "unitsSold": "የተሸጡ እቃዎች",
-                "estimatedProfit": "የተገመተ ትርፍ",
-                "estimatedProfitSubtitle": "በአሁኑ የእቃዎች ግዢ ዋጋ ላይ ተመስርቶ የተገመተ",
-                "estimatedCogs": "የተሸጡ እቃዎች ወጪ (COGS)"
+                "totalSales": "ጠቅላላ ሽያጭ",
+                "unpaidSales": "ያልተከፈሉ ሽያጮች"
             },
-            "salesTrend": {
-                "title": "የሽያጭ እንቅስቃሴ አዝማሚያ",
-                "subtitle": "የገቢ እና የተሸጡ እቃዎች አዝማሚያ",
-                "totalRevenue": "ጠቅላላ ገቢ:",
-                "totalUnitsSold": "ጠቅላላ የተሸጡ እቃዎች:"
+            "receivables": {
+                "title": "የሚሰበሰቡ ዕዳዎች (ተበዳሪዎች)",
+                "openCount": "ክፍት ኢንቮይሶች",
+                "outstanding": "ያልተከፈለ መጠን",
+                "overdue": "ጊዜያቸው ያለፈባቸው"
             },
-            "paymentBreakdown": {
-                "title": "የክፍያ ሁኔታ ዝርዝር",
-                "noBreakdown": "ምንም የክፍያ ዝርዝር መረጃ የለም",
-                "transactions": "ዝውውሮች"
-            },
-            "topProducts": {
-                "title": "ከፍተኛ ሽያጭ ያላቸው ምርቶች",
-                "subtitle": "በሽያጭ መጠን እና በገቢ ደረጃ የተደረደሩ ምርቶች",
-                "colName": "የምርት ስም",
-                "colUnits": "የተሸጠ ብዛት",
-                "colRevenue": "ገቢ",
-                "colProfit": "የተገመተ ትርፍ",
-                "loading": "ከፍተኛ ሽያጭ ያላቸውን ምርቶች በመጫን ላይ...",
-                "noProducts": "በዚህ ጊዜ ውስጥ የተሸጡ ከፍተኛ ምርቶች አልተገኙም።"
-            },
-            "purchases": {
-                "title": "የግዢዎች አጠቃላይ እይታ",
-                "subtitle": "የእቃ አቅርቦት ግዢ መዝገቦች (ግዢዎች የገንዘብ ዝውውርን ወዲያውኑ አይፈጥሩም)።",
-                "count": "ብዛት",
-                "units": "እቃዎች",
-                "cost": "ወጪ",
-                "trendTitle": "የግዢ አዝማሚያ",
-                "logged": "የተመዘገቡ የግዢ አዝማሚያዎች",
-                "chartFallback": "የግዢ መጠን ገበታ"
+            "payables": {
+                "title": "የሚከፈሉ ዕዳዎች (አበዳሪዎች)",
+                "openCount": "ክፍት ሂሳቦች",
+                "outstanding": "ያልተከፈለ መጠን",
+                "overdue": "ጊዜያቸው ያለፈባቸው"
             },
             "inventory": {
-                "valuationTitle": "የእቃዎች ዋጋ ግምት",
-                "totalProducts": "ጠቅላላ ምርቶች",
-                "totalUnits": "ጠቅላላ እቃዎች",
-                "costValue": "የግዢ ዋጋ ግምት",
-                "retailValue": "የመሸጫ ዋጋ ግምት",
-                "outOfStock": "ያለቁ ምርቶች",
-                "lowStock": "ያነሱ ምርቶች",
-                "alertsTitle": "የእቃዎች ማስጠንቀቂያ",
-                "alertsSubtitle": "ያለቁ እና ያነሱ ምርቶች ቅድሚያ ዝርዝር",
-                "colBranch": "የቅርንጫፍ መለያ",
-                "colStock": "ያለው ብዛት",
-                "colThreshold": "አነስተኛ ገደብ",
-                "colAlertType": "የማስጠንቀቂያ ዓይነት",
-                "loadingAlerts": "ማስጠንቀቂያዎችን በመጫን ላይ...",
-                "noAlerts": "በአሁኑ ጊዜ ምንም የእቃ ማስጠንቀቂያ የለም።"
+                "title": "የእቃ ክምችት ማስጠንቀቂያዎች",
+                "lowStock": "ያለቁ/የአነሱ እቃዎች",
+                "outOfStock": "ያለቁ እቃዎች"
             },
             "recentSales": {
-                "title": "ቅርብ ጊዜ ሽያጮች",
-                "subtitle": "በሁሉም ቅርንጫፎች የተመዘገቡ የቅርብ ጊዜ ሽያጮች",
+                "title": "የቅርብ ጊዜ ሽያጮች",
+                "subtitle": "በየቅርንጫፉ የተመዘገቡ የቅርብ ጊዜ ግብይቶች",
                 "colCustomer": "ደበኛ",
                 "colBranch": "ቅርንጫፍ",
-                "colTotal": "ጠቅላላ ዋጋ",
+                "colTotal": "ጠቅላላ መጠን",
                 "colStatus": "የክፍያ ሁኔታ",
-                "colCreatedBy": "መዝጋቢ",
+                "colCreatedBy": "የመዘገበው ሰው",
                 "colDate": "ቀን",
-                "colAction": "ድርጊት",
-                "walkIn": "ተራ ደበኛ",
+                "colAction": "ተግባር",
+                "walkIn": "መደበኛ ደበኛ",
                 "view": "ተመልከት",
                 "loading": "የቅርብ ጊዜ ሽያጮችን በመጫን ላይ...",
                 "noSales": "ምንም የቅርብ ጊዜ የሽያጭ መዝገብ አልተገኘም።"
             },
-            "money": {
-                "title": "የድርጅቱ የገንዘብ እንቅስቃሴ",
-                "subtitle": "ማስታወሻ: የገንዘብ እንቅስቃሴዎች የድርጅት ደረጃ ናቸው (የውስጥ ገንዘብ ማስተላለፎችን አይጨምርም)።",
-                "moneyIn": "ገቢ ገንዘብ",
-                "moneyOut": "ወጪ ገንዘብ",
-                "netFlow": "የተጣራ የገንዘብ ፍሰት"
-            },
-            "receivables": {
-                "title": "ለድርጅቱ የሚከፈል ገንዘብ (ተሰብሰቢ)",
-                "subtitle": "በድርጅት ደረጃ የሚከታተል ተሰብሰቢ ዕዳ",
-                "openCount": "ያልተሰበሰቡ ብዛት",
-                "outstanding": "ቀሪ የሚሰበሰብ",
-                "overdue": "ጊዜው ያለፈበት"
-            },
-            "payables": {
-                "title": "ድርጅቱ የሚከፍለው ገንዘብ (ተከፋይ)",
-                "subtitle": "በድርጅት ደረጃ የሚከታተል ተከፋይ ዕዳ",
-                "openCount": "ያልተከፈሉ ብዛት",
-                "outstanding": "ቀሪ የሚከፈል",
-                "overdue": "ጊዜው ያለፈበት"
-            },
-            "settlements": {
-                "title": "የሂሳብ ማቋጫዎች (Settlements)",
-                "subtitle": "የቅርንጫፎች የሂሳብ ማቋጫ እንቅስቃሴ",
-                "pendingCount": "በተጠባባቂ ላይ ያሉ",
-                "requestedCount": "የተጠየቁ",
-                "receivedCount": "የተረከቡት",
-                "pendingAmount": "በተጠባባቂ ያለ መጠን"
-            },
-            "branchPerformance": {
-                "title": "የቅርንጫፎች አፈጻጸም",
-                "subtitle": "በሁሉም ንቁ ቅርንጫፎች መካከል ያለ የአፈጻጸም ንፅፅር",
-                "colBranchName": "የቅርንጫፍ ስም",
-                "colSalesCount": "የሽያጭ ብዛት",
-                "colRevenue": "ገቢ",
-                "colUnitsSold": "የተሸጡ እቃዎች",
-                "colCogs": "የተሸጡ እቃዎች ወጪ",
-                "colProfit": "የተገመተ ትርፍ",
-                "loading": "የቅርንጫፎችን አፈጻጸም በመጫን ላይ...",
-                "noData": "ምንም የቅርንጫፍ አፈጻጸም መረጃ የለም።"
-            },
             "birr": "ብር",
             "status": {
                 "paid": "ተከፍሏል",
-                "partial": "ከፊል",
-                "credit": "ብድር"
+                "partial": "በከፊል ተከፍሏል",
+                "credit": "በብድር"
             }
         },
         "branchesPage": {
