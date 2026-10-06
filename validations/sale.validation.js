@@ -7,7 +7,7 @@ import { z } from "zod";
 const moneySchema = z
     .number()
     .finite("Amount must be a valid number.")
-    .positive("Amount must be greater than zero.")
+    .nonnegative("Amount cannot be negative.")
     .refine(
         (value) => Number.isInteger(value * 100),
         {
@@ -81,7 +81,17 @@ export const createSaleSchema = z
             })
             .optional(),
 
-        paidAmount: moneySchema
+        paidAmount: z
+            .number()
+            .finite("Amount must be a valid number.")
+            .nonnegative("Amount cannot be negative.")
+            .refine(
+                (value) => Number.isInteger(value * 100),
+                {
+                    message:
+                        "Amount must have at most 2 decimal places.",
+                }
+            )
             .optional()
             .default(0),
 
@@ -105,12 +115,12 @@ export const createSaleSchema = z
                 });
             }
 
-            if (data.paidAmount <= 0) {
+            if (data.paidAmount < 0) {
                 ctx.addIssue({
                     code: "custom",
                     path: ["paidAmount"],
                     message:
-                        "Paid amount must be greater than zero.",
+                        "Paid amount cannot be negative.",
                 });
             }
         }
