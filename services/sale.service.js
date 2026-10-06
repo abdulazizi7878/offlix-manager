@@ -357,6 +357,195 @@ const SaleService = {
         }
     },
 
+    async addSalePayment(
+        userId,
+        accountId,
+        saleId,
+        data
+    ) {
+        const client = await pool.connect();
+        let transactionStarted = false;
+
+        try {
+            await AuthorizationService.assertAccountMember(
+                client,
+                userId,
+                accountId
+            );
+
+            await client.query("BEGIN");
+            transactionStarted = true;
+
+            const sale =
+                await SaleRepository.getSaleForPayment(
+                    client,
+                    saleId,
+                    accountId
+                );
+
+            if (!sale) {
+                throw new AppError(
+                    "Sale not found.",
+                    404,
+                    "SALE_NOT_FOUND"
+                );
+            }
+
+            await AuthorizationService.assertBranchPermission(
+                client,
+                userId,
+                accountId,
+                sale.branch_id,
+                "sales.create"
+            );
+
+            if (sale.payment_status === "paid") {
+                throw new AppError(
+                    "This sale is already fully paid.",
+                    400,
+                    "SALE_ALREADY_PAID"
+                );
+            }
+
+            const amount = Number(data.amount);
+
+            if (
+                !Number.isFinite(amount) ||
+                amount <= 0
+            ) {
+                throw new AppError(
+                    "Payment amount must be greater than zero.",
+                    400,
+                    "INVALID_PAYMENT_AMOUNT"
+                );
+            }
+
+            if (!data.paymentMethod) {
+                throw new AppError(
+                    "Payment method is required.",
+                    400,
+                    "PAYMENT_METHOD_REQUIRED"
+                );
+            }
+
+            if (
+                !["cash", "bank"].includes(
+                    data.paymentMethod
+                )
+            ) {
+                throw new AppError(
+                    "Invalid payment method.",
+                    400,
+                    "INVALID_PAYMENT_METHOD"
+                );
+            }
+
+            const paidAmount =
+                Number(
+                    await SaleRepository.getSalePaidAmount(
+                        client,
+                        sale.id
+                    )
+                );
+
+            const totalAmount =
+                Number(sale.total_amount);
+
+            const remainingAmount =
+                Math.max(
+                    0,
+                    totalAmount - paidAmount
+                );
+
+            if (remainingAmount <= 0) {
+                throw new AppError(
+                    "This sale is already fully paid.",
+                    400,
+                    "SALE_ALREADY_PAID"
+                );
+            }
+
+            if (amount > remainingAmount) {
+                throw new AppError(
+                    `Payment cannot exceed the remaining balance of ${remainingAmount}.`,
+                    400,
+                    "PAYMENT_EXCEEDS_REMAINING"
+                );
+            }
+
+            const payment =
+                await SaleRepository.createSalePayment(
+                    client,
+                    {
+                        saleId: sale.id,
+                        amount,
+                        paymentMethod:
+                            data.paymentMethod,
+                        createdByUserId:
+                            userId,
+                    }
+                );
+
+            const newPaidAmount =
+                paidAmount + amount;
+
+            const newPaymentStatus =
+                newPaidAmount >= totalAmount
+                    ? "paid"
+                    : "partial";
+
+            await SaleRepository.updateSalePaymentStatus(
+                client,
+                sale.id,
+                accountId,
+                newPaymentStatus
+            );
+
+            await SaleRepository.createSettlement(
+                client,
+                {
+                    accountId,
+                    branchId: sale.branch_id,
+                    amount,
+                    notes:
+                        `Automatically generated from payment ${payment.id} for sale ${sale.id}.`,
+                    requestedByUserId:
+                        userId,
+                }
+            );
+
+            await client.query("COMMIT");
+            transactionStarted = false;
+
+            return await SaleRepository.getSaleById(
+                client,
+                sale.id,
+                accountId
+            );
+        } catch (error) {
+            if (transactionStarted) {
+                await client.query("ROLLBACK");
+            }
+
+            if (error instanceof AppError) {
+                throw error;
+            }
+
+            console.error(
+                "SaleService.addSalePayment:",
+                error
+            );
+
+            throw new AppError(
+                "Failed to add sale payment.",
+                500,
+                "SALE_PAYMENT_FAILED"
+            );
+        } finally {
+            client.release();
+        }
+    },
+    
     async getSale(
         userId,
         accountId,

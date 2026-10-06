@@ -855,33 +855,59 @@
         "saleDetailPage": {
             "title": "بيع #{id}",
             "backToSales": "العودة إلى المبيعات",
-            "notFound": "لم يتم العثور على عملية البيع.",
+            "notFound": "لم يتم العثور على البيع.",
             "print": "طباعة",
             "branch": "الفرع",
             "customer": "العميل",
-            "handledBy": "تمت بواسطة (الموظف)",
+            "handledBy": "بواسطة (الموظف)",
             "purchasedItems": "العناصر المشتراة",
             "product": "المنتج",
             "quantity": "الكمية",
-            "pricePerItem": "السعر لكل عنصر",
-            "lineTotal": "إجمالي البند",
+            "pricePerItem": "سعر الوحدة",
+            "lineTotal": "الإجمالي الفرعي",
             "saleTotalAmount": "المبلغ الإجمالي للبيع:",
             "paymentBreakdown": "تفاصيل الدفع",
             "paymentStatus": "حالة الدفع:",
             "paymentMethod": "طريقة الدفع:",
             "amountPaid": "المبلغ المدفوع:",
-            "remainingBalance": "الرصيد المتبقي:",
-            "notes": "الملاحظات",
-            "walkInCustomer": "عميل مباشر",
-            "defaultProduct": "المنتج",
+            "remainingBalance": "المبلغ المتبقي:",
+            "notes": "ملاحظات",
+            "walkInCustomer": "عميل عادي",
+            "defaultProduct": "منتج",
             "birr": "بر",
+            "receivePayment": "تحصيل دفعة",
             "status": {
                 "paid": "مدفوع",
                 "partial": "جزئي",
-                "credit": "آجل / ائتمان"
+                "credit": "آجل"
             },
             "messages": {
-                "loadError": "فشل تحميل تفاصيل البيع."
+                "loadError": "فشل في تحميل تفاصيل البيع."
+            },
+            "paymentHistory": {
+                "title": "سجل المدفوعات",
+                "empty": "لا توجد مدفوعات مسجلة حتى الآن.",
+                "date": "التاريخ والوقت",
+                "method": "الطريقة",
+                "receivedBy": "المستلم بواسطة",
+                "amount": "المبلغ"
+            },
+            "paymentModal": {
+                "title": "تحصيل دفعة",
+                "remainingBalance": "المبلغ المتبقي:",
+                "amountLabel": "مبلغ الدفعة",
+                "methodLabel": "طريقة الدفع",
+                "cancel": "إلغاء",
+                "submit": "تسجيل الدفعة",
+                "methods": {
+                    "cash": "نقداً",
+                    "bank": "تحويل بنكي"
+                },
+                "errors": {
+                    "invalidAmount": "يرجى إدخال مبلغ دفع صحيح.",
+                    "exceedsRemaining": "لا يمكن أن يتجاوز مبلغ الدفعة المبلغ المتبقي.",
+                    "submitFailed": "فشل إرسال الدفعة. يرجى المحاولة مرة أخرى."
+                }
             }
         },
         "moneyOverviewPage": {

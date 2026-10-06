@@ -875,6 +875,7 @@
             "walkInCustomer": "Walk-in Customer",
             "defaultProduct": "Product",
             "birr": "birr",
+            "receivePayment": "Receive Payment",
             "status": {
                 "paid": "Paid",
                 "partial": "Partial",
@@ -882,6 +883,31 @@
             },
             "messages": {
                 "loadError": "Failed to load sale details."
+            },
+            "paymentHistory": {
+                "title": "Payment History",
+                "empty": "No payments recorded yet.",
+                "date": "Date & Time",
+                "method": "Method",
+                "receivedBy": "Received By",
+                "amount": "Amount"
+            },
+            "paymentModal": {
+                "title": "Receive Payment",
+                "remainingBalance": "Remaining Balance:",
+                "amountLabel": "Payment Amount",
+                "methodLabel": "Payment Method",
+                "cancel": "Cancel",
+                "submit": "Record Payment",
+                "methods": {
+                    "cash": "Cash",
+                    "bank": "Bank"
+                },
+                "errors": {
+                    "invalidAmount": "Please enter a valid positive payment amount.",
+                    "exceedsRemaining": "Payment amount cannot exceed the remaining balance.",
+                    "submitFailed": "Failed to submit payment. Please try again."
+                }
             }
         },
         "moneyOverviewPage": {

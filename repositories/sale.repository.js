@@ -262,6 +262,59 @@ const SaleRepository = {
         return result.rows[0] ?? null;
     },
 
+    async getSaleForPayment(
+        client,
+        saleId,
+        accountId
+    ) {
+        const result = await client.query(
+            `
+        SELECT
+            id,
+            account_id,
+            branch_id,
+            total_amount,
+            payment_status
+        FROM sales
+        WHERE id = $1
+          AND account_id = $2
+        FOR UPDATE
+        `,
+            [
+                saleId,
+                accountId,
+            ]
+        );
+
+        return result.rows[0] ?? null;
+    },
+
+    async updateSalePaymentStatus(
+        client,
+        saleId,
+        accountId,
+        paymentStatus
+    ) {
+        const result = await client.query(
+            `
+        UPDATE sales
+        SET
+            payment_status = $3,
+            updated_at = NOW()
+        WHERE id = $1
+          AND account_id = $2
+        RETURNING *
+        `,
+            [
+                saleId,
+                accountId,
+                paymentStatus,
+            ]
+        );
+
+        return result.rows[0] ?? null;
+    },
+
     async getSales(
         client,
         {
@@ -718,14 +771,51 @@ const SaleRepository = {
             $4,
             NOW(),
             $5
-
         ON CONFLICT (
             account_id,
             branch_id,
             settlement_date
         )
         DO UPDATE SET
-            amount = sale_settlements.amount + EXCLUDED.amount,
+            amount =
+                sale_settlements.amount
+                + EXCLUDED.amount,
+
+            status =
+                CASE
+                    WHEN sale_settlements.status = 'received'
+                    THEN 'requested'
+                    ELSE sale_settlements.status
+                END,
+
+            requested_by_user_id =
+                CASE
+                    WHEN sale_settlements.status = 'received'
+                    THEN EXCLUDED.requested_by_user_id
+                    ELSE sale_settlements.requested_by_user_id
+                END,
+
+            requested_at =
+                CASE
+                    WHEN sale_settlements.status = 'received'
+                    THEN EXCLUDED.requested_at
+                    ELSE sale_settlements.requested_at
+                END,
+
+            received_by_user_id =
+                CASE
+                    WHEN sale_settlements.status = 'received'
+                    THEN NULL
+                    ELSE sale_settlements.received_by_user_id
+                END,
+
+            received_at =
+                CASE
+                    WHEN sale_settlements.status = 'received'
+                    THEN NULL
+                    ELSE sale_settlements.received_at
+                END,
+
             updated_at = NOW()
         RETURNING *
         `,
@@ -740,7 +830,6 @@ const SaleRepository = {
 
         return result.rows[0];
     },
-
     async getSettlementById(
         client,
         settlementId,

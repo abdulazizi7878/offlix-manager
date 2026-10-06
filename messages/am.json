@@ -852,38 +852,64 @@
                 "createError": "ሽያጩን መፍጠር አልተቻለም።"
             }
         },
-        "saleDetailPage": {
-            "title": "የሽያጭ መታወቂያ #{id}",
-            "backToSales": "ወደ ሽያጮች ተመለስ",
-            "notFound": "ሽያጩ አልተገኘም።",
-            "print": "አትም",
-            "branch": "ቅርንጫፍ",
-            "customer": "ደንበኛ",
-            "handledBy": "ያከናወነው (ሰራተኛ)",
-            "purchasedItems": "የተገዙ እቃዎች",
-            "product": "ምርት",
-            "quantity": "ብዛት",
-            "pricePerItem": "የአንዱ ዋጋ",
-            "lineTotal": "ጠቅላላ ዋጋ",
-            "saleTotalAmount": "ጠቅላላ የሽያጭ መጠን:",
-            "paymentBreakdown": "የክፍያ ዝርዝር",
-            "paymentStatus": "የክፍያ ሁኔታ:",
-            "paymentMethod": "የክፍያ መንገድ:",
-            "amountPaid": "የተከፈለ መጠን:",
-            "remainingBalance": "ቀሪ ዕዳ:",
-            "notes": "ማስታወሻዎች",
-            "walkInCustomer": "መደበኛ ደንበኛ",
-            "defaultProduct": "ምርት",
-            "birr": "ብር",
-            "status": {
-                "paid": "የተከፈለ",
-                "partial": "በከፊል የተከፈለ",
-                "credit": "በብድር"
+            "saleDetailPage": {
+                "title": "ሽያጭ #{id}",
+                "backToSales": "ወደ ሽያጮች ተመለስ",
+                "notFound": "ሽያጩ አልተገኘም።",
+                "print": "ሕትመት",
+                "branch": "ቅርንጫፍ",
+                "customer": "ደበኛ",
+                "handledBy": "ያከናወነው (ሰራተኛ)",
+                "purchasedItems": "የተገዙ እቃዎች",
+                "product": "እቃ / ምርት",
+                "quantity": "ብዛት",
+                "pricePerItem": "የአንዱ ዋጋ",
+                "lineTotal": "ጠቅላላ ዋጋ",
+                "saleTotalAmount": "የሽያጩ ጠቅላላ ድምር:",
+                "paymentBreakdown": "የክፍያ ዝርዝር",
+                "paymentStatus": "የክፍያ ሁኔታ:",
+                "paymentMethod": "የክፍያ መንገድ:",
+                "amountPaid": "የተከፈለው መጠን:",
+                "remainingBalance": "ቀሪ ሂሳብ:",
+                "notes": "ማስታወሻዎች",
+                "walkInCustomer": "ተራ ደበኛ",
+                "defaultProduct": "ምርት",
+                "birr": "ብር",
+                "receivePayment": "ክፍያ ተቀበል",
+                "status": {
+                    "paid": "ተከፍሏል",
+                    "partial": "በከፊል",
+                    "credit": "ብድር"
+                },
+                "messages": {
+                    "loadError": "የሽያጭ ዝርዝሮችን መጫን አልተቻለም።"
+                },
+                "paymentHistory": {
+                    "title": "የክፍያ ታሪክ",
+                    "empty": "እስካሁን የተመዘገበ ክፍያ የለም።",
+                    "date": "ቀን እና ሰዓት",
+                    "method": "የክፍያ መንገድ",
+                    "receivedBy": "ተቀባይ",
+                    "amount": "መጠን"
+                },
+                "paymentModal": {
+                    "title": "ክፍያ ተቀበል",
+                    "remainingBalance": "ቀሪ ሂሳብ:",
+                    "amountLabel": "የክፍያ መጠን",
+                    "methodLabel": "የክፍያ መንገድ",
+                    "cancel": "ሰርዝ",
+                    "submit": "ክፍያ መዝግብ",
+                    "methods": {
+                        "cash": "በጥሬ ገንዘብ",
+                        "bank": "በባንክ"
+                    },
+                    "errors": {
+                        "invalidAmount": "እባክዎን ትክክለኛ የክፍያ መጠን ያስገቡ።",
+                        "exceedsRemaining": "የክፍያው መጠን ከቀሪው ሂሳብ መበለጥ የለበትም።",
+                        "submitFailed": "ክፍያውን መመዝገብ አልተቻለም። እባክዎ እንደገና ይሞክሩ።"
+                    }
+                }
             },
-            "messages": {
-                "loadError": "የሽያጭ ዝርዝሮችን መጫን አልተቻለም።"
-            }
-        },
         "moneyOverviewPage": {
             "title": "የገንዘብ አስተዳደር",
             "subtitle": "የንግድ ድርጅቱ የገንዘብ ዝውውር፣ ሂሳቦች፣ ግብይቶች እና የካሽ ፍሰት አጠቃላይ እይታ።",

@@ -143,6 +143,18 @@ export const createSaleSchema = z
 export const saleIdSchema =
     z.string().uuid("Invalid sale ID.");
 
+export const addSalePaymentSchema = z.object({
+    amount: moneySchema,
+
+    paymentMethod: z.enum(
+        ["cash", "bank"],
+        {
+            message:
+                "Payment method must be cash or bank.",
+        }
+    ),
+});
+
 export const saleListQuerySchema = z.object({
     page: z.coerce
         .number()
