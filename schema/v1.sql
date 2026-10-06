@@ -745,6 +745,8 @@ CREATE TABLE sale_settlements (
 
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
 
+    settlement_date DATE NOT NULL,
+
     requested_by_user_id UUID
         REFERENCES users(id),
 

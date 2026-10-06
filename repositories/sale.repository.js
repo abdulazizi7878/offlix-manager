@@ -690,26 +690,45 @@ const SaleRepository = {
     ) {
         const result = await client.query(
             `
-            INSERT INTO sale_settlements (
-                account_id,
-                branch_id,
-                amount,
-                status,
-                requested_by_user_id,
-                requested_at,
-                notes
-            )
-            VALUES (
-                $1,
-                $2,
-                $3,
-                'requested',
-                $4,
-                NOW(),
-                $5
-            )
-            RETURNING *
-            `,
+        INSERT INTO sale_settlements (
+            account_id,
+            branch_id,
+            settlement_date,
+            amount,
+            status,
+            requested_by_user_id,
+            requested_at,
+            notes
+        )
+        SELECT
+            $1,
+            $2,
+            (
+                NOW() AT TIME ZONE COALESCE(
+                    (
+                        SELECT timezone
+                        FROM account_settings
+                        WHERE account_id = $1
+                    ),
+                    'Africa/Addis_Ababa'
+                )
+            )::date,
+            $3,
+            'requested',
+            $4,
+            NOW(),
+            $5
+
+        ON CONFLICT (
+            account_id,
+            branch_id,
+            settlement_date
+        )
+        DO UPDATE SET
+            amount = sale_settlements.amount + EXCLUDED.amount,
+            updated_at = NOW()
+        RETURNING *
+        `,
             [
                 accountId,
                 branchId,
