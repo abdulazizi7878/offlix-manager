@@ -788,17 +788,58 @@ const ProductService = {
             );
 
             /*
-             * This is intentionally a soft delete.
+             * Capture product photos before deleting the product.
+             *
+             * product_photos rows are deleted automatically by
+             * ON DELETE CASCADE, so we need their storage metadata
+             * before the database deletion.
              */
-
-            const deletedProduct =
-                await ProductRepository.updateProductStatus(
+            const photos =
+                await ProductRepository.getProductPhotos(
                     client,
-                    product.id,
-                    "inactive"
+                    product.id
                 );
 
+            const deletedProduct =
+                await ProductRepository.deleteProduct(
+                    client,
+                    product.id
+                );
+
+            if (!deletedProduct) {
+                throw new AppError(
+                    "Product could not be deleted.",
+                    400,
+                    "PRODUCT_DELETE_FAILED"
+                );
+            }
+
             await client.query("COMMIT");
+
+            /*
+             * Database deletion succeeded.
+             *
+             * Now remove the actual image objects from storage.
+             */
+            for (const photo of photos) {
+                try {
+                    await Storage.delete({
+                        provider: photo.provider,
+                        objectKey: photo.object_key,
+                    });
+                } catch (storageError) {
+                    console.error(
+                        "ProductService.deleteProduct storage cleanup:",
+                        {
+                            productId: product.id,
+                            photoId: photo.id,
+                            provider: photo.provider,
+                            objectKey: photo.object_key,
+                            error: storageError,
+                        }
+                    );
+                }
+            }
 
             return deletedProduct;
         } catch (error) {
@@ -829,7 +870,6 @@ const ProductService = {
             client.release();
         }
     },
-
     /*
      * ===============================================================
      * PRODUCT PHOTOS

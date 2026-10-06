@@ -686,26 +686,26 @@ CREATE TABLE sale_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
     sale_id UUID NOT NULL
-        REFERENCES sales(id) ON DELETE CASCADE,
+        REFERENCES sales(id)
+        ON DELETE CASCADE,
 
-    product_id UUID NOT NULL
-        REFERENCES products(id),
+    product_id UUID
+        REFERENCES products(id)
+        ON DELETE SET NULL,
 
     product_name VARCHAR(150) NOT NULL,
 
-    quantity INTEGER NOT NULL,
+    quantity INTEGER NOT NULL
+        CHECK (quantity > 0),
 
-    price_per_item NUMERIC(12,2) NOT NULL,
+    price_per_item NUMERIC(12,2) NOT NULL
+        CHECK (price_per_item >= 0),
 
-    total_amount NUMERIC(12,2) NOT NULL,
+    total_amount NUMERIC(12,2) NOT NULL
+        CHECK (total_amount >= 0),
 
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-
-    CHECK (quantity > 0),
-    CHECK (price_per_item >= 0),
-    CHECK (total_amount >= 0)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
 
 CREATE TABLE sale_payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

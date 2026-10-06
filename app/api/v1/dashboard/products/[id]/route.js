@@ -266,3 +266,37 @@ export const PATCH = withErrorHandling(
         });
     }
 );
+
+export const DELETE = withErrorHandling(
+    async (request, context) => {
+        const currentUser =
+            await getCurrentUser();
+
+        if (!currentUser) {
+            throw new AppError(
+                "Authentication required.",
+                401,
+                "UNAUTHORIZED"
+            );
+        }
+
+        const { user } = currentUser;
+
+        const { id } =
+            await context.params;
+
+        const productId =
+            productIdSchema.parse(id);
+
+        await ProductService.deleteProduct(
+            user.id,
+            user.accountId,
+            productId
+        );
+
+        return NextResponse.json({
+            success: true,
+            message: "Product deleted successfully.",
+        });
+    }
+);
