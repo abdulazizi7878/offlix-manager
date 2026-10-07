@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { SafeMath } from "@/lib/math/decimal";
 import SmartActionModals from "@/components/calculator/SmartActionModals";
 import {
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 export default function CalculatorPage() {
+    const t = useTranslations("calculator");
     const [input, setInput] = useState("");
     const [result, setResult] = useState("");
     const [history, setHistory] = useState([]);
@@ -37,7 +39,7 @@ export default function CalculatorPage() {
 
     // Hook trigger delay: Appears when user finishes typing
     useEffect(() => {
-        const targetVal = result || (input && !isNaN(input) ? input : "");
+        const targetVal = result || (input && !isNaN(Number(input)) ? input : "");
 
         if (!targetVal || targetVal === "Error") {
             setShowSmartHook(false);
@@ -47,7 +49,7 @@ export default function CalculatorPage() {
         const timer = setTimeout(() => {
             setHookAmount(targetVal);
             setShowSmartHook(true);
-        }, 500);
+        }, 1000);
 
         return () => clearTimeout(timer);
     }, [result, input]);
@@ -83,9 +85,9 @@ export default function CalculatorPage() {
                         <CalcIcon className="w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold tracking-tight">Smart Calculator</h1>
+                        <h1 className="text-xl font-bold tracking-tight">{t("title")}</h1>
                         <p className="text-xs text-(--muted-foreground)">
-                            Perform calculations & save outputs directly into your system
+                            {t("description")}
                         </p>
                     </div>
                 </div>
@@ -110,19 +112,21 @@ export default function CalculatorPage() {
                             <div className="absolute top-3 left-3 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="bg-(--primary) text-(--primary-foreground) rounded-full p-1.5 pl-3 pr-2.5 shadow-lg flex items-center gap-2 text-xs font-semibold">
                                     <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                                    <span>Save {hookAmount}?</span>
+                                    <span>{t("saveHook", { amount: hookAmount })}</span>
                                     <div className="flex gap-1 ml-1">
                                         <button
+                                            type="button"
                                             onClick={() => setActiveModal("INCOME")}
                                             className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-medium transition-colors cursor-pointer"
                                         >
-                                            Income
+                                            {t("income")}
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={() => setActiveModal("MORE")}
                                             className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-medium transition-colors cursor-pointer"
                                         >
-                                            More
+                                            {t("more")}
                                         </button>
                                     </div>
                                 </div>
@@ -140,6 +144,7 @@ export default function CalculatorPage() {
                                 return (
                                     <button
                                         key={btn}
+                                        type="button"
                                         onClick={() => handleKeyClick(btn)}
                                         className={`py-3.5 rounded-xl font-bold text-lg transition-transform active:scale-95 shadow-2xs cursor-pointer ${btn === "="
                                             ? "col-span-1 bg-(--primary) text-(--primary-foreground)"
@@ -165,14 +170,15 @@ export default function CalculatorPage() {
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2 text-sm font-bold">
                             <History className="w-4 h-4 text-(--muted-foreground)" />
-                            <span>Recent Computations</span>
+                            <span>{t("recentComputations")}</span>
                         </div>
                         {history.length > 0 && (
                             <button
+                                type="button"
                                 onClick={() => setHistory([])}
                                 className="text-xs text-(--muted-foreground) hover:text-(--foreground) transition-colors cursor-pointer"
                             >
-                                Clear
+                                {t("clear")}
                             </button>
                         )}
                     </div>
@@ -181,7 +187,7 @@ export default function CalculatorPage() {
                         {history.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center py-12 text-(--muted-foreground) text-xs">
                                 <RotateCcw className="w-8 h-8 mb-2 opacity-30" />
-                                No history recorded yet
+                                {t("noHistory")}
                             </div>
                         ) : (
                             history.map((item, idx) => (

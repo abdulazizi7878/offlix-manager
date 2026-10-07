@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
     X,
-    Check,
     Loader2,
     TrendingUp,
     TrendingDown,
@@ -14,6 +14,7 @@ import {
     Receipt,
     Plus,
     Trash2,
+    ArrowLeft,
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -25,20 +26,22 @@ export default function SmartActionModals({
     onSuccess,
     onSelectAction,
 }) {
+    const t = useTranslations("calculator.smartAction");
     const [loading, setLoading] = useState(false);
 
-    // Money accounts for basic financial actions
+    // Money accounts state
     const [accounts, setAccounts] = useState([]);
     const [isLoadingAccounts, setIsLoadingAccounts] = useState(false);
 
-    // Branch & Products state for REAL SALE action
+    // Branch & Products state
     const [branches, setBranches] = useState([]);
     const [products, setProducts] = useState([]);
     const [isLoadingBranches, setIsLoadingBranches] = useState(false);
     const [isProductsLoading, setIsProductsLoading] = useState(false);
 
-    // Form state for non-sale smart actions
+    // Form state for non-sale actions
     const [formData, setFormData] = useState({
+        amount: amount || "",
         moneyAccountId: "",
         description: "",
         partyName: "",
@@ -48,7 +51,7 @@ export default function SmartActionModals({
         toMoneyAccountId: "",
     });
 
-    // NORMAL SALE form state
+    // SALE form state
     const [branchId, setBranchId] = useState("");
     const [customerName, setCustomerName] = useState("");
     const [notes, setNotes] = useState("");
@@ -58,6 +61,13 @@ export default function SmartActionModals({
     const [saleItems, setSaleItems] = useState([
         { productId: "", quantity: 1, pricePerItem: 0 },
     ]);
+
+    // Keep amount synced if prop updates
+    useEffect(() => {
+        if (amount) {
+            setFormData((prev) => ({ ...prev, amount }));
+        }
+    }, [amount]);
 
     // Back to Quick Actions or Close
     const handleDismiss = () => {
@@ -91,15 +101,15 @@ export default function SmartActionModals({
                         toMoneyAccountId: accList[1]?.id || accList[0]?.id || "",
                     }));
                 }
-            } catch (err) {
-                toast.error("Failed to load money accounts");
+            } catch {
+                toast.error(t("toasts.loadAccountsFailed"));
             } finally {
                 setIsLoadingAccounts(false);
             }
         };
 
         loadAccounts();
-    }, [actionType]);
+    }, [actionType, t]);
 
     // Fetch branches when SALE action is selected
     useEffect(() => {
@@ -110,16 +120,20 @@ export default function SmartActionModals({
             try {
                 const res = await fetchApi("/api/v1/dashboard/available-branches?permission=sales.view");
                 const branchList = res.data?.branches || res.data || res || [];
-                setBranches(Array.isArray(branchList) ? branchList : []);
-            } catch (err) {
-                toast.error("Failed to load branches");
+                const arr = Array.isArray(branchList) ? branchList : [];
+                setBranches(arr);
+                if (arr.length > 0) {
+                    setBranchId(arr[0].id);
+                }
+            } catch {
+                toast.error(t("toasts.loadBranchesFailed"));
             } finally {
                 setIsLoadingBranches(false);
             }
         }
 
         loadBranches();
-    }, [actionType]);
+    }, [actionType, t]);
 
     // Fetch products whenever selected branchId changes in SALE mode
     useEffect(() => {
@@ -145,9 +159,9 @@ export default function SmartActionModals({
                 const productList = res.data?.products || res.data || res || [];
                 setProducts(Array.isArray(productList) ? productList : []);
             } catch (err) {
-                if (err.name === "AbortError") return;
+                if (err?.name === "AbortError") return;
                 if (isMounted) {
-                    toast.error("Failed to load products for selected branch");
+                    toast.error(t("toasts.loadProductsFailed"));
                     setProducts([]);
                 }
             } finally {
@@ -162,7 +176,7 @@ export default function SmartActionModals({
             isMounted = false;
             controller.abort();
         };
-    }, [branchId, actionType]);
+    }, [branchId, actionType, t]);
 
     if (!actionType) return null;
 
@@ -204,28 +218,29 @@ export default function SmartActionModals({
         const newItems = [...saleItems];
 
         if (field === "productId") {
-            const isDuplicate = newItems.some((item, i) => i !== index && item.productId === value);
-            if (isDuplicate && value !== "") {
-                toast.error("Product already selected in another row");
+            const strVal = value;
+            const isDuplicate = newItems.some((item, i) => i !== index && item.productId === strVal);
+            if (isDuplicate && strVal !== "") {
+                toast.error(t("toasts.productDuplicate"));
                 return;
             }
 
-            const selectedProduct = products.find((p) => p.id === value);
+            const selectedProduct = products.find((p) => p.id === strVal);
             if (!selectedProduct) {
                 newItems[index] = { productId: "", quantity: 1, pricePerItem: 0 };
                 setSaleItems(newItems);
                 return;
             }
 
-            const availableQty = getAvailableQuantityForRow(value, index);
+            const availableQty = getAvailableQuantityForRow(strVal, index);
             if (availableQty <= 0) {
-                toast.error("No stock available for this product in selected branch");
+                toast.error(t("toasts.noStock"));
                 return;
             }
 
             newItems[index] = {
                 ...newItems[index],
-                productId: value,
+                productId: strVal,
                 quantity: 1,
                 pricePerItem: getProductPrice(selectedProduct),
             };
@@ -241,7 +256,7 @@ export default function SmartActionModals({
                 const maxQty = getAvailableQuantityForRow(productId, index);
                 if (requestedQty > maxQty) {
                     newItems[index].quantity = maxQty;
-                    toast.error(`Only ${maxQty} unit(s) remaining in stock`);
+                    toast.error(t("toasts.remainingStock", { maxQty }));
                     setSaleItems(newItems);
                     return;
                 }
@@ -252,8 +267,11 @@ export default function SmartActionModals({
             return;
         }
 
-        newItems[index][field] = value;
-        setSaleItems(newItems);
+        if (field === "pricePerItem") {
+            newItems[index].pricePerItem = Number(value);
+            setSaleItems(newItems);
+            return;
+        }
     };
 
     const calculateSaleTotal = () => {
@@ -263,55 +281,185 @@ export default function SmartActionModals({
         );
     };
 
+    // Form Submissions
+    const handleSaleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!branchId) {
+            toast.error(t("toasts.selectBranch"));
+            return;
+        }
+
+        const validItems = saleItems.filter((i) => i.productId && i.quantity > 0);
+        if (validItems.length === 0) {
+            toast.error(t("toasts.selectProductQty"));
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const total = calculateSaleTotal();
+            const payload = {
+                branchId,
+                customerName: customerName || undefined,
+                notes: notes || undefined,
+                paymentType,
+                paymentMethod,
+                paidAmount: paymentType === "paid" ? total : Number(paidAmount || 0),
+                items: validItems.map((item) => ({
+                    productId: item.productId,
+                    quantity: Number(item.quantity),
+                    pricePerItem: Number(item.pricePerItem),
+                })),
+            };
+
+            await fetchApi("/api/v1/dashboard/sales", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+
+            toast.success(t("toasts.saleLogged"));
+            if (onSuccess) onSuccess(actionType);
+            onClose();
+        } catch (err) {
+            toast.error(err?.message || t("toasts.submitSaleFailed"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFinancialSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+
+        try {
+            let endpoint = "";
+            let payload = {};
+
+            switch (actionType) {
+                case "INCOME":
+                case "EXPENSE":
+                    endpoint = "/api/v1/dashboard/money/transactions";
+                    payload = {
+                        type: actionType,
+                        amount: Number(formData.amount),
+                        moneyAccountId: formData.moneyAccountId,
+                        description: formData.description || undefined,
+                    };
+                    break;
+
+                case "CUSTOMER_DEBT":
+                    endpoint = "/api/v1/dashboard/customer-debts";
+                    payload = {
+                        customerName: formData.partyName,
+                        amount: Number(formData.amount),
+                        direction: formData.direction,
+                        notes: formData.description || undefined,
+                        dueDate: formData.dueDate || undefined,
+                    };
+                    break;
+
+                case "PAYABLE":
+                    endpoint = "/api/v1/dashboard/payables";
+                    payload = {
+                        supplierName: formData.partyName,
+                        amount: Number(formData.amount),
+                        notes: formData.description || undefined,
+                        dueDate: formData.dueDate || undefined,
+                    };
+                    break;
+
+                case "SUPPLIER_PAYMENT":
+                    endpoint = "/api/v1/dashboard/money/transactions";
+                    payload = {
+                        type: "EXPENSE",
+                        amount: Number(formData.amount),
+                        moneyAccountId: formData.moneyAccountId,
+                        description: t("supplierPaymentPrefix", {
+                            partyName: formData.partyName,
+                            description: formData.description || "",
+                        }).trim(),
+                    };
+                    break;
+
+                case "TRANSFER":
+                    endpoint = "/api/v1/dashboard/money/transfers";
+                    payload = {
+                        fromMoneyAccountId: formData.fromMoneyAccountId,
+                        toMoneyAccountId: formData.toMoneyAccountId,
+                        amount: Number(formData.amount),
+                        notes: formData.description || undefined,
+                    };
+                    break;
+
+                default:
+                    throw new Error(t("toasts.invalidAction"));
+            }
+
+            await fetchApi(endpoint, {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+
+            toast.success(t("toasts.actionRecorded"));
+            if (onSuccess) onSuccess(actionType);
+            onClose();
+        } catch (err) {
+            toast.error(err?.message || t("toasts.transactionFailed"));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // 1. "MORE" ACTIONS SELECTOR MODAL
     if (actionType === "MORE") {
         const actions = [
             {
                 id: "SALE",
-                label: "Quick Sale Entry",
-                desc: "Record actual sale with branch stock deduction",
+                label: t("actions.saleTitle"),
+                desc: t("actions.saleDesc"),
                 icon: ShoppingBag,
                 color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
             },
             {
                 id: "INCOME",
-                label: "Save as Income",
-                desc: "Record direct income into account",
+                label: t("actions.incomeTitle"),
+                desc: t("actions.incomeDesc"),
                 icon: TrendingUp,
                 color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
             },
             {
                 id: "EXPENSE",
-                label: "Save as Expense",
-                desc: "Record payout or operational expense",
+                label: t("actions.expenseTitle"),
+                desc: t("actions.expenseDesc"),
                 icon: TrendingDown,
                 color: "text-rose-500 bg-rose-500/10 border-rose-500/20",
             },
             {
                 id: "CUSTOMER_DEBT",
-                label: "Customer Credit / Debt",
-                desc: "Log credit given (out) or income collected (in)",
+                label: t("actions.customerDebtTitle"),
+                desc: t("actions.customerDebtDesc"),
                 icon: UserCheck,
                 color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
             },
             {
                 id: "PAYABLE",
-                label: "Add Payable",
-                desc: "Create supplier bill / debt payable record",
+                label: t("actions.payableTitle"),
+                desc: t("actions.payableDesc"),
                 icon: Receipt,
                 color: "text-orange-500 bg-orange-500/10 border-orange-500/20",
             },
             {
                 id: "SUPPLIER_PAYMENT",
-                label: "Supplier Bill Payment",
-                desc: "Record payment made directly to supplier",
+                label: t("actions.supplierPaymentTitle"),
+                desc: t("actions.supplierPaymentDesc"),
                 icon: Truck,
                 color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
             },
             {
                 id: "TRANSFER",
-                label: "Account Transfer",
-                desc: "Move funds between internal money accounts",
+                label: t("actions.transferTitle"),
+                desc: t("actions.transferDesc"),
                 icon: ArrowRightLeft,
                 color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20",
             },
@@ -319,39 +467,43 @@ export default function SmartActionModals({
 
         return (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-                <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-lg p-6 shadow-2xl relative text-(--foreground) max-h-[90vh] flex flex-col">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 text-(--muted-foreground) hover:text-(--foreground) p-1 rounded-lg transition-colors cursor-pointer"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                <div className="bg-(--card) border border-(--border) rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg font-bold">{t("selectTitle")}</h2>
+                            <p className="text-xs text-(--muted-foreground)">
+                                {t("selectSubtitle", { amount })}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="p-1.5 rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors cursor-pointer"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
 
-                    <h3 className="text-lg font-bold mb-1">Select Smart Action</h3>
-                    <p className="text-xs text-(--muted-foreground) mb-4">
-                        Choose how to process <span className="font-mono font-bold text-(--foreground)">{amount}</span>
-                    </p>
-
-                    {/* Hidden Scrollbar Container */}
-                    <div className="space-y-2 overflow-y-auto flex-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[60vh] overflow-y-auto pr-1">
                         {actions.map((act) => {
                             const Icon = act.icon;
                             return (
                                 <button
                                     key={act.id}
-                                    onClick={() => onSelectAction(act.id)}
-                                    className="w-full p-3 rounded-xl border border-(--border) hover:bg-(--muted)/60 flex items-center gap-3.5 transition-colors text-left cursor-pointer group"
+                                    type="button"
+                                    onClick={() => onSelectAction && onSelectAction(act.id)}
+                                    className="flex items-start gap-3 p-3.5 rounded-xl border border-(--border) hover:border-(--primary)/50 bg-(--background) hover:bg-(--muted)/30 text-left transition-all group cursor-pointer"
                                 >
                                     <div className={`p-2.5 rounded-xl border ${act.color} shrink-0`}>
                                         <Icon className="w-5 h-5" />
                                     </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-bold group-hover:text-(--primary) transition-colors">
+                                    <div className="min-w-0">
+                                        <div className="text-xs font-bold text-(--foreground) group-hover:text-(--primary) transition-colors truncate">
                                             {act.label}
-                                        </p>
-                                        <p className="text-xs text-(--muted-foreground) truncate">
+                                        </div>
+                                        <div className="text-[11px] text-(--muted-foreground) line-clamp-2 mt-0.5">
                                             {act.desc}
-                                        </p>
+                                        </div>
                                     </div>
                                 </button>
                             );
@@ -362,640 +514,374 @@ export default function SmartActionModals({
         );
     }
 
-    // 2. SUBMIT HANDLER FOR ALL MODALS
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
-        try {
-            let endpoint = "";
-            let payload = {};
-
-            if (actionType === "SALE") {
-                if (!branchId) {
-                    toast.error("Please select a branch for the sale");
-                    setLoading(false);
-                    return;
-                }
-
-                if (saleItems.length === 0 || !saleItems[0].productId) {
-                    toast.error("Please add at least one product item");
-                    setLoading(false);
-                    return;
-                }
-
-                const calculatedTotal = calculateSaleTotal();
-                let finalPaidAmount = 0;
-
-                if (paymentType === "paid") {
-                    finalPaidAmount = calculatedTotal;
-                } else if (paymentType === "partial") {
-                    finalPaidAmount = Number(paidAmount || 0);
-                    if (!finalPaidAmount || finalPaidAmount <= 0) {
-                        toast.error("Please enter a valid partial paid amount");
-                        setLoading(false);
-                        return;
-                    }
-                    if (finalPaidAmount >= calculatedTotal) {
-                        toast.error("Partial amount must be less than total sale amount");
-                        setLoading(false);
-                        return;
-                    }
-                }
-
-                endpoint = "/api/v1/dashboard/sales";
-                payload = {
-                    branchId,
-                    customerName: customerName.trim() || undefined,
-                    notes: notes.trim() || undefined,
-                    paymentType,
-                    paymentMethod: paymentType === "credit" ? undefined : paymentMethod,
-                    paidAmount: finalPaidAmount,
-                    items: saleItems.map((item) => ({
-                        productId: item.productId,
-                        quantity: Number(item.quantity),
-                        pricePerItem: Number(item.pricePerItem),
-                    })),
-                };
-            } else if (actionType === "INCOME") {
-                if (!formData.moneyAccountId) {
-                    toast.error("Please select a money account");
-                    setLoading(false);
-                    return;
-                }
-                endpoint = "/api/v1/dashboard/money/transactions";
-                payload = {
-                    moneyAccountId: formData.moneyAccountId,
-                    type: "income",
-                    direction: "in",
-                    amount: Number(amount),
-                    description: formData.description.trim() || "Calculator Income Entry",
-                };
-            } else if (actionType === "EXPENSE") {
-                if (!formData.moneyAccountId) {
-                    toast.error("Please select a money account");
-                    setLoading(false);
-                    return;
-                }
-                endpoint = "/api/v1/dashboard/money/transactions";
-                payload = {
-                    moneyAccountId: formData.moneyAccountId,
-                    type: "expense",
-                    direction: "out",
-                    amount: Number(amount),
-                    description: formData.description.trim() || "Calculator Expense Entry",
-                };
-            } else if (actionType === "SUPPLIER_PAYMENT") {
-                if (!formData.moneyAccountId) {
-                    toast.error("Please select a money account");
-                    setLoading(false);
-                    return;
-                }
-                endpoint = "/api/v1/dashboard/money/transactions";
-                payload = {
-                    moneyAccountId: formData.moneyAccountId,
-                    type: "expense",
-                    direction: "out",
-                    amount: Number(amount),
-                    description: formData.partyName
-                        ? `Supplier Payment - ${formData.partyName}`
-                        : formData.description.trim() || "Calculator Supplier Payment",
-                };
-            } else if (actionType === "CUSTOMER_DEBT") {
-                if (!formData.partyName.trim()) {
-                    toast.error("Customer name is required");
-                    setLoading(false);
-                    return;
-                }
-                if (!formData.moneyAccountId) {
-                    toast.error("Please select a money account");
-                    setLoading(false);
-                    return;
-                }
-                endpoint = "/api/v1/dashboard/money/credits";
-                payload = {
-                    name: formData.partyName.trim(),
-                    moneyAccountId: formData.moneyAccountId,
-                    direction: formData.direction,
-                    amount: Number(amount),
-                    dueDate: formData.dueDate || null,
-                    description: formData.description.trim() || null,
-                };
-            } else if (actionType === "PAYABLE") {
-                if (!formData.partyName.trim()) {
-                    toast.error("Supplier name is required");
-                    setLoading(false);
-                    return;
-                }
-                endpoint = "/api/v1/dashboard/money/payables";
-                payload = {
-                    name: formData.partyName.trim(),
-                    amount: Number(amount),
-                    dueDate: formData.dueDate || null,
-                    description: formData.description.trim() || null,
-                };
-            } else if (actionType === "TRANSFER") {
-                if (!formData.fromMoneyAccountId || !formData.toMoneyAccountId) {
-                    toast.error("Please select both source and destination accounts");
-                    setLoading(false);
-                    return;
-                }
-                if (formData.fromMoneyAccountId === formData.toMoneyAccountId) {
-                    toast.error("Source and destination accounts must be different");
-                    setLoading(false);
-                    return;
-                }
-                endpoint = "/api/v1/dashboard/money/transfers";
-                payload = {
-                    fromMoneyAccountId: formData.fromMoneyAccountId,
-                    toMoneyAccountId: formData.toMoneyAccountId,
-                    amount: Number(amount),
-                    notes: formData.description.trim() || "Calculator Transfer",
-                };
-            }
-
-            await fetchApi(endpoint, {
-                method: "POST",
-                body: JSON.stringify(payload),
-            });
-
-            toast.success(actionType === "SALE" ? "Sale completed successfully!" : "Record created successfully!");
-            onSuccess?.(actionType);
-            onClose();
-        } catch (err) {
-            toast.error(err.message || "Failed to process transaction");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const getTitle = () => {
+    // Modal Title generator
+    const getModalTitle = () => {
         switch (actionType) {
-            case "SALE": return "Create Branch Sale";
-            case "INCOME": return "Record Income";
-            case "EXPENSE": return "Record Expense";
-            case "CUSTOMER_DEBT": return "Customer Credit / Debt";
-            case "PAYABLE": return "Add Payable";
-            case "SUPPLIER_PAYMENT": return "Supplier Bill Payment";
-            case "TRANSFER": return "Account Transfer";
-            default: return "Smart Action";
+            case "SALE": return t("modalTitles.sale");
+            case "INCOME": return t("modalTitles.income");
+            case "EXPENSE": return t("modalTitles.expense");
+            case "CUSTOMER_DEBT": return t("modalTitles.customerDebt");
+            case "PAYABLE": return t("modalTitles.payable");
+            case "SUPPLIER_PAYMENT": return t("modalTitles.supplierPayment");
+            case "TRANSFER": return t("modalTitles.transfer");
+            default: return t("modalTitles.default");
         }
     };
 
     return (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-xl p-6 shadow-2xl relative text-(--foreground) max-h-[90vh] flex flex-col">
-                <button
-                    onClick={handleDismiss}
-                    className="absolute top-4 right-4 text-(--muted-foreground) hover:text-(--foreground) p-1 rounded-lg transition-colors cursor-pointer"
-                >
-                    <X className="w-5 h-5" />
-                </button>
+            <div className="bg-(--card) border border-(--border) rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={handleDismiss}
+                            className="p-1 rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors cursor-pointer"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                        </button>
+                        <div>
+                            <h2 className="text-lg font-bold">{getModalTitle()}</h2>
+                            <p className="text-xs text-(--muted-foreground)">
+                                {t("targetAmount")}: <span className="font-mono font-bold text-(--foreground)">{amount}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1.5 rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors cursor-pointer"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                <h3 className="text-lg font-bold mb-1">{getTitle()}</h3>
-                {amount && (
-                    <p className="text-xs text-(--muted-foreground) mb-4">
-                        Calculator Reference: <span className="font-mono font-bold text-(--foreground)">{amount} ETB</span>
-                    </p>
-                )}
-
-                {/* Main Form Body with scrollbar hidden */}
-                <form
-                    onSubmit={handleSubmit}
-                    className="space-y-3.5 overflow-y-auto flex-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                >
-                    {/* --- SALE FORM --- */}
-                    {actionType === "SALE" && (
-                        <>
+                {/* Form Content */}
+                <div className="flex-1 overflow-y-auto pr-1">
+                    {actionType === "SALE" ? (
+                        <form id="smart-action-form" onSubmit={handleSaleSubmit} className="space-y-4">
+                            {/* Branch Selection */}
                             <div>
-                                <label className="block text-xs font-semibold mb-1">Target Branch *</label>
-                                <select
-                                    value={branchId}
-                                    onChange={(e) => setBranchId(e.target.value)}
-                                    required
-                                    disabled={isLoadingBranches}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs font-medium focus:outline-hidden focus:ring-1 focus:ring-(--primary)"
-                                >
-                                    <option value="">Select Branch...</option>
-                                    {branches.map((b) => (
-                                        <option key={b.id} value={b.id}>
-                                            {b.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <label className="block text-xs font-semibold mb-1">{t("fields.branch")}</label>
+                                {isLoadingBranches ? (
+                                    <div className="flex items-center gap-2 text-xs text-(--muted-foreground) py-2">
+                                        <Loader2 className="w-4 h-4 animate-spin" /> {t("fields.loadingBranches")}
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={branchId}
+                                        onChange={(e) => setBranchId(e.target.value)}
+                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:border-(--primary)"
+                                        required
+                                    >
+                                        <option value="">{t("fields.selectBranch")}</option>
+                                        {branches.map((b) => (
+                                            <option key={b.id} value={b.id}>
+                                                {b.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
 
+                            {/* Customer Name */}
                             <div>
-                                <label className="block text-xs font-semibold mb-1">Customer Name (Optional)</label>
+                                <label className="block text-xs font-semibold mb-1">{t("fields.customerNameOptional")}</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g. Walk-in Customer"
+                                    placeholder={t("fields.walkInCustomer")}
                                     value={customerName}
                                     onChange={(e) => setCustomerName(e.target.value)}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden focus:ring-1 focus:ring-(--primary)"
+                                    className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:border-(--primary)"
                                 />
                             </div>
 
-                            <div className="space-y-2 pt-1 border-t border-(--border)">
+                            {/* Sale Items Table/List */}
+                            <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-xs font-bold text-(--muted-foreground) uppercase tracking-wider">
-                                        Sale Products
-                                    </label>
+                                    <label className="block text-xs font-semibold">{t("fields.saleItems")}</label>
                                     <button
                                         type="button"
                                         onClick={handleAddSaleItem}
                                         disabled={!branchId || isProductsLoading}
-                                        className="text-xs font-semibold text-(--primary) hover:underline flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                                        className="text-xs flex items-center gap-1 text-(--primary) hover:underline disabled:opacity-50 cursor-pointer"
                                     >
-                                        <Plus className="w-3.5 h-3.5" /> Add Product
+                                        <Plus className="w-3.5 h-3.5" /> {t("fields.addItem")}
                                     </button>
                                 </div>
 
-                                {!branchId ? (
-                                    <div className="p-3 bg-(--muted)/40 rounded-xl border border-(--border) text-center text-xs text-(--muted-foreground)">
-                                        Select a branch first to load available inventory
-                                    </div>
-                                ) : isProductsLoading ? (
-                                    <div className="p-4 flex justify-center items-center gap-2 text-xs text-(--muted-foreground)">
-                                        <Loader2 className="w-4 h-4 animate-spin" /> Loading branch stock...
+                                {isProductsLoading ? (
+                                    <div className="flex items-center gap-2 text-xs text-(--muted-foreground) py-4 justify-center">
+                                        <Loader2 className="w-4 h-4 animate-spin" /> {t("fields.loadingProducts")}
                                     </div>
                                 ) : (
-                                    saleItems.map((item, idx) => {
-                                        const availableStock = item.productId ? getProductStock(item.productId) : 0;
-                                        const lineTotal = Number(item.quantity || 0) * Number(item.pricePerItem || 0);
-
-                                        return (
-                                            <div key={idx} className="p-3 border border-(--border) rounded-xl space-y-2 bg-(--muted)/10">
-                                                <div className="flex gap-2 items-center">
-                                                    <select
-                                                        value={item.productId}
-                                                        onChange={(e) => handleSaleItemChange(idx, "productId", e.target.value)}
-                                                        required
-                                                        className="flex-1 px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                                    >
-                                                        <option value="">Select Product...</option>
-                                                        {products.map((p) => (
-                                                            <option key={p.id} value={p.id} disabled={Number(p.stock) <= 0}>
-                                                                {p.name} ({getProductPrice(p)} ETB, Stock: {p.stock})
-                                                            </option>
-                                                        ))}
-                                                    </select>
-
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        placeholder="Qty"
-                                                        value={item.quantity}
-                                                        onChange={(e) => handleSaleItemChange(idx, "quantity", e.target.value)}
-                                                        required
-                                                        disabled={!item.productId}
-                                                        className="w-16 px-2 py-2 bg-(--background) border border-(--border) rounded-xl text-xs text-center focus:outline-hidden"
-                                                    />
-
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        placeholder="Price"
-                                                        value={item.pricePerItem}
-                                                        onChange={(e) => handleSaleItemChange(idx, "pricePerItem", e.target.value)}
-                                                        required
-                                                        disabled={!item.productId}
-                                                        className="w-24 px-2 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden font-mono"
-                                                    />
-
-                                                    {saleItems.length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveSaleItem(idx)}
-                                                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {item.productId && (
-                                                    <div className="flex justify-between items-center text-[11px] text-(--muted-foreground) px-1">
-                                                        <span>In stock: <strong className="text-(--foreground)">{availableStock}</strong></span>
-                                                        <span>Line Total: <strong className="font-mono text-(--primary)">{lineTotal.toLocaleString()} ETB</strong></span>
-                                                    </div>
-                                                )}
+                                    saleItems.map((item, idx) => (
+                                        <div key={idx} className="flex gap-2 items-center bg-(--background) p-2.5 rounded-xl border border-(--border)">
+                                            <div className="flex-1 min-w-0">
+                                                <select
+                                                    value={item.productId}
+                                                    onChange={(e) => handleSaleItemChange(idx, "productId", e.target.value)}
+                                                    className="w-full bg-transparent text-xs font-medium focus:outline-hidden"
+                                                    required
+                                                >
+                                                    <option value="">{t("fields.selectProduct")}</option>
+                                                    {products.map((p) => (
+                                                        <option key={p.id} value={p.id}>
+                                                            {p.name} ({t("fields.stock", { stock: p.stock ?? 0 })})
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
-                                        );
-                                    })
+
+                                            <div className="w-16">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) => handleSaleItemChange(idx, "quantity", e.target.value)}
+                                                    className="w-full bg-(--card) border border-(--border) rounded-lg px-2 py-1 text-xs text-center font-mono"
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="w-24">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={item.pricePerItem}
+                                                    onChange={(e) => handleSaleItemChange(idx, "pricePerItem", e.target.value)}
+                                                    className="w-full bg-(--card) border border-(--border) rounded-lg px-2 py-1 text-xs text-right font-mono"
+                                                    required
+                                                />
+                                            </div>
+
+                                            {saleItems.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveSaleItem(idx)}
+                                                    className="p-1 text-rose-500 hover:bg-rose-500/10 rounded-lg cursor-pointer"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))
                                 )}
 
-                                <div className="p-3 bg-(--muted)/30 rounded-xl flex items-center justify-between font-bold text-xs">
-                                    <span>Total Sale Amount:</span>
-                                    <span className="text-sm font-mono text-(--primary)">{calculateSaleTotal().toLocaleString()} ETB</span>
+                                <div className="flex justify-between items-center pt-2 font-bold text-sm border-t border-(--border)">
+                                    <span>{t("fields.calculatedTotal")}</span>
+                                    <span className="font-mono text-base">{calculateSaleTotal()}</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 pt-1 border-t border-(--border)">
+                            {/* Payment Options */}
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-semibold mb-1">Payment Status</label>
+                                    <label className="block text-xs font-semibold mb-1">{t("fields.paymentStatus")}</label>
                                     <select
                                         value={paymentType}
                                         onChange={(e) => setPaymentType(e.target.value)}
-                                        className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
+                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
                                     >
-                                        <option value="paid">Fully Paid</option>
-                                        <option value="partial">Partial Payment</option>
-                                        <option value="credit">On Credit</option>
+                                        <option value="paid">{t("fields.fullyPaid")}</option>
+                                        <option value="partial">{t("fields.partialPayment")}</option>
+                                        <option value="credit">{t("fields.onCredit")}</option>
                                     </select>
                                 </div>
-
-                                {paymentType !== "credit" && (
-                                    <div>
-                                        <label className="block text-xs font-semibold mb-1">Payment Method</label>
-                                        <select
-                                            value={paymentMethod}
-                                            onChange={(e) => setPaymentMethod(e.target.value)}
-                                            className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                        >
-                                            <option value="cash">Cash</option>
-                                            <option value="bank">Bank Transfer</option>
-                                        </select>
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="block text-xs font-semibold mb-1">{t("fields.method")}</label>
+                                    <select
+                                        value={paymentMethod}
+                                        onChange={(e) => setPaymentMethod(e.target.value)}
+                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
+                                    >
+                                        <option value="cash">{t("fields.cash")}</option>
+                                        <option value="bank">{t("fields.bankDigital")}</option>
+                                    </select>
+                                </div>
                             </div>
 
                             {paymentType === "partial" && (
                                 <div>
-                                    <label className="block text-xs font-semibold mb-1">Paid Amount (ETB)</label>
+                                    <label className="block text-xs font-semibold mb-1">{t("fields.amountPaidNow")}</label>
                                     <input
                                         type="number"
                                         step="0.01"
-                                        placeholder="Enter amount paid now"
                                         value={paidAmount}
                                         onChange={(e) => setPaidAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm font-mono"
                                         required
-                                        className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden font-mono"
                                     />
                                 </div>
                             )}
 
+                            {/* Notes */}
                             <div>
-                                <label className="block text-xs font-semibold mb-1">Sale Notes / Remarks</label>
-                                <input
-                                    type="text"
-                                    placeholder="Add optional internal note..."
+                                <label className="block text-xs font-semibold mb-1">{t("fields.notesRef")}</label>
+                                <textarea
+                                    rows={2}
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
+                                    placeholder={t("fields.notesPlaceholder")}
+                                    className="w-full bg-(--background) border border-(--border) rounded-xl p-3 text-sm focus:outline-hidden focus:border-(--primary)"
                                 />
                             </div>
-                        </>
-                    )}
-
-                    {/* --- TRANSFER MODAL --- */}
-                    {actionType === "TRANSFER" && (
-                        <>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-semibold mb-1">From Account *</label>
-                                    <select
-                                        value={formData.fromMoneyAccountId}
-                                        onChange={(e) => setFormData({ ...formData, fromMoneyAccountId: e.target.value })}
-                                        required
-                                        className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                    >
-                                        {accounts.map((acc) => (
-                                            <option key={acc.id} value={acc.id}>
-                                                {acc.name} ({acc.type})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-semibold mb-1">To Account *</label>
-                                    <select
-                                        value={formData.toMoneyAccountId}
-                                        onChange={(e) => setFormData({ ...formData, toMoneyAccountId: e.target.value })}
-                                        required
-                                        className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                    >
-                                        {accounts.map((acc) => (
-                                            <option key={acc.id} value={acc.id}>
-                                                {acc.name} ({acc.type})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
+                        </form>
+                    ) : (
+                        /* NON-SALE FINANCIAL FORM (INCOME, EXPENSE, DEBTS, PAYABLE, TRANSFER) */
+                        <form id="smart-action-form" onSubmit={handleFinancialSubmit} className="space-y-4">
+                            {/* Amount Field */}
                             <div>
-                                <label className="block text-xs font-semibold mb-1">Transfer Notes / Reason</label>
+                                <label className="block text-xs font-semibold mb-1">{t("fields.transactionAmount")}</label>
                                 <input
-                                    type="text"
-                                    placeholder="Optional transfer notes..."
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    {/* --- CUSTOMER DEBT MODAL --- */}
-                    {actionType === "CUSTOMER_DEBT" && (
-                        <>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Customer Name *</label>
-                                <input
-                                    type="text"
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.amount}
+                                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                                    className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-base font-bold font-mono focus:outline-hidden focus:border-(--primary)"
                                     required
-                                    placeholder="e.g. Abebe Kebede"
-                                    value={formData.partyName}
-                                    onChange={(e) => setFormData({ ...formData, partyName: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+
+                            {/* Money Account pickers */}
+                            {actionType === "TRANSFER" ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs font-semibold mb-1">{t("fields.fromAccount")}</label>
+                                        <select
+                                            value={formData.fromMoneyAccountId}
+                                            onChange={(e) => setFormData({ ...formData, fromMoneyAccountId: e.target.value })}
+                                            className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
+                                            required
+                                        >
+                                            {accounts.map((acc) => (
+                                                <option key={acc.id} value={acc.id}>
+                                                    {acc.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold mb-1">{t("fields.toAccount")}</label>
+                                        <select
+                                            value={formData.toMoneyAccountId}
+                                            onChange={(e) => setFormData({ ...formData, toMoneyAccountId: e.target.value })}
+                                            className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
+                                            required
+                                        >
+                                            {accounts.map((acc) => (
+                                                <option key={acc.id} value={acc.id}>
+                                                    {acc.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            ) : actionType === "INCOME" || actionType === "EXPENSE" || actionType === "SUPPLIER_PAYMENT" ? (
                                 <div>
-                                    <label className="block text-xs font-semibold mb-1">Direction</label>
+                                    <label className="block text-xs font-semibold mb-1">{t("fields.account")}</label>
+                                    {isLoadingAccounts ? (
+                                        <div className="flex items-center gap-2 text-xs text-(--muted-foreground) py-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" /> {t("fields.loadingAccounts")}
+                                        </div>
+                                    ) : (
+                                        <select
+                                            value={formData.moneyAccountId}
+                                            onChange={(e) => setFormData({ ...formData, moneyAccountId: e.target.value })}
+                                            className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
+                                            required
+                                        >
+                                            {accounts.map((acc) => (
+                                                <option key={acc.id} value={acc.id}>
+                                                    {acc.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
+                            ) : null}
+
+                            {/* Party Name for Debts/Payables/Suppliers */}
+                            {(actionType === "CUSTOMER_DEBT" || actionType === "PAYABLE" || actionType === "SUPPLIER_PAYMENT") && (
+                                <div>
+                                    <label className="block text-xs font-semibold mb-1">
+                                        {actionType === "CUSTOMER_DEBT" ? t("fields.customerNameOnly") : t("fields.supplierName")}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.partyName}
+                                        onChange={(e) => setFormData({ ...formData, partyName: e.target.value })}
+                                        placeholder={t("fields.enterName")}
+                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
+                                        required
+                                    />
+                                </div>
+                            )}
+
+                            {/* Direction toggle for Customer Debt */}
+                            {actionType === "CUSTOMER_DEBT" && (
+                                <div>
+                                    <label className="block text-xs font-semibold mb-1">{t("fields.debtType")}</label>
                                     <select
                                         value={formData.direction}
                                         onChange={(e) => setFormData({ ...formData, direction: e.target.value })}
-                                        className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
+                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
                                     >
-                                        <option value="out">Given Credit (Out)</option>
-                                        <option value="in">Collected Payment (In)</option>
+                                        <option value="out">{t("fields.creditGiven")}</option>
+                                        <option value="in">{t("fields.debtCollected")}</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-semibold mb-1">Money Account *</label>
-                                    <select
-                                        value={formData.moneyAccountId}
-                                        onChange={(e) => setFormData({ ...formData, moneyAccountId: e.target.value })}
-                                        required
-                                        className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                    >
-                                        {accounts.map((acc) => (
-                                            <option key={acc.id} value={acc.id}>
-                                                {acc.name} ({acc.type})
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Due Date (Optional)</label>
-                                <input
-                                    type="date"
-                                    value={formData.dueDate}
-                                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Description / Note</label>
-                                <input
-                                    type="text"
-                                    placeholder="Add optional notes..."
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    {/* --- PAYABLE MODAL --- */}
-                    {actionType === "PAYABLE" && (
-                        <>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Supplier / Creditor Name *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="e.g. Wholesale Supplier LLC"
-                                    value={formData.partyName}
-                                    onChange={(e) => setFormData({ ...formData, partyName: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Due Date (Optional)</label>
-                                <input
-                                    type="date"
-                                    value={formData.dueDate}
-                                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Description / Note</label>
-                                <input
-                                    type="text"
-                                    placeholder="Bill details or note..."
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    {/* --- SUPPLIER PAYMENT MODAL --- */}
-                    {actionType === "SUPPLIER_PAYMENT" && (
-                        <>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Supplier Name (Optional)</label>
-                                <input
-                                    type="text"
-                                    placeholder="e.g. Kebede Wholesale"
-                                    value={formData.partyName}
-                                    onChange={(e) => setFormData({ ...formData, partyName: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Paid From Account *</label>
-                                <select
-                                    value={formData.moneyAccountId}
-                                    onChange={(e) => setFormData({ ...formData, moneyAccountId: e.target.value })}
-                                    required
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                >
-                                    {accounts.map((acc) => (
-                                        <option key={acc.id} value={acc.id}>
-                                            {acc.name} ({acc.type})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Description / Note</label>
-                                <input
-                                    type="text"
-                                    placeholder="Add optional notes..."
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    {/* --- INCOME / EXPENSE MODALS --- */}
-                    {(actionType === "INCOME" || actionType === "EXPENSE") && (
-                        <>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Target Money Account *</label>
-                                <select
-                                    value={formData.moneyAccountId}
-                                    onChange={(e) => setFormData({ ...formData, moneyAccountId: e.target.value })}
-                                    required
-                                    disabled={isLoadingAccounts}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs font-medium focus:outline-hidden"
-                                >
-                                    {isLoadingAccounts ? (
-                                        <option value="">Loading accounts...</option>
-                                    ) : (
-                                        accounts.map((acc) => (
-                                            <option key={acc.id} value={acc.id}>
-                                                {acc.name} ({acc.type})
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold mb-1">Description / Note</label>
-                                <input
-                                    type="text"
-                                    placeholder="Add optional notes..."
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full px-3 py-2 bg-(--background) border border-(--border) rounded-xl text-xs focus:outline-hidden"
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    <div className="pt-3 flex gap-3 border-t border-(--border)">
-                        <button
-                            type="button"
-                            onClick={handleDismiss}
-                            className="flex-1 py-2.5 rounded-xl border border-(--border) hover:bg-(--muted) text-xs font-semibold transition-colors cursor-pointer"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading || (actionType === "SALE" && !branchId)}
-                            className="flex-1 py-2.5 rounded-xl bg-(--primary) text-(--primary-foreground) font-semibold text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50"
-                        >
-                            {loading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <>
-                                    <Check className="w-4 h-4" /> {actionType === "SALE" ? "Complete Sale" : "Save Record"}
-                                </>
                             )}
-                        </button>
-                    </div>
-                </form>
+
+                            {/* Due Date for Debts/Payables */}
+                            {(actionType === "CUSTOMER_DEBT" || actionType === "PAYABLE") && (
+                                <div>
+                                    <label className="block text-xs font-semibold mb-1">{t("fields.dueDateOptional")}</label>
+                                    <input
+                                        type="date"
+                                        value={formData.dueDate}
+                                        onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Description / Notes */}
+                            <div>
+                                <label className="block text-xs font-semibold mb-1">{t("fields.descriptionNotes")}</label>
+                                <textarea
+                                    rows={2}
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    placeholder={t("fields.descriptionPlaceholder")}
+                                    className="w-full bg-(--background) border border-(--border) rounded-xl p-3 text-sm focus:outline-hidden focus:border-(--primary)"
+                                />
+                            </div>
+                        </form>
+                    )}
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex justify-end gap-2 shrink-0 pt-3 border-t border-(--border)">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-xl text-xs font-semibold text-(--muted-foreground) hover:bg-(--muted) transition-colors cursor-pointer"
+                    >
+                        {t("cancel")}
+                    </button>
+                    <button
+                        type="submit"
+                        form="smart-action-form"
+                        disabled={loading}
+                        className="px-4 py-2 rounded-xl text-xs font-semibold bg-(--primary) text-(--primary-foreground) hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                        {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                        {t("saveAction")}
+                    </button>
+                </div>
             </div>
         </div>
     );
