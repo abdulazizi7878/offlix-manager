@@ -21,6 +21,7 @@ import {
   ChevronRight,
   User,
   Search,
+  Calculator,
 } from "lucide-react";
 
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
@@ -153,6 +154,7 @@ export default function DashboardLayout({ children }) {
 
   const navigationItems = [
     { label: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { label: "Smart Calculator", href: "/dashboard/calculator", icon: Calculator },
     { label: t("nav.branches"), href: "/dashboard/branches", icon: GitBranch },
     { label: `${t("nav.branches")} - ${t("nav.create")}`, href: "/dashboard/branches/create", icon: GitBranch },
     { label: t("nav.products"), href: "/dashboard/products", icon: Package },
@@ -243,6 +245,12 @@ export default function DashboardLayout({ children }) {
           >
             <LayoutDashboard className="w-4 h-4" />
             <span>{t("nav.dashboard")}</span>
+          </Link>
+
+          {/* Smart Calculator */}
+          <Link href="/dashboard/calculator" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard/calculator") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
+            <Calculator className="w-4 h-4" />
+            <span>Smart Calculator</span>
           </Link>
 
           {/* Branches */}
