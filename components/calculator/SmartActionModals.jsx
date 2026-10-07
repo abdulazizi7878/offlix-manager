@@ -22,41 +22,6 @@ import {
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
-// Audio and vibration are independent feedback channels.
-// Failure of one does not prevent the other from running.
-const feedbackAudioRef = React.createRef();
-
-const triggerFeedback = (duration = 10) => {
-    if (typeof window === "undefined") return;
-
-    // 📳 Vibration
-    try {
-        if (
-            typeof navigator !== "undefined" &&
-            typeof navigator.vibrate === "function"
-        ) {
-            navigator.vibrate(duration);
-        }
-    } catch {
-        // Vibration failure must not affect audio.
-    }
-
-    // 🔊 Already-loaded audio
-    try {
-        const audio = feedbackAudioRef.current;
-
-        if (!audio) return;
-
-        audio.currentTime = 0;
-        void audio.play().catch(() => {
-            // Audio failure must not affect vibration.
-        });
-    } catch {
-        // Audio failure must not affect vibration.
-    }
-};
-
-
 export default function SmartActionModals({
     actionType,
     amount,
