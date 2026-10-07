@@ -14,6 +14,8 @@ import {
     Sparkles,
     ArrowRight,
     History,
+    Volume2,
+    VolumeX,
 } from "lucide-react";
 
 export default function CalculatorPage() {
@@ -25,6 +27,34 @@ export default function CalculatorPage() {
     const [showSmartHook, setShowSmartHook] = useState(false);
     const [activeModal, setActiveModal] = useState(null);
     const [hookAmount, setHookAmount] = useState("");
+
+    // --------------------------------------------------
+    // FEEDBACK MUTE STATE
+    // --------------------------------------------------
+
+    const [isMuted, setIsMuted] = useState(false);
+
+    // Load saved mute preference
+    useEffect(() => {
+        const savedMute = localStorage.getItem("calculator-muted");
+
+        if (savedMute === "true") {
+            setIsMuted(true);
+        }
+    }, []);
+
+    const toggleMute = () => {
+        setIsMuted((prev) => {
+            const next = !prev;
+
+            localStorage.setItem(
+                "calculator-muted",
+                String(next)
+            );
+
+            return next;
+        });
+    };
 
     // --------------------------------------------------
     // PRELOADED FEEDBACK AUDIO
@@ -53,6 +83,8 @@ export default function CalculatorPage() {
     // --------------------------------------------------
 
     const triggerFeedback = (duration = 10) => {
+        if (isMuted) return;
+
         // Vibration
         try {
             if (
@@ -70,6 +102,7 @@ export default function CalculatorPage() {
             if (!audio) return;
 
             audio.currentTime = 0;
+
             void audio.play().catch(() => { });
         } catch { }
     };
@@ -100,7 +133,10 @@ export default function CalculatorPage() {
 
     useEffect(() => {
         const targetVal =
-            result || (input && !isNaN(Number(input)) ? input : "");
+            result ||
+            (input && !isNaN(Number(input))
+                ? input
+                : "");
 
         if (!targetVal || targetVal === "Error") {
             setShowSmartHook(false);
@@ -120,7 +156,7 @@ export default function CalculatorPage() {
     // --------------------------------------------------
 
     const handleKeyClick = (val) => {
-        // Immediate audio + vibration feedback
+        // Immediate audio + vibration
         triggerFeedback(10);
 
         if (val === "C") {
@@ -179,6 +215,31 @@ export default function CalculatorPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Calculator */}
                 <div className="lg:col-span-2 bg-(--card) border border-(--border) rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+                    {/* Calculator Controls */}
+                    <div className="flex items-center justify-end mb-4">
+                        <button
+                            type="button"
+                            onClick={toggleMute}
+                            aria-label={
+                                isMuted
+                                    ? "Enable calculator feedback"
+                                    : "Mute calculator feedback"
+                            }
+                            title={
+                                isMuted
+                                    ? "Enable sound and vibration"
+                                    : "Mute sound and vibration"
+                            }
+                            className="w-9 h-9 rounded-xl bg-(--muted)/50 hover:bg-(--muted) text-(--muted-foreground) hover:text-(--foreground) flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                            {isMuted ? (
+                                <VolumeX className="w-4 h-4" />
+                            ) : (
+                                <Volume2 className="w-4 h-4" />
+                            )}
+                        </button>
+                    </div>
+
                     {/* Display area */}
                     <div className="relative bg-(--background) border border-(--border) rounded-2xl p-5 mb-6 text-right space-y-1 min-h-[130px] flex flex-col justify-end">
                         {/* Expression */}
@@ -188,7 +249,11 @@ export default function CalculatorPage() {
 
                         {/* Dynamic Result preview */}
                         <div className="text-3xl font-extrabold font-mono tracking-tight text-(--foreground)">
-                            {result ? `= ${result}` : input ? "" : "0"}
+                            {result
+                                ? `= ${result}`
+                                : input
+                                    ? ""
+                                    : "0"}
                         </div>
 
                         {/* Smart Action Floating Hook */}
@@ -207,7 +272,9 @@ export default function CalculatorPage() {
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                setActiveModal("INCOME")
+                                                setActiveModal(
+                                                    "INCOME"
+                                                )
                                             }
                                             className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-medium transition-colors cursor-pointer"
                                         >
@@ -217,7 +284,9 @@ export default function CalculatorPage() {
                                         <button
                                             type="button"
                                             onClick={() =>
-                                                setActiveModal("MORE")
+                                                setActiveModal(
+                                                    "MORE"
+                                                )
                                             }
                                             className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-medium transition-colors cursor-pointer"
                                         >
@@ -259,13 +328,18 @@ export default function CalculatorPage() {
                                 "=",
                             ].includes(btn);
 
-                            const isAction = ["C", "DEL"].includes(btn);
+                            const isAction = [
+                                "C",
+                                "DEL",
+                            ].includes(btn);
 
                             return (
                                 <button
                                     key={btn}
                                     type="button"
-                                    onClick={() => handleKeyClick(btn)}
+                                    onClick={() =>
+                                        handleKeyClick(btn)
+                                    }
                                     className={`py-3.5 rounded-xl font-bold text-lg transition-transform active:scale-95 shadow-2xs cursor-pointer ${btn === "="
                                             ? "col-span-1 bg-(--primary) text-(--primary-foreground)"
                                             : btn === "0"

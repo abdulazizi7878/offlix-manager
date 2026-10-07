@@ -124,7 +124,6 @@ export default function SmartActionModals({
 
     // Back to Quick Actions or Close
     const handleDismiss = () => {
-        triggerFeedback(10);
 
         if (actionType !== "MORE" && onSelectAction) {
             onSelectAction("MORE");
@@ -171,7 +170,6 @@ export default function SmartActionModals({
                     }));
                 }
             } catch {
-                triggerFeedback(30);
 
                 toast.error(
                     t("toasts.loadAccountsFailed")
@@ -212,7 +210,6 @@ export default function SmartActionModals({
                     setBranchId(arr[0].id);
                 }
             } catch {
-                triggerFeedback(30);
 
                 toast.error(
                     t("toasts.loadBranchesFailed")
@@ -267,7 +264,6 @@ export default function SmartActionModals({
                 if (err?.name === "AbortError") return;
 
                 if (isMounted) {
-                    triggerFeedback(30);
 
                     toast.error(
                         t("toasts.loadProductsFailed")
@@ -366,8 +362,7 @@ export default function SmartActionModals({
     };
 
     const handleAddSaleItem = () => {
-        triggerFeedback(10);
-
+      
         setSaleItems([
             ...saleItems,
             {
@@ -379,7 +374,6 @@ export default function SmartActionModals({
     };
 
     const handleRemoveSaleItem = (index) => {
-        triggerFeedback(10);
 
         setSaleItems(
             saleItems.filter(
@@ -408,7 +402,6 @@ export default function SmartActionModals({
                 isDuplicate &&
                 strVal !== ""
             ) {
-                triggerFeedback(30);
 
                 toast.error(
                     t("toasts.productDuplicate")
@@ -441,7 +434,6 @@ export default function SmartActionModals({
                 );
 
             if (availableQty <= 0) {
-                triggerFeedback(30);
 
                 toast.error(
                     t("toasts.noStock")
@@ -480,7 +472,6 @@ export default function SmartActionModals({
                     );
 
                 if (requestedQty > maxQty) {
-                    triggerFeedback(30);
 
                     newItems[index].quantity =
                         maxQty;
@@ -539,7 +530,7 @@ export default function SmartActionModals({
         e.preventDefault();
 
         if (!branchId) {
-            triggerFeedback(30);
+        
 
             toast.error(
                 t("toasts.selectBranch")
@@ -555,7 +546,7 @@ export default function SmartActionModals({
         );
 
         if (validItems.length === 0) {
-            triggerFeedback(30);
+            
 
             toast.error(
                 t("toasts.selectProductQty")
@@ -613,7 +604,7 @@ export default function SmartActionModals({
                 }
             );
 
-            triggerFeedback(30);
+            trigge
 
             toast.success(
                 t("toasts.saleLogged")
@@ -625,7 +616,7 @@ export default function SmartActionModals({
 
             onClose();
         } catch (err) {
-            triggerFeedback(30);
+            trigge
 
             toast.error(
                 err?.message ||
@@ -774,7 +765,7 @@ export default function SmartActionModals({
                 ),
             });
 
-            triggerFeedback(30);
+            trigge
 
             toast.success(
                 t("toasts.actionRecorded")
@@ -786,7 +777,7 @@ export default function SmartActionModals({
 
             onClose();
         } catch (err) {
-            triggerFeedback(30);
+            trigge
 
             toast.error(
                 err?.message ||
@@ -911,7 +902,6 @@ export default function SmartActionModals({
                         <button
                             type="button"
                             onClick={() => {
-                                triggerFeedback(10);
                                 onClose();
                             }}
                             className="p-1.5 rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors cursor-pointer"
@@ -929,9 +919,7 @@ export default function SmartActionModals({
                                     key={act.id}
                                     type="button"
                                     onClick={() => {
-                                        triggerFeedback(
-                                            10
-                                        );
+                                        
 
                                         if (
                                             onSelectAction
@@ -1051,7 +1039,6 @@ export default function SmartActionModals({
                     <button
                         type="button"
                         onClick={() => {
-                            triggerFeedback(10);
                             onClose();
                         }}
                         className="p-1.5 rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors cursor-pointer"
@@ -1814,7 +1801,6 @@ export default function SmartActionModals({
                     <button
                         type="button"
                         onClick={() => {
-                            triggerFeedback(10);
                             onClose();
                         }}
                         className="px-4 py-2 rounded-xl text-xs font-semibold text-(--muted-foreground) hover:bg-(--muted) transition-colors cursor-pointer"
@@ -1826,9 +1812,6 @@ export default function SmartActionModals({
                         type="submit"
                         form="smart-action-form"
                         disabled={loading}
-                        onClick={()=>{
-                            triggerFeedback(10);
-                        }}
                         className="px-4 py-2 rounded-xl text-xs font-semibold bg-(--primary) text-(--primary-foreground) hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                         {loading && (
