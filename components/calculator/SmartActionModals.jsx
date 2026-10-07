@@ -18,7 +18,26 @@ import {
 } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
-import { feedback } from "@/lib/sound/feedback";
+
+// Reusable haptic helper with silent failure
+const triggerHaptic = (duration = 10) => {
+    if (typeof window === "undefined") return;
+    try {
+        if ("vibrate" in navigator) {
+            navigator.vibrate(duration);
+        }
+    } catch { }
+};
+
+// Direct audio helper to bypass browser autoplay blocks
+const playBeep = () => {
+    if (typeof window === "undefined") return;
+    try {
+        const audio = new Audio("/sound/beep.mp3");
+        audio.volume = 1.0;
+        audio.play().catch(() => { });
+    } catch (e) { }
+};
 
 export default function SmartActionModals({
     actionType,
@@ -72,7 +91,8 @@ export default function SmartActionModals({
 
     // Back to Quick Actions or Close
     const handleDismiss = () => {
-        feedback.actionSelect();
+        triggerHaptic(10);
+        playBeep();
         if (actionType !== "MORE" && onSelectAction) {
             onSelectAction("MORE");
         } else {
@@ -104,6 +124,7 @@ export default function SmartActionModals({
                     }));
                 }
             } catch {
+                triggerHaptic(30);
                 toast.error(t("toasts.loadAccountsFailed"));
             } finally {
                 setIsLoadingAccounts(false);
@@ -128,6 +149,7 @@ export default function SmartActionModals({
                     setBranchId(arr[0].id);
                 }
             } catch {
+                triggerHaptic(30);
                 toast.error(t("toasts.loadBranchesFailed"));
             } finally {
                 setIsLoadingBranches(false);
@@ -163,6 +185,7 @@ export default function SmartActionModals({
             } catch (err) {
                 if (err?.name === "AbortError") return;
                 if (isMounted) {
+                    triggerHaptic(30);
                     toast.error(t("toasts.loadProductsFailed"));
                     setProducts([]);
                 }
@@ -206,7 +229,8 @@ export default function SmartActionModals({
     };
 
     const handleAddSaleItem = () => {
-        feedback.actionSelect();
+        triggerHaptic(10);
+        playBeep();
         setSaleItems([
             ...saleItems,
             { productId: "", quantity: 1, pricePerItem: 0 },
@@ -214,7 +238,8 @@ export default function SmartActionModals({
     };
 
     const handleRemoveSaleItem = (index) => {
-        feedback.keyPress();
+        triggerHaptic(10);
+        playBeep();
         setSaleItems(saleItems.filter((_, i) => i !== index));
     };
 
@@ -225,7 +250,8 @@ export default function SmartActionModals({
             const strVal = value;
             const isDuplicate = newItems.some((item, i) => i !== index && item.productId === strVal);
             if (isDuplicate && strVal !== "") {
-                feedback.error();
+                triggerHaptic(30);
+                playBeep();
                 toast.error(t("toasts.productDuplicate"));
                 return;
             }
@@ -239,7 +265,8 @@ export default function SmartActionModals({
 
             const availableQty = getAvailableQuantityForRow(strVal, index);
             if (availableQty <= 0) {
-                feedback.error();
+                triggerHaptic(30);
+                playBeep();
                 toast.error(t("toasts.noStock"));
                 return;
             }
@@ -261,7 +288,7 @@ export default function SmartActionModals({
             if (productId) {
                 const maxQty = getAvailableQuantityForRow(productId, index);
                 if (requestedQty > maxQty) {
-                    feedback.error();
+                    triggerHaptic(30);
                     newItems[index].quantity = maxQty;
                     toast.error(t("toasts.remainingStock", { maxQty }));
                     setSaleItems(newItems);
@@ -293,14 +320,16 @@ export default function SmartActionModals({
         e.preventDefault();
 
         if (!branchId) {
-            feedback.error();
+            triggerHaptic(30);
+            playBeep();
             toast.error(t("toasts.selectBranch"));
             return;
         }
 
         const validItems = saleItems.filter((i) => i.productId && i.quantity > 0);
         if (validItems.length === 0) {
-            feedback.error();
+            triggerHaptic(30);
+            playBeep();
             toast.error(t("toasts.selectProductQty"));
             return;
         }
@@ -327,18 +356,20 @@ export default function SmartActionModals({
                 body: JSON.stringify(payload),
             });
 
-            feedback.success();
+            triggerHaptic(30);
+            playBeep();
             toast.success(t("toasts.saleLogged"));
             if (onSuccess) onSuccess(actionType);
             onClose();
         } catch (err) {
-            feedback.error();
+            triggerHaptic(30);
+            playBeep();
             toast.error(err?.message || t("toasts.submitSaleFailed"));
         } finally {
             setLoading(false);
         }
     };
-
+    
     const handleFinancialSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -412,12 +443,12 @@ export default function SmartActionModals({
                 body: JSON.stringify(payload),
             });
 
-            feedback.success();
+            playBeep();
             toast.success(t("toasts.actionRecorded"));
             if (onSuccess) onSuccess(actionType);
             onClose();
         } catch (err) {
-            feedback.error();
+            playBeep();
             toast.error(err?.message || t("toasts.transactionFailed"));
         } finally {
             setLoading(false);
@@ -491,7 +522,7 @@ export default function SmartActionModals({
                         <button
                             type="button"
                             onClick={() => {
-                                feedback.actionSelect();
+                                playBeep();
                                 onClose();
                             }}
                             className="p-1.5 rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors cursor-pointer"
@@ -508,7 +539,7 @@ export default function SmartActionModals({
                                     key={act.id}
                                     type="button"
                                     onClick={() => {
-                                        feedback.actionSelect();
+                                        playBeep();
                                         if (onSelectAction) onSelectAction(act.id);
                                     }}
                                     className="flex items-start gap-3 p-3.5 rounded-xl border border-(--border) hover:border-(--primary)/50 bg-(--background) hover:bg-(--muted)/30 text-left transition-all group cursor-pointer"
@@ -570,7 +601,7 @@ export default function SmartActionModals({
                     <button
                         type="button"
                         onClick={() => {
-                            feedback.actionSelect();
+                            playBeep();
                             onClose();
                         }}
                         className="p-1.5 rounded-lg hover:bg-(--muted) text-(--muted-foreground) transition-colors cursor-pointer"
@@ -892,7 +923,7 @@ export default function SmartActionModals({
                     <button
                         type="button"
                         onClick={() => {
-                            feedback.actionSelect();
+                            playBeep();
                             onClose();
                         }}
                         className="px-4 py-2 rounded-xl text-xs font-semibold text-(--muted-foreground) hover:bg-(--muted) transition-colors cursor-pointer"
