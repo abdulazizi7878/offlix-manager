@@ -261,7 +261,7 @@ function DashboardContent() {
           />
           <KpiCard
             title={t("money.accountsCount")}
-            value={Number(moneyData.accountsCount || moneyData.accounts || 0).toLocaleString()}
+            value={Number(moneyData.accountCount || moneyData.accountCount || 0).toLocaleString()}
             icon={CreditCard}
             isLoading={isLoading}
           />
