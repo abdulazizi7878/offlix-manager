@@ -51,9 +51,8 @@ export default function SmartActionModals({
         };
     }, []);
 
-    const triggerFeedback = (duration = 10) => {
-        if (typeof window === "undefined") return;
 
+    const triggerFeedback = (duration = 10) => {
         // 📳 Vibration
         try {
             if (
@@ -64,7 +63,7 @@ export default function SmartActionModals({
             }
         } catch { }
 
-        // 🔊 Preloaded audio
+        // 🔊 Audio, triggered directly by the user's action
         try {
             const audio = feedbackAudioRef.current;
 
@@ -1827,6 +1826,9 @@ export default function SmartActionModals({
                         type="submit"
                         form="smart-action-form"
                         disabled={loading}
+                        onClick={()=>{
+                            triggerFeedback(10);
+                        }}
                         className="px-4 py-2 rounded-xl text-xs font-semibold bg-(--primary) text-(--primary-foreground) hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                         {loading && (

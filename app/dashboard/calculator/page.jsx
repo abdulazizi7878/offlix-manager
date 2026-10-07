@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
 import { useTranslations } from "next-intl";
+
 import { SafeMath } from "@/lib/math/decimal";
+
 import SmartActionModals from "@/components/calculator/SmartActionModals";
+
 import {
     Calculator as CalcIcon,
     RotateCcw,
@@ -14,6 +18,7 @@ import {
 
 export default function CalculatorPage() {
     const t = useTranslations("calculator");
+
     const [input, setInput] = useState("");
     const [result, setResult] = useState("");
     const [history, setHistory] = useState([]);
@@ -21,7 +26,58 @@ export default function CalculatorPage() {
     const [activeModal, setActiveModal] = useState(null);
     const [hookAmount, setHookAmount] = useState("");
 
-    // Live calculation evaluation
+    // --------------------------------------------------
+    // PRELOADED FEEDBACK AUDIO
+    // --------------------------------------------------
+
+    const feedbackAudioRef = useRef(null);
+
+    useEffect(() => {
+        const audio = new Audio("/sound/beep.mp3");
+
+        audio.preload = "auto";
+        audio.volume = 1.0;
+        audio.load();
+
+        feedbackAudioRef.current = audio;
+
+        return () => {
+            audio.pause();
+            audio.src = "";
+            feedbackAudioRef.current = null;
+        };
+    }, []);
+
+    // --------------------------------------------------
+    // AUDIO + VIBRATION FEEDBACK
+    // --------------------------------------------------
+
+    const triggerFeedback = (duration = 10) => {
+        // Vibration
+        try {
+            if (
+                typeof navigator !== "undefined" &&
+                typeof navigator.vibrate === "function"
+            ) {
+                navigator.vibrate(duration);
+            }
+        } catch { }
+
+        // Preloaded audio
+        try {
+            const audio = feedbackAudioRef.current;
+
+            if (!audio) return;
+
+            audio.currentTime = 0;
+            void audio.play().catch(() => { });
+        } catch { }
+    };
+
+    // --------------------------------------------------
+    // LIVE CALCULATION EVALUATION
+    // --------------------------------------------------
+
     useEffect(() => {
         if (!input) {
             setResult("");
@@ -30,6 +86,7 @@ export default function CalculatorPage() {
         }
 
         const calculated = SafeMath.evaluate(input);
+
         if (calculated && calculated !== "Error") {
             setResult(calculated);
         } else {
@@ -37,9 +94,13 @@ export default function CalculatorPage() {
         }
     }, [input]);
 
-    // Hook trigger delay: Appears when user finishes typing
+    // --------------------------------------------------
+    // SMART ACTION HOOK DELAY
+    // --------------------------------------------------
+
     useEffect(() => {
-        const targetVal = result || (input && !isNaN(Number(input)) ? input : "");
+        const targetVal =
+            result || (input && !isNaN(Number(input)) ? input : "");
 
         if (!targetVal || targetVal === "Error") {
             setShowSmartHook(false);
@@ -54,25 +115,43 @@ export default function CalculatorPage() {
         return () => clearTimeout(timer);
     }, [result, input]);
 
+    // --------------------------------------------------
+    // CALCULATOR KEY HANDLER
+    // --------------------------------------------------
+
     const handleKeyClick = (val) => {
+        // Immediate audio + vibration feedback
+        triggerFeedback(10);
+
         if (val === "C") {
             setInput("");
             setResult("");
             setShowSmartHook(false);
             return;
         }
+
         if (val === "DEL") {
             setInput((prev) => prev.slice(0, -1));
             return;
         }
+
         if (val === "=") {
             if (result) {
-                setHistory((prev) => [{ expr: input, res: result }, ...prev.slice(0, 9)]);
+                setHistory((prev) => [
+                    {
+                        expr: input,
+                        res: result,
+                    },
+                    ...prev.slice(0, 9),
+                ]);
+
                 setInput(result);
                 setResult("");
             }
+
             return;
         }
+
         setInput((prev) => prev + val);
     };
 
@@ -84,8 +163,12 @@ export default function CalculatorPage() {
                     <div className="p-2.5 rounded-xl bg-(--primary)/10 text-(--primary)">
                         <CalcIcon className="w-6 h-6" />
                     </div>
+
                     <div>
-                        <h1 className="text-xl font-bold tracking-tight">{t("title")}</h1>
+                        <h1 className="text-xl font-bold tracking-tight">
+                            {t("title")}
+                        </h1>
+
                         <p className="text-xs text-(--muted-foreground)">
                             {t("description")}
                         </p>
@@ -102,6 +185,7 @@ export default function CalculatorPage() {
                         <div className="text-sm font-mono text-(--muted-foreground) overflow-x-auto whitespace-nowrap">
                             {input || "0"}
                         </div>
+
                         {/* Dynamic Result preview */}
                         <div className="text-3xl font-extrabold font-mono tracking-tight text-(--foreground)">
                             {result ? `= ${result}` : input ? "" : "0"}
@@ -112,18 +196,29 @@ export default function CalculatorPage() {
                             <div className="absolute top-3 left-3 animate-in fade-in slide-in-from-top-2 duration-200">
                                 <div className="bg-(--primary) text-(--primary-foreground) rounded-full p-1.5 pl-3 pr-2.5 shadow-lg flex items-center gap-2 text-xs font-semibold">
                                     <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-                                    <span>{t("saveHook", { amount: hookAmount })}</span>
+
+                                    <span>
+                                        {t("saveHook", {
+                                            amount: hookAmount,
+                                        })}
+                                    </span>
+
                                     <div className="flex gap-1 ml-1">
                                         <button
                                             type="button"
-                                            onClick={() => setActiveModal("INCOME")}
+                                            onClick={() =>
+                                                setActiveModal("INCOME")
+                                            }
                                             className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-medium transition-colors cursor-pointer"
                                         >
                                             {t("income")}
                                         </button>
+
                                         <button
                                             type="button"
-                                            onClick={() => setActiveModal("MORE")}
+                                            onClick={() =>
+                                                setActiveModal("MORE")
+                                            }
                                             className="px-2.5 py-1 rounded-full bg-white/20 hover:bg-white/30 text-[11px] font-medium transition-colors cursor-pointer"
                                         >
                                             {t("more")}
@@ -136,17 +231,42 @@ export default function CalculatorPage() {
 
                     {/* Keypad */}
                     <div className="grid grid-cols-4 gap-2.5">
-                        {["C", "DEL", "/", "*", "7", "8", "9", "-", "4", "5", "6", "+", "1", "2", "3", "=", "0", "."].map(
-                            (btn) => {
-                                const isOp = ["/", "*", "-", "+", "="].includes(btn);
-                                const isAction = ["C", "DEL"].includes(btn);
+                        {[
+                            "C",
+                            "DEL",
+                            "/",
+                            "*",
+                            "7",
+                            "8",
+                            "9",
+                            "-",
+                            "4",
+                            "5",
+                            "6",
+                            "+",
+                            "1",
+                            "2",
+                            "3",
+                            "=",
+                            "0",
+                            ".",
+                        ].map((btn) => {
+                            const isOp = [
+                                "/",
+                                "*",
+                                "-",
+                                "+",
+                                "=",
+                            ].includes(btn);
 
-                                return (
-                                    <button
-                                        key={btn}
-                                        type="button"
-                                        onClick={() => handleKeyClick(btn)}
-                                        className={`py-3.5 rounded-xl font-bold text-lg transition-transform active:scale-95 shadow-2xs cursor-pointer ${btn === "="
+                            const isAction = ["C", "DEL"].includes(btn);
+
+                            return (
+                                <button
+                                    key={btn}
+                                    type="button"
+                                    onClick={() => handleKeyClick(btn)}
+                                    className={`py-3.5 rounded-xl font-bold text-lg transition-transform active:scale-95 shadow-2xs cursor-pointer ${btn === "="
                                             ? "col-span-1 bg-(--primary) text-(--primary-foreground)"
                                             : btn === "0"
                                                 ? "col-span-1"
@@ -155,13 +275,12 @@ export default function CalculatorPage() {
                                                     : isOp
                                                         ? "bg-(--muted) text-(--primary) hover:bg-(--muted)/80"
                                                         : "bg-(--muted)/40 hover:bg-(--muted) text-(--foreground)"
-                                            }`}
-                                    >
-                                        {btn}
-                                    </button>
-                                );
-                            }
-                        )}
+                                        }`}
+                                >
+                                    {btn}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -170,12 +289,19 @@ export default function CalculatorPage() {
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2 text-sm font-bold">
                             <History className="w-4 h-4 text-(--muted-foreground)" />
-                            <span>{t("recentComputations")}</span>
+
+                            <span>
+                                {t("recentComputations")}
+                            </span>
                         </div>
+
                         {history.length > 0 && (
                             <button
                                 type="button"
-                                onClick={() => setHistory([])}
+                                onClick={() => {
+                                    triggerFeedback(10);
+                                    setHistory([]);
+                                }}
                                 className="text-xs text-(--muted-foreground) hover:text-(--foreground) transition-colors cursor-pointer"
                             >
                                 {t("clear")}
@@ -187,19 +313,29 @@ export default function CalculatorPage() {
                         {history.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center py-12 text-(--muted-foreground) text-xs">
                                 <RotateCcw className="w-8 h-8 mb-2 opacity-30" />
+
                                 {t("noHistory")}
                             </div>
                         ) : (
                             history.map((item, idx) => (
                                 <div
                                     key={idx}
-                                    onClick={() => setInput(item.res)}
+                                    onClick={() => {
+                                        triggerFeedback(10);
+                                        setInput(item.res);
+                                    }}
                                     className="p-3 rounded-xl bg-(--background) border border-(--border) hover:border-(--primary)/50 cursor-pointer transition-colors flex items-center justify-between group"
                                 >
                                     <div className="min-w-0">
-                                        <p className="text-xs font-mono text-(--muted-foreground) truncate">{item.expr}</p>
-                                        <p className="text-base font-bold font-mono text-(--foreground)">= {item.res}</p>
+                                        <p className="text-xs font-mono text-(--muted-foreground) truncate">
+                                            {item.expr}
+                                        </p>
+
+                                        <p className="text-base font-bold font-mono text-(--foreground)">
+                                            = {item.res}
+                                        </p>
                                     </div>
+
                                     <ArrowRight className="w-4 h-4 text-(--muted-foreground) group-hover:text-(--primary) transition-colors shrink-0 ml-2" />
                                 </div>
                             ))
@@ -214,7 +350,9 @@ export default function CalculatorPage() {
                     actionType={activeModal}
                     amount={hookAmount || result || input}
                     onClose={() => setActiveModal(null)}
-                    onSelectAction={(selectedAction) => setActiveModal(selectedAction)}
+                    onSelectAction={(selectedAction) =>
+                        setActiveModal(selectedAction)
+                    }
                     onSuccess={() => {
                         setInput("");
                         setResult("");
