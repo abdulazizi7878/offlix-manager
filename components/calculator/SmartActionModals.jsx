@@ -304,8 +304,8 @@ export default function SmartActionModals({
                 customerName: customerName || undefined,
                 notes: notes || undefined,
                 paymentType,
-                paymentMethod,
-                paidAmount: paymentType === "paid" ? total : Number(paidAmount || 0),
+                paymentMethod: paymentType === "credit" ? undefined : paymentMethod,
+                paidAmount: paymentType === "paid" ? total : paymentType === "credit" ? 0 : Number(paidAmount || 0),
                 items: validItems.map((item) => ({
                     productId: item.productId,
                     quantity: Number(item.quantity),
@@ -689,19 +689,21 @@ export default function SmartActionModals({
                                         <option value="credit">{t("fields.onCredit")}</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-xs font-semibold mb-1">{t("fields.method")}</label>
-                                    <select
-                                        value={paymentMethod}
-                                        onChange={(e) => setPaymentMethod(e.target.value)}
-                                        className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
-                                    >
-                                        <option value="cash">{t("fields.cash")}</option>
-                                        <option value="bank">{t("fields.bankDigital")}</option>
-                                    </select>
-                                </div>
+                                {paymentType !== "credit" && (
+                                    <div>
+                                        <label className="block text-xs font-semibold mb-1">{t("fields.method")}</label>
+                                        <select
+                                            value={paymentMethod}
+                                            onChange={(e) => setPaymentMethod(e.target.value)}
+                                            className="w-full bg-(--background) border border-(--border) rounded-xl px-3 py-2 text-sm"
+                                        >
+                                            <option value="cash">{t("fields.cash")}</option>
+                                            <option value="bank">{t("fields.bankDigital")}</option>
+                                        </select>
+                                    </div>
+                                )}
                             </div>
-
+                            
                             {paymentType === "partial" && (
                                 <div>
                                     <label className="block text-xs font-semibold mb-1">{t("fields.amountPaidNow")}</label>
