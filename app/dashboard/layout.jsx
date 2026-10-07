@@ -202,6 +202,8 @@ export default function DashboardLayout({ children }) {
     setIsSidebarOpen(true);
   };
 
+  const isCalculator = pathname === '/dashboard/calculator'
+
   if (authChecking) {
     return (
       <div className="h-screen bg-(--background) text-(--foreground) flex items-center justify-center">
@@ -442,7 +444,8 @@ export default function DashboardLayout({ children }) {
 
         {/* Mobile Floating Bottom Navigation */}
         <div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40">
-          <div className="flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-2xl rounded-full p-2 px-4 text-(--foreground)">
+          <div className="flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-2xl rounded-full p-2 px-3 text-(--foreground)">
+            {/* Search (Left) */}
             <button
               type="button"
               onClick={handleOpenSearch}
@@ -454,15 +457,32 @@ export default function DashboardLayout({ children }) {
 
             <div className="w-[1px] h-5 bg-(--border)" />
 
+            {/* Menu (Center) */}
             <button
               type="button"
               onClick={handleOpenMenu}
-              className="flex items-center gap-2 py-2 px-3.5 rounded-full bg-(--foreground) text-(--background) font-semibold text-xs transition-transform active:scale-95 cursor-pointer shadow-sm"
+              className={`flex items-center gap-2 py-2 px-3.5 rounded-full font-semibold text-xs transition-colors cursor-pointer shadow-sm ${isCalculator
+                  ? "bg-(--muted) text-(--foreground) hover:bg-(--muted)/80"
+                  : "bg-(--primary) text-(--primary-foreground)"
+                }`}
               aria-label="Open Mobile Menu"
             >
               <Menu className="w-4 h-4" />
-              <span>Menu</span>
             </button>
+
+            <div className="w-[1px] h-5 bg-(--border)" />
+
+            {/* Calculator (Right) */}
+            <Link
+              href="/dashboard/calculator"
+              className={`p-2.5 rounded-full transition-colors cursor-pointer flex items-center justify-center ${isCalculator
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "hover:bg-(--muted) text-(--foreground)"
+                }`}
+              aria-label="Smart Calculator"
+            >
+              <Calculator className="w-5 h-5" />
+            </Link>
           </div>
         </div>
 
@@ -549,6 +569,19 @@ export default function DashboardLayout({ children }) {
                     <LayoutDashboard className="w-5 h-5" />
                     <span className="text-base">{t("nav.dashboard")}</span>
                   </Link>
+
+                    {/* Smart Calculator */}
+                    <Link
+                      href="/dashboard/calculator"
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive("/dashboard/calculator")
+                          ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                          : "text-(--foreground) hover:bg-(--muted)"
+                        }`}
+                    >
+                      <Calculator className="w-5 h-5" />
+                      <span className="text-base">Smart Calculator</span>
+                    </Link>
 
                   {/* Branches */}
                   <div className="space-y-1">
