@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 import { useTranslations } from "next-intl";
 
@@ -24,6 +24,8 @@ import { toast } from "sonner";
 
 // Audio and vibration are independent feedback channels.
 // Failure of one does not prevent the other from running.
+const feedbackAudioRef = React.createRef();
+
 const triggerFeedback = (duration = 10) => {
     if (typeof window === "undefined") return;
 
@@ -39,18 +41,21 @@ const triggerFeedback = (duration = 10) => {
         // Vibration failure must not affect audio.
     }
 
-    // 🔊 Audio
+    // 🔊 Already-loaded audio
     try {
-        const audio = new Audio("/sound/beep.mp3");
-        audio.volume = 1.0;
+        const audio = feedbackAudioRef.current;
 
-        audio.play().catch(() => {
+        if (!audio) return;
+
+        audio.currentTime = 0;
+        void audio.play().catch(() => {
             // Audio failure must not affect vibration.
         });
     } catch {
         // Audio failure must not affect vibration.
     }
 };
+
 
 export default function SmartActionModals({
     actionType,
@@ -62,6 +67,48 @@ export default function SmartActionModals({
     const t = useTranslations("calculator.smartAction");
 
     const [loading, setLoading] = useState(false);
+
+    const feedbackAudioRef = useRef(null);
+
+    useEffect(() => {
+        const audio = new Audio("/sound/beep.mp3");
+
+        audio.preload = "auto";
+        audio.volume = 1.0;
+        audio.load();
+
+        feedbackAudioRef.current = audio;
+
+        return () => {
+            audio.pause();
+            audio.src = "";
+            feedbackAudioRef.current = null;
+        };
+    }, []);
+
+    const triggerFeedback = (duration = 10) => {
+        if (typeof window === "undefined") return;
+
+        // 📳 Vibration
+        try {
+            if (
+                typeof navigator !== "undefined" &&
+                typeof navigator.vibrate === "function"
+            ) {
+                navigator.vibrate(duration);
+            }
+        } catch { }
+
+        // 🔊 Preloaded audio
+        try {
+            const audio = feedbackAudioRef.current;
+
+            if (!audio) return;
+
+            audio.currentTime = 0;
+            void audio.play().catch(() => { });
+        } catch { }
+    };
 
     // Money accounts state
     const [accounts, setAccounts] = useState([]);
@@ -1815,11 +1862,6 @@ export default function SmartActionModals({
                         type="submit"
                         form="smart-action-form"
                         disabled={loading}
-                        onClick={() => {
-                            if (!loading) {
-                                triggerFeedback(10);
-                            }
-                        }}
                         className="px-4 py-2 rounded-xl text-xs font-semibold bg-(--primary) text-(--primary-foreground) hover:opacity-90 transition-opacity flex items-center gap-2 cursor-pointer disabled:opacity-50"
                     >
                         {loading && (
