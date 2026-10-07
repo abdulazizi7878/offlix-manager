@@ -369,7 +369,6 @@ export default function SmartActionModals({
             setLoading(false);
         }
     };
-    
     const handleFinancialSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
