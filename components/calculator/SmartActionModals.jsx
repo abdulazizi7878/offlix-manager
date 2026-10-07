@@ -59,6 +59,15 @@ export default function SmartActionModals({
         { productId: "", quantity: 1, pricePerItem: 0 },
     ]);
 
+    // Back to Quick Actions or Close
+    const handleDismiss = () => {
+        if (actionType !== "MORE" && onSelectAction) {
+            onSelectAction("MORE");
+        } else {
+            onClose();
+        }
+    };
+
     // Load money accounts for quick financial transactions
     useEffect(() => {
         if (!actionType || actionType === "MORE" || actionType === "SALE") return;
@@ -537,7 +546,7 @@ export default function SmartActionModals({
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-xl p-6 shadow-2xl relative text-(--foreground) max-h-[90vh] flex flex-col">
                 <button
-                    onClick={onClose}
+                    onClick={handleDismiss}
                     className="absolute top-4 right-4 text-(--muted-foreground) hover:text-(--foreground) p-1 rounded-lg transition-colors cursor-pointer"
                 >
                     <X className="w-5 h-5" />
@@ -967,7 +976,7 @@ export default function SmartActionModals({
                     <div className="pt-3 flex gap-3 border-t border-(--border)">
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleDismiss}
                             className="flex-1 py-2.5 rounded-xl border border-(--border) hover:bg-(--muted) text-xs font-semibold transition-colors cursor-pointer"
                         >
                             Cancel
