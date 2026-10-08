@@ -46,6 +46,7 @@ export default function SalesOverviewPage() {
 
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
 
     const loadFilterOptions = async () => {
         try {
@@ -77,6 +78,9 @@ export default function SalesOverviewPage() {
 
         try {
             const params = new URLSearchParams();
+            params.append("page", page.toString());
+            params.append("limit", "10");
+
             if (search) params.append("search", search);
             if (branchId) params.append("branchId", branchId);
             if (employeeId) params.append("employeeId", employeeId);
@@ -87,24 +91,22 @@ export default function SalesOverviewPage() {
                 params.append("endDate", selectedDate);
             }
 
-            params.append("page", page.toString());
-
             const response = await fetchApi(`/api/v1/dashboard/sales?${params.toString()}`);
 
             const data = response.data || response;
-            setSales(data.sales || data.items || data || []);
+            const salesList = data.sales || data.items || data.data || (Array.isArray(data) ? data : []);
+            setSales(salesList);
 
             if (data.summary) {
                 setSummary(data.summary);
             } else {
-                const list = data.sales || data.items || data || [];
-                const rev = list.reduce((acc, s) => acc + Number(s.totalAmount || s.total_amount || 0), 0);
-                const pCount = list.filter(s => (s.paymentStatus || s.payment_status) === "paid").length;
-                const partCount = list.filter(s => (s.paymentStatus || s.payment_status) === "partial").length;
-                const credCount = list.filter(s => (s.paymentStatus || s.payment_status) === "credit").length;
+                const rev = salesList.reduce((acc, s) => acc + Number(s.totalAmount || s.total_amount || 0), 0);
+                const pCount = salesList.filter(s => (s.paymentStatus || s.payment_status) === "paid").length;
+                const partCount = salesList.filter(s => (s.paymentStatus || s.payment_status) === "partial").length;
+                const credCount = salesList.filter(s => (s.paymentStatus || s.payment_status) === "credit").length;
 
                 setSummary({
-                    totalSales: list.length,
+                    totalSales: salesList.length,
                     totalRevenue: rev,
                     paid: pCount,
                     partial: partCount,
@@ -112,9 +114,10 @@ export default function SalesOverviewPage() {
                 });
             }
 
-            if (data.totalPages) {
-                setTotalPages(data.totalPages);
-            }
+            const paginationInfo = data.pagination || {};
+            setTotalPages(paginationInfo.totalPages || data.totalPages || 1);
+            setTotalItems(paginationInfo.total || salesList.length);
+
         } catch (err) {
             setError(err.message || t("loadError"));
         } finally {
@@ -296,7 +299,7 @@ export default function SalesOverviewPage() {
                                     setSelectedDate("");
                                     setPage(1);
                                 }}
-                                className="text-xs text-(--muted-foreground) hover:text-(--foreground) underline shrink-0"
+                                className="text-xs text-(--muted-foreground) hover:text-(--foreground) underline shrink-0 cursor-pointer"
                             >
                                 {t("clear")}
                             </button>
@@ -307,7 +310,7 @@ export default function SalesOverviewPage() {
                 <div className="flex items-center justify-end pt-2 border-t border-(--border)">
                     <button
                         onClick={handleSelectToday}
-                        className="px-3 py-1.5 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-xl text-xs font-medium transition-colors border border-(--border)"
+                        className="px-3 py-1.5 bg-(--muted) hover:bg-(--muted)/80 text-(--foreground) rounded-xl text-xs font-medium transition-colors border border-(--border) cursor-pointer"
                     >
                         {t("selectToday")}
                     </button>
@@ -327,7 +330,7 @@ export default function SalesOverviewPage() {
                         <p className="text-sm font-semibold">{error}</p>
                         <button
                             onClick={loadSales}
-                            className="px-3 py-1.5 bg-(--muted) text-(--foreground) rounded-lg text-xs font-medium hover:opacity-80"
+                            className="px-3 py-1.5 bg-(--muted) text-(--foreground) rounded-lg text-xs font-medium hover:opacity-80 cursor-pointer"
                         >
                             {t("tryAgain")}
                         </button>
@@ -413,24 +416,28 @@ export default function SalesOverviewPage() {
                     </div>
                 )}
 
+                {/* Pagination Controls */}
                 {totalPages > 1 && (
-                    <div className="p-4 border-t border-(--border) flex items-center justify-between">
+                    <div className="px-4 py-3 border-t border-(--border) flex items-center justify-between">
                         <span className="text-xs text-(--muted-foreground)">
-                            {t("pageIndicator", { page, totalPages })}
+                            Page <span className="font-semibold text-(--foreground)">{page}</span> of{" "}
+                            <span className="font-semibold text-(--foreground)">{totalPages}</span> ({totalItems} items)
                         </span>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                                disabled={page === 1}
-                                className="p-1.5 border border-(--border) rounded-lg hover:bg-(--muted) disabled:opacity-40 transition-colors"
+                                disabled={page === 1 || isLoading}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
                                 <ChevronLeft className="w-4 h-4" />
+                                <span>Previous</span>
                             </button>
                             <button
                                 onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                                disabled={page === totalPages}
-                                className="p-1.5 border border-(--border) rounded-lg hover:bg-(--muted) disabled:opacity-40 transition-colors"
+                                disabled={page === totalPages || isLoading}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                             >
+                                <span>Next</span>
                                 <ChevronRight className="w-4 h-4" />
                             </button>
                         </div>
