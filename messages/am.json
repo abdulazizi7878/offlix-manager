@@ -1265,6 +1265,142 @@
                 "paymentFailed": "ክፍያውን መመዝገብ አልተቻለም"
             }
         },
+        "receivablesPage": {
+            "title": "ተቀባይ ሂሳቦች",
+            "subtitle": "ለንግዱ የሚከፈል ገንዘብ።",
+            "createReceivable": "ተቀባይ ሂሳብ አክል",
+            "searchPlaceholder": "በስም ወይም በማስታወሻ ፈልግ...",
+            "allStatuses": "ሁሉም ሁኔታዎች",
+            "statusPending": "በመጠባበቅ ላይ",
+            "statusPartial": "በከፊል የተከፈለ",
+            "statusPaid": "ሙሉ በሙሉ የተከፈለ",
+            "statusCancelled": "የተሰረዘ",
+            "retry": "ድጋሚ ሞክር",
+            "noReceivablesTitle": "ምንም ተቀባይ ሂሳቦች የሉም።",
+            "noReceivablesSubtitle": "ለንግድዎ የሚከፈለውን ገንዘብ እዚህ ይከታተሉ።",
+            "summary": {
+                "totalReceivables": "ጠቅላላ ተቀባይ ሂሳቦች",
+                "outstandingAmount": "ቀሪ ያልተከፈለ መጠን",
+                "partiallyPaid": "በከፊል የተከፈሉ",
+                "overdue": "ጊዜው ያለፈበት"
+            },
+            "table": {
+                "name": "ስም",
+                "total": "ጠቅላላ መጠን",
+                "paid": "የተከፈለ",
+                "outstanding": "ቀሪ መጠን",
+                "status": "ሁኔታ",
+                "dueDate": "የመክፈያ ቀን",
+                "action": "እርምጃ",
+                "viewManage": "እይ እና ተቀበል",
+                "noDueDate": "የመክፈያ ቀን የለውም",
+                "overdue": "ጊዜው ያለፈበት",
+                "etb": "ብር"
+            },
+            "statuses": {
+                "pending": "በመጠባበቅ ላይ",
+                "partial": "በከፊል የተከፈለ",
+                "paid": "ሙሉ በሙሉ የተከፈለ",
+                "cancelled": "የተሰረዘ"
+            },
+            "modal": {
+                "title": "ተቀባይ ሂሳብ አክል",
+                "name": "ስም",
+                "namePlaceholder": "ምሳሌ፡ ደበበ ከበደ",
+                "amount": "መጠን (በብር)",
+                "amountPlaceholder": "0.00",
+                "dueDate": "የመክፈያ ቀን (አማራጭ)",
+                "notes": "መግለጫ / ማስታወሻ",
+                "notesPlaceholder": "ስለዚህ ተቀባይ ሂሳብ ተጨማሪ ማስታወሻ...",
+                "cancel": "ሰርዝ",
+                "create": "ተቀባይ ሂሳቡን መዝግብ",
+                "creating": "በመመዝገብ ላይ..."
+            },
+            "messages": {
+                "loadError": "ተቀባይ ሂሳቦችን መጫን አልተቻለም።",
+                "nameRequired": "ስም ማካተት ግዴታ ነው።",
+                "invalidAmount": "እባክዎን ትክክለኛ መጠን ያስገቡ።",
+                "decimalLimit": "መጠኑ ቢበዛ እስከ 2 ዴሲማል ቦታዎችን ብቻ ይደግፋል።",
+                "createSuccess": "ተቀባይ ሂሳብ በስኬት ተመዝግቧል።",
+                "createFailed": "ተቀባይ ሂሳብ መመዝገብ አልተቻለም።"
+            }
+        },
+        "receivableDetail": {
+            "title": "የተቀባይ ሂሳብ ዝርዝር",
+            "noDescription": "ምንም መግለጫ አልተሰጠም።",
+            "backToList": "ወደ ተቀባይ ሂሳቦች ተመለስ",
+            "notFound": "ተቀባይ ሂሳቡ አልተገኘም።",
+            "receivePayment": "ክፍያ ተቀበል",
+            "edit": "አስተካክል",
+            "delete": "ሰርዝ",
+            "details": {
+                "totalAmount": "ጠቅላላ መጠን",
+                "paidAmount": "የተከፈለ መጠን",
+                "outstandingAmount": "ቀሪ ያልተከፈለ መጠን",
+                "status": "ሁኔታ",
+                "dueDate": "የመክፈያ ቀን",
+                "noDueDate": "የመክፈያ ቀን የለውም",
+                "createdAt": "የተፈጠረበት ቀን"
+            },
+            "statuses": {
+                "pending": "በመጠባበቅ ላይ",
+                "partial": "በከፊል የተከፈለ",
+                "paid": "ሙሉ በሙሉ የተከፈለ",
+                "cancelled": "የተሰረዘ"
+            },
+            "payments": {
+                "title": "የክፍያ ታሪክ",
+                "empty": "እስካሁን የተቀበሉት ክፍያ የለም።",
+                "table": {
+                    "date": "ቀን",
+                    "amount": "መጠን",
+                    "account": "የገንዘብ አካውንት",
+                    "notes": "ማስታወሻ",
+                    "accountFallback": "አካውንት"
+                }
+            },
+            "receiveModal": {
+                "title": "ክፍያ ተቀበል",
+                "moneyAccount": "የገንዘብ አካውንት",
+                "amountWithMax": "መጠን (ከፍተኛ፡ {max} ብር)",
+                "notes": "ማስታወሻ",
+                "notesPlaceholder": "አማራጭ የክፍያ ማስታወሻ...",
+                "cancel": "ሰርዝ",
+                "submit": "ክፍያን መዝግብ",
+                "submitting": "በማስኬድ ላይ..."
+            },
+            "editModal": {
+                "title": "ተቀባይ ሂሳብ አስተካክል",
+                "name": "ስም",
+                "amountWithMin": "ጠቅላላ መጠን (አነስተኛ፡ {min} ብር)",
+                "dueDate": "የመክፈያ ቀን",
+                "description": "መግለጫ",
+                "cancel": "ሰርዝ",
+                "submit": "ተቀባይ ሂሳብ አዘምን",
+                "submitting": "በማስቀመጥ ላይ..."
+            },
+            "deleteModal": {
+                "title": "ተቀባይ ሂሳብ ሰርዝ",
+                "description": "እርግጠኛ ነዎት ይህንን ተቀባይ ሂሳብ መሰረዝ ይፈልጋሉ? ይህ እርምጃ ሊመለስ አይችልም።",
+                "cancel": "ሰርዝ",
+                "submit": "ሰርዝ",
+                "submitting": "በመሰረዝ ላይ..."
+            },
+            "messages": {
+                "loadError": "የተቀባይ ሂሳብ ዝርዝሮችን መጫን አልተቻለም።",
+                "selectAccount": "እባክዎን የገንዘብ አካውንት ይምረጡ።",
+                "invalidAmount": "እባክዎን ትክክለኛ ክፍያ ያስገቡ።",
+                "exceedsOutstanding": "የክፍያው መጠን ከቀሪው ያልተከፈለ መጠን መብለጥ አይችልም።",
+                "paymentSuccess": "ክፍያው በስኬት ተመዝግቧል።",
+                "paymentFailed": "ክፍያን መመዝገብ አልተቻለም።",
+                "nameRequired": "ስም ማስገባት ግዴታ ነው።",
+                "amountBelowPaid": "ጠቅላላው መጠን ቀደም ሲል ከተቀበሉት ክፍያ ማነስ አይችልም።",
+                "updateSuccess": "ተቀባይ ሂሳቡ በስኬት ተዘምኗል።",
+                "updateFailed": "ተቀባይ ሂሳቡን ማዘመን አልተቻለም።",
+                "deleteSuccess": "ተቀባይ ሂሳቡ በስኬት ተሰርዟል።",
+                "deleteFailed": "ተቀባይ ሂሳቡን መሰረዝ አልተቻለም።"
+            }
+        },
         "creditsPage": {
             "title": "ብድሮችና ዕዳዎች",
             "description": "በብድር የተሰጠ እና የተቀበሉትን ገንዘብ ይከታተሉ።",

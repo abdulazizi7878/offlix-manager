@@ -168,6 +168,7 @@ export default function DashboardLayout({ children }) {
     { label: `${t("nav.money")} - ${t("nav.transfers")}`, href: "/dashboard/money/transfers", icon: Receipt },
     { label: `${t("nav.money")} - ${t("nav.settlements")}`, href: "/dashboard/money/settlements", icon: Receipt },
     { label: `${t("nav.money")} - ${t("nav.payables")}`, href: "/dashboard/money/payables", icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.receivables")}`, href: "/dashboard/money/receivables", icon: Receipt },
     { label: `${t("nav.money")} - ${t("nav.credit")}`, href: "/dashboard/money/credits", icon: Receipt },
     { label: `${t("nav.money")} - ${t("nav.totalMoney")}`, href: "/dashboard/money/total-money", icon: Receipt },
     { label: t("nav.users"), href: "/dashboard/users", icon: Users },
@@ -340,6 +341,7 @@ export default function DashboardLayout({ children }) {
                 <Link href="/dashboard/money/transfers" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/transfers") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.transfers")}</Link>
                 <Link href="/dashboard/money/settlements" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/settlements") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.settlements")}</Link>
                 <Link href="/dashboard/money/payables" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/payables") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.payables")}</Link>
+                <Link href="/dashboard/money/receivables" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/receivables") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.receivables")}</Link>
                 <Link href="/dashboard/money/credits" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/credits") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.credit")}</Link>
                 <Link href="/dashboard/money/total-money" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/total-money") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.totalMoney")}</Link>
               </div>
@@ -462,8 +464,8 @@ export default function DashboardLayout({ children }) {
               type="button"
               onClick={handleOpenMenu}
               className={`flex items-center gap-2 py-2 px-3.5 rounded-full font-semibold text-xs transition-colors cursor-pointer shadow-sm ${isCalculator
-                  ? "bg-(--muted) text-(--foreground) hover:bg-(--muted)/80"
-                  : "bg-(--primary) text-(--primary-foreground)"
+                ? "bg-(--muted) text-(--foreground) hover:bg-(--muted)/80"
+                : "bg-(--primary) text-(--primary-foreground)"
                 }`}
               aria-label="Open Mobile Menu"
             >
@@ -476,8 +478,8 @@ export default function DashboardLayout({ children }) {
             <Link
               href="/dashboard/calculator"
               className={`p-2.5 rounded-full transition-colors cursor-pointer flex items-center justify-center ${isCalculator
-                  ? "bg-(--primary) text-(--primary-foreground)"
-                  : "hover:bg-(--muted) text-(--foreground)"
+                ? "bg-(--primary) text-(--primary-foreground)"
+                : "hover:bg-(--muted) text-(--foreground)"
                 }`}
               aria-label="Smart Calculator"
             >
@@ -570,18 +572,18 @@ export default function DashboardLayout({ children }) {
                     <span className="text-base">{t("nav.dashboard")}</span>
                   </Link>
 
-                    {/* Smart Calculator */}
-                    <Link
-                      href="/dashboard/calculator"
-                      onClick={() => setIsSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive("/dashboard/calculator")
-                          ? "bg-(--primary) text-(--primary-foreground) font-semibold"
-                          : "text-(--foreground) hover:bg-(--muted)"
-                        }`}
-                    >
-                      <Calculator className="w-5 h-5" />
-                      <span className="text-base">Smart Calculator</span>
-                    </Link>
+                  {/* Smart Calculator */}
+                  <Link
+                    href="/dashboard/calculator"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive("/dashboard/calculator")
+                      ? "bg-(--primary) text-(--primary-foreground) font-semibold"
+                      : "text-(--foreground) hover:bg-(--muted)"
+                      }`}
+                  >
+                    <Calculator className="w-5 h-5" />
+                    <span className="text-base">Smart Calculator</span>
+                  </Link>
 
                   {/* Branches */}
                   <div className="space-y-1">
@@ -652,6 +654,7 @@ export default function DashboardLayout({ children }) {
                         <Link href="/dashboard/money/transfers" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.transfers")}</Link>
                         <Link href="/dashboard/money/settlements" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.settlements")}</Link>
                         <Link href="/dashboard/money/payables" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.payables")}</Link>
+                        <Link href="/dashboard/money/receivables" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.receivables")}</Link>
                         <Link href="/dashboard/money/credits" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.credit")}</Link>
                         <Link href="/dashboard/money/total-money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.totalMoney")}</Link>
                       </div>

@@ -492,6 +492,103 @@ export const payPayableSchema = z
         }
     });
 
+
+// ============================================================
+// RECEIVABLES
+// ============================================================
+
+export const createReceivableSchema = z.object({
+    name: z
+        .string()
+        .trim()
+        .min(1)
+        .max(150),
+
+    description: z
+        .string()
+        .trim()
+        .max(5000)
+        .nullable()
+        .optional(),
+
+    amount: z.coerce
+        .number()
+        .positive(),
+
+    dueDate: z
+        .string()
+        .nullable()
+        .optional(),
+});
+
+
+export const receivableListQuerySchema = z.object({
+    page: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .default(1),
+
+    limit: z.coerce
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .default(20),
+
+    status: z
+        .enum([
+            "pending",
+            "partial",
+            "paid",
+            "cancelled",
+        ])
+        .optional(),
+
+    search: z
+        .string()
+        .trim()
+        .optional(),
+
+    dateFrom: z
+        .string()
+        .optional(),
+
+    dateTo: z
+        .string()
+        .optional(),
+});
+
+export const updateReceivableSchema = z.object({
+    name: z.string().trim().min(1).max(150),
+
+    description: z
+        .string()
+        .trim()
+        .max(5000)
+        .nullable()
+        .optional(),
+
+    amount: z.coerce.number().positive(),
+
+    dueDate: z
+        .string()
+        .nullable()
+        .optional(),
+});
+
+export const createReceivablePaymentSchema = z.object({
+    moneyAccountId: z.string().uuid(),
+
+    amount: z.coerce.number().positive(),
+
+    notes: z
+        .string()
+        .trim()
+        .max(5000)
+        .nullable()
+        .optional(),
+});
 // ============================================================
 // CREDITS
 // ============================================================

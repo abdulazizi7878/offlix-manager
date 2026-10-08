@@ -302,6 +302,7 @@
             "transfers": "Transfers",
             "settlements": "Settlements",
             "payables": "Payables",
+            "receivables": "Receivables",
             "credit": "Credit",
             "totalMoney": "Total Money"
         },
@@ -858,6 +859,7 @@
                 "transfers": "Transfers",
                 "settlements": "Settlements",
                 "payables": "Payables",
+                "receivables": "Receivables",
                 "credits": "Credits"
             },
             "moneyAccounts": "Money Accounts",
@@ -1263,6 +1265,142 @@
                 "decimalLimit": "Amounts can support a maximum of 2 decimal places",
                 "paymentSuccess": "Payment recorded successfully",
                 "paymentFailed": "Failed to record payment"
+            }
+        },
+        "receivablesPage": {
+            "title": "Receivables",
+            "subtitle": "Money owed to the business.",
+            "createReceivable": "Add Receivable",
+            "searchPlaceholder": "Search receivables by name or notes...",
+            "allStatuses": "All Statuses",
+            "statusPending": "Pending",
+            "statusPartial": "Partial",
+            "statusPaid": "Paid",
+            "statusCancelled": "Cancelled",
+            "retry": "Retry",
+            "noReceivablesTitle": "No receivables yet.",
+            "noReceivablesSubtitle": "Track money owed to your business here.",
+            "summary": {
+                "totalReceivables": "Total Receivables",
+                "outstandingAmount": "Outstanding Amount",
+                "partiallyPaid": "Partially Paid",
+                "overdue": "Overdue"
+            },
+            "table": {
+                "name": "Name",
+                "total": "Total Amount",
+                "paid": "Paid",
+                "outstanding": "Outstanding",
+                "status": "Status",
+                "dueDate": "Due Date",
+                "action": "Action",
+                "viewManage": "View & Receive",
+                "noDueDate": "No due date",
+                "overdue": "Overdue",
+                "etb": "ETB"
+            },
+            "statuses": {
+                "pending": "Pending",
+                "partial": "Partial",
+                "paid": "Paid",
+                "cancelled": "Cancelled"
+            },
+            "modal": {
+                "title": "Add Receivable",
+                "name": "Name",
+                "namePlaceholder": "e.g., Client John Doe",
+                "amount": "Amount (ETB)",
+                "amountPlaceholder": "0.00",
+                "dueDate": "Due Date (Optional)",
+                "notes": "Description / Notes",
+                "notesPlaceholder": "Optional notes about this receivable...",
+                "cancel": "Cancel",
+                "create": "Save Receivable",
+                "creating": "Saving..."
+            },
+            "messages": {
+                "loadError": "Failed to load receivables.",
+                "nameRequired": "Name is required.",
+                "invalidAmount": "Please enter a valid amount.",
+                "decimalLimit": "Amounts can support a maximum of 2 decimal places.",
+                "createSuccess": "Receivable created successfully.",
+                "createFailed": "Failed to create receivable."
+            }
+        },
+        "receivableDetail": {
+            "title": "Receivable Details",
+            "noDescription": "No description provided.",
+            "backToList": "Back to Receivables",
+            "notFound": "Receivable not found.",
+            "receivePayment": "Receive Payment",
+            "edit": "Edit",
+            "delete": "Delete",
+            "details": {
+                "totalAmount": "Total Amount",
+                "paidAmount": "Paid Amount",
+                "outstandingAmount": "Outstanding Amount",
+                "status": "Status",
+                "dueDate": "Due Date",
+                "noDueDate": "No due date",
+                "createdAt": "Created Date"
+            },
+            "statuses": {
+                "pending": "Pending",
+                "partial": "Partial",
+                "paid": "Paid",
+                "cancelled": "Cancelled"
+            },
+            "payments": {
+                "title": "Payment History",
+                "empty": "No payments received yet.",
+                "table": {
+                    "date": "Date",
+                    "amount": "Amount",
+                    "account": "Money Account",
+                    "notes": "Notes",
+                    "accountFallback": "Account"
+                }
+            },
+            "receiveModal": {
+                "title": "Receive Payment",
+                "moneyAccount": "Money Account",
+                "amountWithMax": "Amount (Max: {max} ETB)",
+                "notes": "Notes",
+                "notesPlaceholder": "Optional payment notes...",
+                "cancel": "Cancel",
+                "submit": "Record Payment",
+                "submitting": "Processing..."
+            },
+            "editModal": {
+                "title": "Edit Receivable",
+                "name": "Name",
+                "amountWithMin": "Total Amount (Min: {min} ETB)",
+                "dueDate": "Due Date",
+                "description": "Description",
+                "cancel": "Cancel",
+                "submit": "Update Receivable",
+                "submitting": "Saving..."
+            },
+            "deleteModal": {
+                "title": "Delete Receivable",
+                "description": "Are you sure you want to delete this receivable? This action cannot be undone.",
+                "cancel": "Cancel",
+                "submit": "Delete",
+                "submitting": "Deleting..."
+            },
+            "messages": {
+                "loadError": "Failed to load receivable details.",
+                "selectAccount": "Please select a money account.",
+                "invalidAmount": "Please enter a valid positive payment amount.",
+                "exceedsOutstanding": "Payment amount cannot exceed outstanding balance.",
+                "paymentSuccess": "Payment recorded successfully.",
+                "paymentFailed": "Failed to record payment.",
+                "nameRequired": "Name is required.",
+                "amountBelowPaid": "Total amount cannot be less than already received payments.",
+                "updateSuccess": "Receivable updated successfully.",
+                "updateFailed": "Failed to update receivable.",
+                "deleteSuccess": "Receivable deleted successfully.",
+                "deleteFailed": "Failed to delete receivable."
             }
         },
         "creditsPage": {
@@ -1699,6 +1837,8 @@
                 "customerDebtDesc": "Log credit given (out) or income collected (in)",
                 "payableTitle": "Add Payable",
                 "payableDesc": "Create supplier bill / debt payable record",
+                "receivableTitle": "Add Receivable",
+                "receivableDesc": "Create money owed to business record",             
                 "supplierPaymentTitle": "Supplier Bill Payment",
                 "supplierPaymentDesc": "Record payment made directly to supplier",
                 "transferTitle": "Account Transfer",
@@ -1710,6 +1850,7 @@
                 "expense": "Record Expense",
                 "customerDebt": "Customer Debt / Credit",
                 "payable": "Record Payable",
+                "receivable": "Record Receivable",
                 "supplierPayment": "Pay Supplier",
                 "transfer": "Internal Transfer",
                 "default": "Smart Action"

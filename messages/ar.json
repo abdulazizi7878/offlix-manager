@@ -1265,6 +1265,142 @@
                 "paymentFailed": "فشل تسجيل الدفع"
             }
         },
+        "receivablesPage": {
+            "title": "المستحقات",
+            "subtitle": "الأموال المستحقة للنشاط التجاري.",
+            "createReceivable": "إضافة مستحق",
+            "searchPlaceholder": "البحث في المستحقات بالاسم أو الملاحظات...",
+            "allStatuses": "جميع الحالات",
+            "statusPending": "قيد الانتظار",
+            "statusPartial": "مدفوع جزئياً",
+            "statusPaid": "مدفوع",
+            "statusCancelled": "ملغى",
+            "retry": "إعادة المحاولة",
+            "noReceivablesTitle": "لا توجد مستحقات بعد.",
+            "noReceivablesSubtitle": "تتبع الأموال المستحقة لنشاطك التجاري هنا.",
+            "summary": {
+                "totalReceivables": "إجمالي المستحقات",
+                "outstandingAmount": "المبلغ المتبقي",
+                "partiallyPaid": "مدفوع جزئياً",
+                "overdue": "متأخر"
+            },
+            "table": {
+                "name": "الاسم",
+                "total": "المبلغ الإجمالي",
+                "paid": "المدفوع",
+                "outstanding": "المتبقي",
+                "status": "الحالة",
+                "dueDate": "تاريخ الاستحقاق",
+                "action": "الإجراء",
+                "viewManage": "عرض واستلام",
+                "noDueDate": "لا يوجد تاريخ استحقاق",
+                "overdue": "متأخر",
+                "etb": "بر"
+            },
+            "statuses": {
+                "pending": "قيد الانتظار",
+                "partial": "مدفوع جزئياً",
+                "paid": "مدفوع",
+                "cancelled": "ملغى"
+            },
+            "modal": {
+                "title": "إضافة مستحق",
+                "name": "الاسم",
+                "namePlaceholder": "مثال: العميل أحمد علي",
+                "amount": "المبلغ (بالبر)",
+                "amountPlaceholder": "0.00",
+                "dueDate": "تاريخ الاستحقاق (اختياري)",
+                "notes": "الوصف / الملاحظات",
+                "notesPlaceholder": "ملاحظات اختيارية حول هذا المستحق...",
+                "cancel": "إلغاء",
+                "create": "حفظ المستحق",
+                "creating": "جاري الحفظ..."
+            },
+            "messages": {
+                "loadError": "فشل في تحميل المستحقات.",
+                "nameRequired": "الاسم مطلوب.",
+                "invalidAmount": "يرجى إدخال مبلغ صحيح.",
+                "decimalLimit": "يدعم المبلغ خانتين عشريتين كحد أقصى.",
+                "createSuccess": "تم إنشاء المستحق بنجاح.",
+                "createFailed": "فشل في إنشاء المستحق."
+            }
+        },
+        "receivableDetail": {
+            "title": "تفاصيل المستحق",
+            "noDescription": "لا يوجد وصف.",
+            "backToList": "العودة إلى المستحقات",
+            "notFound": "المستحق غير موجود.",
+            "receivePayment": "استلام دفعة",
+            "edit": "تعديل",
+            "delete": "حذف",
+            "details": {
+                "totalAmount": "المبلغ الإجمالي",
+                "paidAmount": "المبلغ المدفوع",
+                "outstandingAmount": "المبلغ المتبقي",
+                "status": "الحالة",
+                "dueDate": "تاريخ الاستحقاق",
+                "noDueDate": "لا يوجد تاريخ استحقاق",
+                "createdAt": "تاريخ الإنشاء"
+            },
+            "statuses": {
+                "pending": "قيد الانتظار",
+                "partial": "مدفوع جزئياً",
+                "paid": "مدفوع",
+                "cancelled": "ملغى"
+            },
+            "payments": {
+                "title": "سجل الدفعات",
+                "empty": "لم يتم استلام أي دفعات بعد.",
+                "table": {
+                    "date": "التاريخ",
+                    "amount": "المبلغ",
+                    "account": "الحساب المالي",
+                    "notes": "الملاحظات",
+                    "accountFallback": "الحساب"
+                }
+            },
+            "receiveModal": {
+                "title": "استلام دفعة",
+                "moneyAccount": "الحساب المالي",
+                "amountWithMax": "المبلغ (الأقصى: {max} بر)",
+                "notes": "الملاحظات",
+                "notesPlaceholder": "ملاحظات اختيارية حول الدفعة...",
+                "cancel": "إلغاء",
+                "submit": "تسجيل الدفعة",
+                "submitting": "جاري المعالجة..."
+            },
+            "editModal": {
+                "title": "تعديل المستحق",
+                "name": "الاسم",
+                "amountWithMin": "المبلغ الإجمالي (الأدنى: {min} بر)",
+                "dueDate": "تاريخ الاستحقاق",
+                "description": "الوصف",
+                "cancel": "إلغاء",
+                "submit": "تحديث المستحق",
+                "submitting": "جاري الحفظ..."
+            },
+            "deleteModal": {
+                "title": "حذف المستحق",
+                "description": "هل أنت تأكد من أنك تريد حذف هذا المستحق؟ لا يمكن التراجع عن هذا الإجراء.",
+                "cancel": "إلغاء",
+                "submit": "حذف",
+                "submitting": "جاري الحذف..."
+            },
+            "messages": {
+                "loadError": "فشل في تحميل تفاصيل المستحق.",
+                "selectAccount": "يرجى تحديد حساب مالي.",
+                "invalidAmount": "يرجى إدخال مبلغ دفع صحيح موجبي.",
+                "exceedsOutstanding": "لا يمكن أن يتجاوز مبلغ الدفعة المبلغ المتبقي.",
+                "paymentSuccess": "تم تسجيل الدفعة بنجاح.",
+                "paymentFailed": "فشل في تسجيل الدفعة.",
+                "nameRequired": "الاسم مطلوب.",
+                "amountBelowPaid": "لا يمكن أن يكون المبلغ الإجمالي أقل من الدفعات المستلمة بالفعل.",
+                "updateSuccess": "تم تحديث المستحق بنجاح.",
+                "updateFailed": "فشل في تحديث المستحق.",
+                "deleteSuccess": "تم حذف المستحق بنجاح.",
+                "deleteFailed": "فشل في حذف المستحق."
+            }
+        },
         "creditsPage": {
             "title": "الائتمانات",
             "description": "تتبع الأموال المقدمة كائتمان والمستلمة كائتمان.",

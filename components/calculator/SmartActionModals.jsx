@@ -413,6 +413,16 @@ export default function SmartActionModals({
                     };
                     break;
 
+                case "RECEIVABLE":
+                    endpoint = "/api/v1/dashboard/money/receivables";
+                    payload = {
+                        name: formData.partyName,
+                        amount: Number(formData.amount),
+                        description: formData.description || null,
+                        dueDate: formData.dueDate || null,
+                    };
+                    break;
+
                 case "SUPPLIER_PAYMENT":
                     endpoint = "/api/v1/dashboard/money/transactions";
                     payload = {
@@ -499,6 +509,13 @@ export default function SmartActionModals({
                 color: "text-orange-500 bg-orange-500/10 border-orange-500/20",
             },
             {
+                id: "RECEIVABLE",
+                label: t("actions.receivableTitle"),
+                desc: t("actions.receivableDesc"),
+                icon: Receipt,
+                color: "text-teal-500 bg-teal-500/10 border-teal-500/20",
+            },
+            {
                 id: "SUPPLIER_PAYMENT",
                 label: t("actions.supplierPaymentTitle"),
                 desc: t("actions.supplierPaymentDesc"),
@@ -579,6 +596,7 @@ export default function SmartActionModals({
             case "EXPENSE": return t("modalTitles.expense");
             case "CUSTOMER_DEBT": return t("modalTitles.customerDebt");
             case "PAYABLE": return t("modalTitles.payable");
+            case "RECEIVABLE": return t("modalTitles.receivable");
             case "SUPPLIER_PAYMENT": return t("modalTitles.supplierPayment");
             case "TRANSFER": return t("modalTitles.transfer");
             default: return t("modalTitles.default");
@@ -793,7 +811,7 @@ export default function SmartActionModals({
                             </div>
                         </form>
                     ) : (
-                        /* NON-SALE FINANCIAL FORM (INCOME, EXPENSE, DEBTS, PAYABLE, TRANSFER) */
+                        /* NON-SALE FINANCIAL FORM (INCOME, EXPENSE, DEBTS, PAYABLE, RECEIVABLE, TRANSFER) */
                         <form id="smart-action-form" onSubmit={handleFinancialSubmit} className="space-y-4">
                             {/* Amount Field */}
                             <div>
@@ -866,11 +884,11 @@ export default function SmartActionModals({
                                 </div>
                             ) : null}
 
-                            {/* Party Name for Debts/Payables/Suppliers */}
-                            {(actionType === "CUSTOMER_DEBT" || actionType === "PAYABLE" || actionType === "SUPPLIER_PAYMENT") && (
+                            {/* Party Name for Debts/Payables/Receivables/Suppliers */}
+                            {(actionType === "CUSTOMER_DEBT" || actionType === "PAYABLE" || actionType === "RECEIVABLE" || actionType === "SUPPLIER_PAYMENT") && (
                                 <div>
                                     <label className="block text-xs font-semibold mb-1">
-                                        {actionType === "CUSTOMER_DEBT" ? t("fields.customerNameOnly") : t("fields.supplierName")}
+                                        {actionType === "CUSTOMER_DEBT" || actionType === "RECEIVABLE" ? t("fields.customerNameOnly") : t("fields.supplierName")}
                                     </label>
                                     <input
                                         type="text"
@@ -922,8 +940,8 @@ export default function SmartActionModals({
                                 </>
                             )}
 
-                            {/* Due Date for Debts/Payables */}
-                            {(actionType === "CUSTOMER_DEBT" || actionType === "PAYABLE") && (
+                            {/* Due Date for Debts/Payables/Receivables */}
+                            {(actionType === "CUSTOMER_DEBT" || actionType === "PAYABLE" || actionType === "RECEIVABLE") && (
                                 <div>
                                     <label className="block text-xs font-semibold mb-1">{t("fields.dueDateOptional")}</label>
                                     <input

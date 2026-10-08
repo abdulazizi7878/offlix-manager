@@ -1218,6 +1218,120 @@ CREATE INDEX idx_payable_payments_money_account_id
 CREATE INDEX idx_payable_payments_paid_at
     ON payable_payments(paid_at);
 
+-- ============================================================
+-- RECEIVABLES
+-- ============================================================
+-- Money owed to the business by another person/entity.
+-- Completely independent from sales.
+-- ============================================================
+
+CREATE TABLE receivables (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    name VARCHAR(150) NOT NULL,
+
+    description TEXT,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    due_date DATE,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+
+    created_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (length(trim(name)) > 0),
+
+    CHECK (amount > 0),
+
+    CHECK (
+        status IN (
+            'pending',
+            'partial',
+            'paid',
+            'cancelled'
+        )
+    )
+);
+
+
+CREATE INDEX idx_receivables_account_id
+    ON receivables(account_id);
+
+CREATE INDEX idx_receivables_account_status
+    ON receivables(account_id, status);
+
+CREATE INDEX idx_receivables_due_date
+    ON receivables(account_id, due_date);
+
+
+-- ============================================================
+-- RECEIVABLE PAYMENTS
+-- ============================================================
+-- Actual money received against a receivable.
+-- ============================================================
+
+CREATE TABLE receivable_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    account_id UUID NOT NULL
+        REFERENCES accounts(id)
+        ON DELETE CASCADE,
+
+    receivable_id UUID NOT NULL,
+
+    money_account_id UUID NOT NULL,
+
+    amount NUMERIC(12,2) NOT NULL,
+
+    received_by_user_id UUID NOT NULL
+        REFERENCES users(id),
+
+    received_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    notes TEXT,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CHECK (amount > 0),
+
+    CONSTRAINT fk_receivable_payment_receivable
+        FOREIGN KEY (receivable_id)
+        REFERENCES receivables(id)
+        ON DELETE RESTRICT,
+
+    CONSTRAINT fk_receivable_payment_money_account
+        FOREIGN KEY (
+            money_account_id,
+            account_id
+        )
+        REFERENCES money_accounts (
+            id,
+            account_id
+        )
+);
+
+
+CREATE INDEX idx_receivable_payments_account_id
+    ON receivable_payments(account_id);
+
+CREATE INDEX idx_receivable_payments_receivable_id
+    ON receivable_payments(receivable_id);
+
+CREATE INDEX idx_receivable_payments_money_account_id
+    ON receivable_payments(money_account_id);
+
+CREATE INDEX idx_receivable_payments_received_at
+    ON receivable_payments(received_at);
 
 -- ============================================================
 -- CREDITS
