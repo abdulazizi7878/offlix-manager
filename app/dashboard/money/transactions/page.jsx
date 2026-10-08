@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowRightLeft, Plus, Search, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { ArrowRightLeft, Plus, Search, ArrowUpRight, ArrowDownLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import dayjs from "dayjs";
@@ -23,7 +23,7 @@ export default function TransactionsPage() {
     const [typeFilter, setTypeFilter] = useState("");
     const [directionFilter, setDirectionFilter] = useState("");
     const [page, setPage] = useState(1);
-    const [pagination, setPagination] = useState({ totalPages: 1, total: 0 });
+    const [pagination, setPagination] = useState({ totalPages: 1, total: 0, page: 1 });
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,11 +54,17 @@ export default function TransactionsPage() {
                 fetchApi("/api/v1/dashboard/money/accounts")
             ]);
 
-            const txData = txRes.data?.data ?? {};
+            // Safely parse nested structure: { success: true, data: { data: [...], pagination: {...} } }
+            const responseObj = txRes.data?.data ?? txRes.data ?? {};
+            const list = Array.isArray(responseObj)
+                ? responseObj
+                : (responseObj.data ?? responseObj.items ?? []);
 
-            setTransactions(txData ?? []);
-            setPagination(txData.pagination ?? { totalPages: 1, total: 0 });
-            setAccounts(accRes.data?.data ?? []);
+            const pageInfo = responseObj.pagination ?? txRes.data?.pagination ?? { totalPages: 1, total: list.length, page: currentPage };
+
+            setTransactions(list);
+            setPagination(pageInfo);
+            setAccounts(accRes.data?.data ?? accRes.data ?? []);
 
         } catch (err) {
             setError(err.message || t("messages.loadError"));
@@ -139,7 +145,7 @@ export default function TransactionsPage() {
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                    className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity cursor-pointer"
                 >
                     <Plus className="w-4 h-4" />
                     <span>{t("newTransaction")}</span>
@@ -196,7 +202,7 @@ export default function TransactionsPage() {
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
                     <span className="text-sm font-medium">{error}</span>
-                    <button onClick={() => loadData(page)} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">{t("retry")}</button>
+                    <button onClick={() => loadData(page)} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium cursor-pointer">{t("retry")}</button>
                 </div>
             )}
 
@@ -217,7 +223,7 @@ export default function TransactionsPage() {
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         <span>{t("newTransaction")}</span>
@@ -295,6 +301,34 @@ export default function TransactionsPage() {
                             </table>
                         </div>
                     </div>
+
+                    {/* Pagination Bar */}
+                    {pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-between px-2 py-2">
+                            <p className="text-xs text-(--muted-foreground)">
+                                Page <span className="font-semibold text-(--foreground)">{page}</span> of{" "}
+                                <span className="font-semibold text-(--foreground)">{pagination.totalPages}</span> ({pagination.total || transactions.length} items)
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={page <= 1 || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span>Previous</span>
+                                </button>
+                                <button
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                                    disabled={page >= pagination.totalPages || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <span>Next</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -304,7 +338,7 @@ export default function TransactionsPage() {
                     <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-lg p-6 space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between pb-4 border-b border-(--border)">
                             <h2 className="text-lg font-bold">{t("modal.title")}</h2>
-                            <button onClick={() => setIsCreateModalOpen(false)} className="text-(--muted-foreground) hover:text-(--foreground)">✕</button>
+                            <button onClick={() => setIsCreateModalOpen(false)} className="text-(--muted-foreground) hover:text-(--foreground) cursor-pointer">✕</button>
                         </div>
                         <form onSubmit={handleCreateTransaction} className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -400,14 +434,14 @@ export default function TransactionsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors"
+                                    className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium hover:bg-(--muted) transition-colors cursor-pointer"
                                 >
                                     {t("modal.cancel")}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50"
+                                    className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50 cursor-pointer"
                                 >
                                     {isSubmitting ? t("modal.submitting") : t("newTransaction")}
                                 </button>

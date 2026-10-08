@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { TrendingDown, Plus, Search } from "lucide-react";
+import { TrendingDown, Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 
@@ -18,6 +18,10 @@ export default function PayablesPage() {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
+    // Pagination states
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({ totalPages: 1, total: 0, page: 1 });
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,11 +32,13 @@ export default function PayablesPage() {
         notes: ""
     });
 
-    const loadData = async () => {
+    const loadData = async (currentPage = 1) => {
         setIsLoading(true);
         setError(null);
         try {
             const params = new URLSearchParams();
+            params.append("page", currentPage.toString());
+            params.append("limit", "10");
             if (search) params.append("search", search);
             if (statusFilter) params.append("status", statusFilter);
 
@@ -45,7 +51,9 @@ export default function PayablesPage() {
             const payResponseData = payRes.data?.data ?? payRes.data ?? {};
             const payList = Array.isArray(payResponseData)
                 ? payResponseData
-                : (payResponseData.data ?? payRes.data?.payables ?? []);
+                : (payResponseData.data ?? payResponseData.items ?? payRes.data?.payables ?? []);
+
+            const pageInfo = payResponseData.pagination ?? payRes.data?.pagination ?? { totalPages: 1, total: payList.length, page: currentPage };
 
             const accResponseData = accRes.data?.data ?? accRes.data ?? {};
             const accList = Array.isArray(accResponseData)
@@ -53,6 +61,7 @@ export default function PayablesPage() {
                 : (accResponseData.data ?? accRes.data?.accounts ?? []);
 
             setPayables(payList);
+            setPagination(pageInfo);
             setAccounts(accList);
         } catch (err) {
             setError(err.message || t("messages.loadError"));
@@ -64,10 +73,10 @@ export default function PayablesPage() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            loadData();
+            loadData(page);
         }, 300);
         return () => clearTimeout(timer);
-    }, [search, statusFilter]);
+    }, [page, search, statusFilter]);
 
     const handleCreatePayable = async (e) => {
         e.preventDefault();
@@ -100,7 +109,7 @@ export default function PayablesPage() {
             toast.success(t("messages.createSuccess"));
             setIsCreateModalOpen(false);
             setFormData({ supplier_name: "", amount: "", due_date: "", notes: "" });
-            loadData();
+            loadData(page);
         } catch (err) {
             toast.error(err.message || t("messages.createFailed"));
         } finally {
@@ -124,7 +133,7 @@ export default function PayablesPage() {
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                    className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity cursor-pointer"
                 >
                     <Plus className="w-4 h-4" />
                     <span>{t("createPayable")}</span>
@@ -138,13 +147,13 @@ export default function PayablesPage() {
                         type="text"
                         placeholder={t("searchPlaceholder")}
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                         className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                     />
                 </div>
                 <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                     className="w-full sm:w-48 px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
                     <option value="">{t("allStatuses")}</option>
@@ -158,7 +167,7 @@ export default function PayablesPage() {
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
                     <span className="text-sm font-medium">{error}</span>
-                    <button onClick={loadData} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium">
+                    <button onClick={() => loadData(page)} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium cursor-pointer">
                         {t("retry")}
                     </button>
                 </div>
@@ -179,7 +188,7 @@ export default function PayablesPage() {
                     </div>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         <span>{t("createPayable")}</span>
@@ -188,45 +197,75 @@ export default function PayablesPage() {
             )}
 
             {!isLoading && !error && payables.length > 0 && (
-                <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
-                                <tr>
-                                    <th className="px-6 py-3.5">{t("table.supplier")}</th>
-                                    <th className="px-6 py-3.5">{t("table.original")}</th>
-                                    <th className="px-6 py-3.5">{t("table.remaining")}</th>
-                                    <th className="px-6 py-3.5">{t("table.status")}</th>
-                                    <th className="px-6 py-3.5">{t("table.dueDate")}</th>
-                                    <th className="px-6 py-3.5 text-right">{t("table.action")}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-(--border)">
-                                {payables.map((p) => {
-                                    const orig = Number(p.amount || 0);
-                                    const rem = Number(p.remaining_amount ?? orig);
-                                    return (
-                                        <tr key={p.id} className="hover:bg-(--muted)/30 transition-colors">
-                                            <td className="px-6 py-4 font-medium">{p.supplier_name || p.name}</td>
-                                            <td className="px-6 py-4 font-semibold">{orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("table.etb")}</span></td>
-                                            <td className="px-6 py-4 font-semibold text-(--destructive)">{rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">{t("table.etb")}</span></td>
-                                            <td className="px-6 py-4">
-                                                <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase bg-(--primary)/10 text-(--primary)">
-                                                    {p.status || t("table.pending")}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">{p.due_date ? new Date(p.due_date).toLocaleDateString() : t("table.noDueDate")}</td>
-                                            <td className="px-6 py-4 text-right">
-                                                <Link href={`/dashboard/money/payables/${p.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors">
-                                                    {t("table.viewPay")}
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                <div className="space-y-4">
+                    <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-6 py-3.5">{t("table.supplier")}</th>
+                                        <th className="px-6 py-3.5">{t("table.original")}</th>
+                                        <th className="px-6 py-3.5">{t("table.remaining")}</th>
+                                        <th className="px-6 py-3.5">{t("table.status")}</th>
+                                        <th className="px-6 py-3.5">{t("table.dueDate")}</th>
+                                        <th className="px-6 py-3.5 text-right">{t("table.action")}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-(--border)">
+                                    {payables.map((p) => {
+                                        const orig = Number(p.amount || 0);
+                                        const rem = Number(p.remaining_amount ?? orig);
+                                        return (
+                                            <tr key={p.id} className="hover:bg-(--muted)/30 transition-colors">
+                                                <td className="px-6 py-4 font-medium">{p.supplier_name || p.name}</td>
+                                                <td className="px-6 py-4 font-semibold">{orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("table.etb")}</span></td>
+                                                <td className="px-6 py-4 font-semibold text-(--destructive)">{rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">{t("table.etb")}</span></td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase bg-(--primary)/10 text-(--primary)">
+                                                        {p.status || t("table.pending")}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-xs text-(--muted-foreground)">{p.due_date ? new Date(p.due_date).toLocaleDateString() : t("table.noDueDate")}</td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <Link href={`/dashboard/money/payables/${p.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors">
+                                                        {t("table.viewPay")}
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    {/* Pagination Bar */}
+                    {pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-between px-2 py-2">
+                            <p className="text-xs text-(--muted-foreground)">
+                                Page <span className="font-semibold text-(--foreground)">{page}</span> of{" "}
+                                <span className="font-semibold text-(--foreground)">{pagination.totalPages}</span> ({pagination.total || payables.length} items)
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={page <= 1 || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span>Previous</span>
+                                </button>
+                                <button
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                                    disabled={page >= pagination.totalPages || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <span>Next</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -235,7 +274,7 @@ export default function PayablesPage() {
                     <div className="bg-(--card) border border-(--border) rounded-2xl w-full max-w-md p-6 space-y-6 shadow-xl animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between pb-4 border-b border-(--border)">
                             <h2 className="text-lg font-bold">{t("modal.title")}</h2>
-                            <button onClick={() => setIsCreateModalOpen(false)} className="text-(--muted-foreground) hover:text-(--foreground)">✕</button>
+                            <button onClick={() => setIsCreateModalOpen(false)} className="text-(--muted-foreground) hover:text-(--foreground) cursor-pointer">✕</button>
                         </div>
                         <form onSubmit={handleCreatePayable} className="space-y-4">
                             <div className="space-y-1.5">
@@ -281,10 +320,10 @@ export default function PayablesPage() {
                                 />
                             </div>
                             <div className="flex items-center justify-end gap-3 pt-4 border-t border-(--border)">
-                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium">
+                                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium cursor-pointer">
                                     {t("modal.cancel")}
                                 </button>
-                                <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium">
+                                <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium hover:opacity-95 transition-opacity disabled:opacity-50 cursor-pointer">
                                     {isSubmitting ? t("modal.creating") : t("modal.create")}
                                 </button>
                             </div>

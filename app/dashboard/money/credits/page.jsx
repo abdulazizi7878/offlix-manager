@@ -8,6 +8,8 @@ import {
     TrendingUp,
     Plus,
     Search,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 
 import { fetchApi } from "@/lib/api/client";
@@ -34,6 +36,10 @@ export default function CreditsPage() {
     const [statusFilter, setStatusFilter] = useState("");
     const [directionFilter, setDirectionFilter] = useState("");
 
+    // Pagination states
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({ totalPages: 1, total: 0, page: 1 });
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,12 +52,14 @@ export default function CreditsPage() {
         notes: "",
     });
 
-    const loadData = async () => {
+    const loadData = async (currentPage = 1) => {
         setIsLoading(true);
         setError(null);
 
         try {
             const params = new URLSearchParams();
+            params.append("page", currentPage.toString());
+            params.append("limit", "10");
 
             if (search) {
                 params.append("search", search);
@@ -86,12 +94,15 @@ export default function CreditsPage() {
                 );
             }
 
+            const pageInfo = responseBody?.pagination ?? responseBody?.data?.pagination ?? credRes.data?.pagination ?? { totalPages: 1, total: credList.length, page: currentPage };
+
             const accResponseData = accRes.data?.data ?? accRes.data ?? {};
             const accList = Array.isArray(accResponseData)
                 ? accResponseData
                 : (accResponseData.data ?? accRes.data?.accounts ?? []);
 
             setCredits(credList);
+            setPagination(pageInfo);
             setAccounts(accList);
         } catch (err) {
             setError(err.message || t("messages.loadError"));
@@ -103,11 +114,11 @@ export default function CreditsPage() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            loadData();
+            loadData(page);
         }, 300);
 
         return () => clearTimeout(timer);
-    }, [search, statusFilter, directionFilter]);
+    }, [page, search, statusFilter, directionFilter]);
 
     const handleCreateCredit = async (e) => {
         e.preventDefault();
@@ -169,7 +180,7 @@ export default function CreditsPage() {
                 notes: "",
             });
 
-            loadData();
+            loadData(page);
         } catch (err) {
             toast.error(err.message || t("messages.createError"));
         } finally {
@@ -199,7 +210,7 @@ export default function CreditsPage() {
 
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                    className="inline-flex items-center justify-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity cursor-pointer"
                 >
                     <Plus className="w-4 h-4" />
                     <span>{t("createCredit")}</span>
@@ -215,14 +226,14 @@ export default function CreditsPage() {
                         type="text"
                         placeholder={t("searchPlaceholder")}
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                         className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                     />
                 </div>
 
                 <select
                     value={directionFilter}
-                    onChange={(e) => setDirectionFilter(e.target.value)}
+                    onChange={(e) => { setDirectionFilter(e.target.value); setPage(1); }}
                     className="w-full sm:w-40 px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
                     <option value="">{t("allDirections")}</option>
@@ -232,7 +243,7 @@ export default function CreditsPage() {
 
                 <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                     className="w-full sm:w-48 px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
                     <option value="">{t("allStatuses")}</option>
@@ -249,8 +260,8 @@ export default function CreditsPage() {
                     <span className="text-sm font-medium">{error}</span>
 
                     <button
-                        onClick={loadData}
-                        className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium"
+                        onClick={() => loadData(page)}
+                        className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium cursor-pointer"
                     >
                         {t("retry")}
                     </button>
@@ -281,7 +292,7 @@ export default function CreditsPage() {
 
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity"
+                        className="inline-flex items-center gap-2 bg-(--primary) text-(--primary-foreground) px-4 py-2 rounded-lg font-medium text-sm hover:opacity-95 transition-opacity cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         <span>{t("createCredit")}</span>
@@ -291,128 +302,158 @@ export default function CreditsPage() {
 
             {/* Table */}
             {!isLoading && !error && credits.length > 0 && (
-                <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
-                                <tr>
-                                    <th className="px-6 py-3.5">{t("table.customer")}</th>
-                                    <th className="px-6 py-3.5">{t("table.direction")}</th>
-                                    <th className="px-6 py-3.5">{t("table.original")}</th>
-                                    <th className="px-6 py-3.5">{t("table.remaining")}</th>
-                                    <th className="px-6 py-3.5">{t("table.status")}</th>
-                                    <th className="px-6 py-3.5">{t("table.createdAt")}</th>
-                                    <th className="px-6 py-3.5">{t("table.dueDate")}</th>
-                                    <th className="px-6 py-3.5 text-right">{t("table.action")}</th>
-                                </tr>
-                            </thead>
+                <div className="space-y-4">
+                    <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-6 py-3.5">{t("table.customer")}</th>
+                                        <th className="px-6 py-3.5">{t("table.direction")}</th>
+                                        <th className="px-6 py-3.5">{t("table.original")}</th>
+                                        <th className="px-6 py-3.5">{t("table.remaining")}</th>
+                                        <th className="px-6 py-3.5">{t("table.status")}</th>
+                                        <th className="px-6 py-3.5">{t("table.createdAt")}</th>
+                                        <th className="px-6 py-3.5">{t("table.dueDate")}</th>
+                                        <th className="px-6 py-3.5 text-right">{t("table.action")}</th>
+                                    </tr>
+                                </thead>
 
-                            <tbody className="divide-y divide-(--border)">
-                                {credits.map((c) => {
-                                    const orig = Number(c.amount || 0);
-                                    const rem = Number(c.remaining_amount ?? orig);
-                                    const dueDate = c.due_date;
-                                    const createdAt = c.created_at;
-                                    const isMoneyIn = c.direction === "in";
+                                <tbody className="divide-y divide-(--border)">
+                                    {credits.map((c) => {
+                                        const orig = Number(c.amount || 0);
+                                        const rem = Number(c.remaining_amount ?? orig);
+                                        const dueDate = c.due_date;
+                                        const createdAt = c.created_at;
+                                        const isMoneyIn = c.direction === "in";
 
-                                    return (
-                                        <tr
-                                            key={c.id}
-                                            className="hover:bg-(--muted)/30 transition-colors"
-                                        >
-                                            <td className="px-6 py-4 font-medium">
-                                                {c.customer_name || c.name}
-                                            </td>
+                                        return (
+                                            <tr
+                                                key={c.id}
+                                                className="hover:bg-(--muted)/30 transition-colors"
+                                            >
+                                                <td className="px-6 py-4 font-medium">
+                                                    {c.customer_name || c.name}
+                                                </td>
 
-                                            <td className="px-6 py-4">
-                                                <span
-                                                    className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${isMoneyIn
+                                                <td className="px-6 py-4">
+                                                    <span
+                                                        className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${isMoneyIn
                                                             ? "bg-(--success)/10 text-(--success)"
                                                             : "bg-(--destructive)/10 text-(--destructive)"
-                                                        }`}
-                                                >
-                                                    {isMoneyIn ? t("moneyIn") : t("moneyOut")}
-                                                </span>
-                                            </td>
+                                                            }`}
+                                                    >
+                                                        {isMoneyIn ? t("moneyIn") : t("moneyOut")}
+                                                    </span>
+                                                </td>
 
-                                            <td className="px-6 py-4 font-semibold">
-                                                {orig.toLocaleString(undefined, {
-                                                    minimumFractionDigits: 2,
-                                                    maximumFractionDigits: 2,
-                                                })}{" "}
-                                                <span className="text-xs font-normal text-(--muted-foreground)">
-                                                    {t("table.etb")}
-                                                </span>
-                                            </td>
+                                                <td className="px-6 py-4 font-semibold">
+                                                    {orig.toLocaleString(undefined, {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    })}{" "}
+                                                    <span className="text-xs font-normal text-(--muted-foreground)">
+                                                        {t("table.etb")}
+                                                    </span>
+                                                </td>
 
-                                            <td className="px-6 py-4 font-semibold">
-                                                {rem.toLocaleString(undefined, {
-                                                    minimumFractionDigits: 2,
-                                                    maximumFractionDigits: 2,
-                                                })}{" "}
-                                                <span className="text-xs font-normal text-(--muted-foreground)">
-                                                    {t("table.etb")}
-                                                </span>
-                                            </td>
+                                                <td className="px-6 py-4 font-semibold">
+                                                    {rem.toLocaleString(undefined, {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    })}{" "}
+                                                    <span className="text-xs font-normal text-(--muted-foreground)">
+                                                        {t("table.etb")}
+                                                    </span>
+                                                </td>
 
-                                            <td className="px-6 py-4">
-                                                <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase bg-(--primary)/10 text-(--primary)">
-                                                    {c.status ? t(`statuses.${c.status}`) : t("statuses.pending")}
-                                                </span>
-                                            </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase bg-(--primary)/10 text-(--primary)">
+                                                        {c.status ? t(`statuses.${c.status}`) : t("statuses.pending")}
+                                                    </span>
+                                                </td>
 
-                                            {/* Created At Column */}
-                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">
-                                                <div>
-                                                    {createdAt
-                                                        ? dayjs(createdAt)
-                                                            .tz("Africa/Addis_Ababa")
-                                                            .format("DD/MM/YYYY HH:mm")
-                                                        : "—"}
-                                                </div>
+                                                {/* Created At Column */}
+                                                <td className="px-6 py-4 text-xs text-(--muted-foreground)">
+                                                    <div>
+                                                        {createdAt
+                                                            ? dayjs(createdAt)
+                                                                .tz("Africa/Addis_Ababa")
+                                                                .format("DD/MM/YYYY HH:mm")
+                                                            : "—"}
+                                                    </div>
 
-                                                <div className="text-[10px]">
-                                                    {createdAt
-                                                        ? `(${dayjs(createdAt)
-                                                            .tz("Africa/Addis_Ababa")
-                                                            .fromNow()})`
-                                                        : ""}
-                                                </div>
-                                            </td>
+                                                    <div className="text-[10px]">
+                                                        {createdAt
+                                                            ? `(${dayjs(createdAt)
+                                                                .tz("Africa/Addis_Ababa")
+                                                                .fromNow()})`
+                                                            : ""}
+                                                    </div>
+                                                </td>
 
-                                            {/* Due Date Column */}
-                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">
-                                                <div>
-                                                    {dueDate
-                                                        ? dayjs(dueDate)
-                                                            .tz("Africa/Addis_Ababa")
-                                                            .format("DD/MM/YYYY")
-                                                        : "—"}
-                                                </div>
+                                                {/* Due Date Column */}
+                                                <td className="px-6 py-4 text-xs text-(--muted-foreground)">
+                                                    <div>
+                                                        {dueDate
+                                                            ? dayjs(dueDate)
+                                                                .tz("Africa/Addis_Ababa")
+                                                                .format("DD/MM/YYYY")
+                                                            : "—"}
+                                                    </div>
 
-                                                <div className="text-[10px]">
-                                                    {dueDate
-                                                        ? `(${dayjs(dueDate)
-                                                            .tz("Africa/Addis_Ababa")
-                                                            .fromNow()})`
-                                                        : ""}
-                                                </div>
-                                            </td>
+                                                    <div className="text-[10px]">
+                                                        {dueDate
+                                                            ? `(${dayjs(dueDate)
+                                                                .tz("Africa/Addis_Ababa")
+                                                                .fromNow()})`
+                                                            : ""}
+                                                    </div>
+                                                </td>
 
-                                            <td className="px-6 py-4 text-right">
-                                                <Link
-                                                    href={`/dashboard/money/credits/${c.id}`}
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors"
-                                                >
-                                                    {t("table.viewManage")}
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                                <td className="px-6 py-4 text-right">
+                                                    <Link
+                                                        href={`/dashboard/money/credits/${c.id}`}
+                                                        className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors"
+                                                    >
+                                                        {t("table.viewManage")}
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    {/* Pagination Bar */}
+                    {pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-between px-2 py-2">
+                            <p className="text-xs text-(--muted-foreground)">
+                                Page <span className="font-semibold text-(--foreground)">{page}</span> of{" "}
+                                <span className="font-semibold text-(--foreground)">{pagination.totalPages}</span> ({pagination.total || credits.length} items)
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={page <= 1 || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span>Previous</span>
+                                </button>
+                                <button
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                                    disabled={page >= pagination.totalPages || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <span>Next</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -425,7 +466,7 @@ export default function CreditsPage() {
 
                             <button
                                 onClick={() => setIsCreateModalOpen(false)}
-                                className="text-(--muted-foreground) hover:text-(--foreground)"
+                                className="text-(--muted-foreground) hover:text-(--foreground) cursor-pointer"
                             >
                                 ✕
                             </button>
@@ -576,7 +617,7 @@ export default function CreditsPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsCreateModalOpen(false)}
-                                    className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium"
+                                    className="px-4 py-2 border border-(--border) rounded-lg text-sm font-medium cursor-pointer"
                                 >
                                     {t("modal.cancel")}
                                 </button>
@@ -584,7 +625,7 @@ export default function CreditsPage() {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium disabled:opacity-50"
+                                    className="px-4 py-2 bg-(--primary) text-(--primary-foreground) rounded-lg text-sm font-medium disabled:opacity-50 cursor-pointer"
                                 >
                                     {isSubmitting ? t("modal.submitting") : t("modal.submit")}
                                 </button>

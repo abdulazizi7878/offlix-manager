@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { TrendingUp, Plus, Search, AlertCircle } from "lucide-react";
+import { TrendingUp, Plus, Search, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchApi } from "@/lib/api/client";
 import { toast } from "sonner";
 import dayjs from "dayjs";
@@ -21,6 +21,10 @@ export default function ReceivablesPage() {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("");
 
+    // Pagination states
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({ totalPages: 1, total: 0, page: 1 });
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,23 +35,27 @@ export default function ReceivablesPage() {
         notes: ""
     });
 
-    const loadData = async () => {
+    const loadData = async (currentPage = 1) => {
         setIsLoading(true);
         setError(null);
         try {
             const params = new URLSearchParams();
+            params.append("page", currentPage.toString());
+            params.append("limit", "10");
             if (search) params.append("search", search);
             if (statusFilter) params.append("status", statusFilter);
 
             const res = await fetchApi(`/api/v1/dashboard/money/receivables?${params.toString()}`);
 
-            // Correctly parse based on your exact API response structure: { success: true, data: { items: [], pagination: {} } }
             const responseData = res.data?.data ?? res.data ?? {};
             const list = Array.isArray(responseData)
                 ? responseData
                 : (responseData.items ?? responseData.data ?? res.data?.receivables ?? []);
 
+            const pageInfo = responseData.pagination ?? res.data?.pagination ?? { totalPages: 1, total: list.length, page: currentPage };
+
             setReceivables(list);
+            setPagination(pageInfo);
         } catch (err) {
             setError(err.message || t("messages.loadError"));
             toast.error(t("messages.loadError"));
@@ -58,10 +66,10 @@ export default function ReceivablesPage() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            loadData();
+            loadData(page);
         }, 300);
         return () => clearTimeout(timer);
-    }, [search, statusFilter]);
+    }, [page, search, statusFilter]);
 
     const handleCreateReceivable = async (e) => {
         e.preventDefault();
@@ -94,7 +102,7 @@ export default function ReceivablesPage() {
             toast.success(t("messages.createSuccess"));
             setIsCreateModalOpen(false);
             setFormData({ name: "", amount: "", due_date: "", notes: "" });
-            loadData();
+            loadData(page);
         } catch (err) {
             toast.error(err.message || t("messages.createFailed"));
         } finally {
@@ -103,7 +111,7 @@ export default function ReceivablesPage() {
     };
 
     // Calculate Summary Metrics
-    const totalReceivablesCount = receivables.length;
+    const totalReceivablesCount = pagination.total || receivables.length;
     const totalOutstandingAmount = receivables.reduce(
         (sum, r) => sum + Number(r.outstandingAmount ?? (Number(r.amount || 0) - Number(r.paidAmount || 0))),
         0
@@ -147,7 +155,7 @@ export default function ReceivablesPage() {
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
                     <span className="text-xs font-semibold uppercase tracking-wider text-(--muted-foreground)">{t("summary.outstandingAmount", { defaultValue: "Outstanding Amount" })}</span>
                     <div className="text-xl font-bold text-(--primary)">
-                        {totalOutstandingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
+                        {totalOutstandingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("table.etb", { defaultValue: "ETB" })}</span>
                     </div>
                 </div>
                 <div className="bg-(--card) border border-(--border) rounded-xl p-4 shadow-xs space-y-1">
@@ -168,13 +176,13 @@ export default function ReceivablesPage() {
                         type="text"
                         placeholder={t("searchPlaceholder", { defaultValue: "Search receivables by name or notes..." })}
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                         className="w-full pl-9 pr-3 py-2 border border-(--border) rounded-xl text-sm bg-transparent focus:outline-none focus:border-(--primary)"
                     />
                 </div>
                 <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                     className="w-full sm:w-48 px-3 py-2 border border-(--border) rounded-xl text-sm bg-(--card) text-(--foreground) focus:outline-none focus:border-(--primary)"
                 >
                     <option value="">{t("allStatuses", { defaultValue: "All Statuses" })}</option>
@@ -189,7 +197,7 @@ export default function ReceivablesPage() {
             {error && (
                 <div className="p-4 bg-(--destructive)/10 border border-(--destructive)/20 rounded-xl flex items-center justify-between text-(--destructive)">
                     <span className="text-sm font-medium">{error}</span>
-                    <button onClick={loadData} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium cursor-pointer">
+                    <button onClick={() => loadData(page)} className="px-3 py-1.5 bg-(--background) border border-(--border) text-xs rounded-lg font-medium cursor-pointer">
                         {t("retry", { defaultValue: "Retry" })}
                     </button>
                 </div>
@@ -224,73 +232,103 @@ export default function ReceivablesPage() {
 
             {/* Receivables Table */}
             {!isLoading && !error && receivables.length > 0 && (
-                <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
-                                <tr>
-                                    <th className="px-6 py-3.5">{t("table.name", { defaultValue: "Name" })}</th>
-                                    <th className="px-6 py-3.5">{t("table.total", { defaultValue: "Total Amount" })}</th>
-                                    <th className="px-6 py-3.5">{t("table.paid", { defaultValue: "Paid" })}</th>
-                                    <th className="px-6 py-3.5">{t("table.outstanding", { defaultValue: "Outstanding" })}</th>
-                                    <th className="px-6 py-3.5">{t("table.status", { defaultValue: "Status" })}</th>
-                                    <th className="px-6 py-3.5">{t("table.dueDate", { defaultValue: "Due Date" })}</th>
-                                    <th className="px-6 py-3.5 text-right">{t("table.action", { defaultValue: "Action" })}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-(--border)">
-                                {receivables.map((r) => {
-                                    const orig = Number(r.amount || 0);
-                                    const paid = Number(r.paidAmount || 0);
-                                    const rem = Number(r.outstandingAmount ?? (orig - paid));
-                                    const isOverdue = r.dueDate && r.status !== "paid" && r.status !== "cancelled" && dayjs(r.dueDate).isBefore(dayjs(), "day");
+                <div className="space-y-4">
+                    <div className="bg-(--card) border border-(--border) rounded-xl shadow-xs overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-(--muted)/50 border-b border-(--border) text-(--muted-foreground) text-xs font-semibold uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-6 py-3.5">{t("table.name", { defaultValue: "Name" })}</th>
+                                        <th className="px-6 py-3.5">{t("table.total", { defaultValue: "Total Amount" })}</th>
+                                        <th className="px-6 py-3.5">{t("table.paid", { defaultValue: "Paid" })}</th>
+                                        <th className="px-6 py-3.5">{t("table.outstanding", { defaultValue: "Outstanding" })}</th>
+                                        <th className="px-6 py-3.5">{t("table.status", { defaultValue: "Status" })}</th>
+                                        <th className="px-6 py-3.5">{t("table.dueDate", { defaultValue: "Due Date" })}</th>
+                                        <th className="px-6 py-3.5 text-right">{t("table.action", { defaultValue: "Action" })}</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-(--border)">
+                                    {receivables.map((r) => {
+                                        const orig = Number(r.amount || 0);
+                                        const paid = Number(r.paidAmount || 0);
+                                        const rem = Number(r.outstandingAmount ?? (orig - paid));
+                                        const isOverdue = r.dueDate && r.status !== "paid" && r.status !== "cancelled" && dayjs(r.dueDate).isBefore(dayjs(), "day");
 
-                                    return (
-                                        <tr key={r.id} className="hover:bg-(--muted)/30 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="font-medium text-(--foreground)">{r.name}</div>
-                                                {r.description && <div className="text-xs text-(--muted-foreground) truncate max-w-xs">{r.description}</div>}
-                                            </td>
-                                            <td className="px-6 py-4 font-semibold">
-                                                {orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
-                                            </td>
-                                            <td className="px-6 py-4 font-semibold text-emerald-600">
-                                                {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">ETB</span>
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-(--primary)">
-                                                {rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">ETB</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase ${r.status === "paid" ? "bg-emerald-500/10 text-emerald-600" :
+                                        return (
+                                            <tr key={r.id} className="hover:bg-(--muted)/30 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-medium text-(--foreground)">{r.name}</div>
+                                                    {r.description && <div className="text-xs text-(--muted-foreground) truncate max-w-xs">{r.description}</div>}
+                                                </td>
+                                                <td className="px-6 py-4 font-semibold">
+                                                    {orig.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("table.etb", { defaultValue: "ETB" })}</span>
+                                                </td>
+                                                <td className="px-6 py-4 font-semibold text-emerald-600">
+                                                    {paid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal">{t("table.etb", { defaultValue: "ETB" })}</span>
+                                                </td>
+                                                <td className="px-6 py-4 font-bold text-(--primary)">
+                                                    {rem.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs font-normal text-(--muted-foreground)">{t("table.etb", { defaultValue: "ETB" })}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium uppercase ${r.status === "paid" ? "bg-emerald-500/10 text-emerald-600" :
                                                         r.status === "partial" ? "bg-amber-500/10 text-amber-600" :
                                                             r.status === "cancelled" ? "bg-rose-500/10 text-rose-600" :
                                                                 "bg-(--primary)/10 text-(--primary)"
-                                                    }`}>
-                                                    {r.status || "pending"}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-xs text-(--muted-foreground)">
-                                                {r.dueDate ? (
-                                                    <div className="flex flex-col">
-                                                        <span className={isOverdue ? "text-rose-500 font-semibold flex items-center gap-1" : ""}>
-                                                            {isOverdue && <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
-                                                            {new Date(r.dueDate).toLocaleDateString()}
-                                                        </span>
-                                                        {isOverdue && <span className="text-[10px] text-rose-500">Overdue</span>}
-                                                    </div>
-                                                ) : t("table.noDueDate", { defaultValue: "No due date" })}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <Link href={`/dashboard/money/receivables/${r.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors">
-                                                    {t("table.viewManage", { defaultValue: "View & Receive" })}
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                                        }`}>
+                                                        {t(`statuses.${r.status}`, { defaultValue: r.status || "Pending" })}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-xs text-(--muted-foreground)">
+                                                    {r.dueDate ? (
+                                                        <div className="flex flex-col">
+                                                            <span className={isOverdue ? "text-rose-500 font-semibold flex items-center gap-1" : ""}>
+                                                                {isOverdue && <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
+                                                                {new Date(r.dueDate).toLocaleDateString()}
+                                                            </span>
+                                                            {isOverdue && <span className="text-[10px] text-rose-500">{t("table.overdue", { defaultValue: "Overdue" })}</span>}
+                                                        </div>
+                                                    ) : t("table.noDueDate", { defaultValue: "No due date" })}
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <Link href={`/dashboard/money/receivables/${r.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) transition-colors">
+                                                        {t("table.viewManage", { defaultValue: "View & Receive" })}
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    {/* Pagination Bar */}
+                    {pagination.totalPages > 1 && (
+                        <div className="flex items-center justify-between px-2 py-2">
+                            <p className="text-xs text-(--muted-foreground)">
+                                Page <span className="font-semibold text-(--foreground)">{page}</span> of{" "}
+                                <span className="font-semibold text-(--foreground)">{pagination.totalPages}</span> ({pagination.total || receivables.length} items)
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                                    disabled={page <= 1 || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                    <span>Previous</span>
+                                </button>
+                                <button
+                                    onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                                    disabled={page >= pagination.totalPages || isLoading}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 border border-(--border) rounded-lg text-xs font-medium hover:bg-(--muted) disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                                >
+                                    <span>Next</span>
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
