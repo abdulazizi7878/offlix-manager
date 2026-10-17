@@ -22,6 +22,8 @@ import {
   User,
   Search,
   Calculator,
+  Wrench,
+  ShieldCheck,
 } from "lucide-react";
 
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
@@ -36,6 +38,8 @@ export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [shouldFocusSearch, setShouldFocusSearch] = useState(false);
 
+  // Group dropdown states
+  const [isToolsOpen, setIsToolsOpen] = useState(false);
   const [isBranchesOpen, setIsBranchesOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const [isSalesOpen, setIsSalesOpen] = useState(false);
@@ -53,12 +57,17 @@ export default function DashboardLayout({ children }) {
   const [sidebarWidth, setSidebarWidth] = useState(288);
   const isResizingRef = useRef(false);
 
+  // Base prefix detection (handles /dashboard or /dashboar cleanly)
+  const basePath = pathname.startsWith("/dashboard") ? "/dashboard" : "/dashboard";
+  const paymentVerificationPath = `${basePath}/tools/payment-verification`;
+
   useEffect(() => {
-    if (pathname.includes("/dashboard/branches")) setIsBranchesOpen(true);
-    if (pathname.includes("/dashboard/products")) setIsProductsOpen(true);
-    if (pathname.includes("/dashboard/sales")) setIsSalesOpen(true);
-    if (pathname.includes("/dashboard/money")) setIsMoneyOpen(true);
-    if (pathname.includes("/dashboard/users")) setIsUsersOpen(true);
+    if (pathname.includes("/tools")) setIsToolsOpen(true);
+    if (pathname.includes("/branches")) setIsBranchesOpen(true);
+    if (pathname.includes("/products")) setIsProductsOpen(true);
+    if (pathname.includes("/sales")) setIsSalesOpen(true);
+    if (pathname.includes("/money")) setIsMoneyOpen(true);
+    if (pathname.includes("/users")) setIsUsersOpen(true);
 
     setIsSidebarOpen(false);
     setSearchQuery("");
@@ -139,9 +148,12 @@ export default function DashboardLayout({ children }) {
     return segments.map((segment, index) => {
       const href = "/" + segments.slice(0, index + 1).join("/");
 
-      const translatedLabel = t.has(`nav.${segment}`)
-        ? t(`nav.${segment}`)
-        : segment.charAt(0).toUpperCase() + segment.slice(1);
+      let translatedLabel = segment.charAt(0).toUpperCase() + segment.slice(1);
+      if (segment === "payment-verification") {
+        translatedLabel = "Payment Verification";
+      } else if (t.has(`nav.${segment}`)) {
+        translatedLabel = t(`nav.${segment}`);
+      }
 
       return {
         href,
@@ -153,28 +165,29 @@ export default function DashboardLayout({ children }) {
   const breadcrumbs = getBreadcrumbs();
 
   const navigationItems = [
-    { label: t("nav.dashboard"), href: "/dashboard", icon: LayoutDashboard },
-    { label: "Smart Calculator", href: "/dashboard/calculator", icon: Calculator },
-    { label: t("nav.branches"), href: "/dashboard/branches", icon: GitBranch },
-    { label: `${t("nav.branches")} - ${t("nav.create")}`, href: "/dashboard/branches/create", icon: GitBranch },
-    { label: t("nav.products"), href: "/dashboard/products", icon: Package },
-    { label: `${t("nav.products")} - ${t("nav.create")}`, href: "/dashboard/products/create", icon: Package },
-    { label: `${t("nav.products")} - ${t("nav.purchases")}`, href: "/dashboard/products/purchases", icon: Package },
-    { label: t("nav.sales"), href: "/dashboard/sales", icon: ShoppingCart },
-    { label: `${t("nav.sales")} - ${t("nav.create")}`, href: "/dashboard/sales/create", icon: ShoppingCart },
-    { label: t("nav.money"), href: "/dashboard/money", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.accounts")}`, href: "/dashboard/money/accounts", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.transactions")}`, href: "/dashboard/money/transactions", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.transfers")}`, href: "/dashboard/money/transfers", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.settlements")}`, href: "/dashboard/money/settlements", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.payables")}`, href: "/dashboard/money/payables", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.receivables")}`, href: "/dashboard/money/receivables", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.credit")}`, href: "/dashboard/money/credits", icon: Receipt },
-    { label: `${t("nav.money")} - ${t("nav.totalMoney")}`, href: "/dashboard/money/total-money", icon: Receipt },
-    { label: t("nav.users"), href: "/dashboard/users", icon: Users },
-    { label: `${t("nav.users")} - ${t("nav.create")}`, href: "/dashboard/users/create", icon: Users },
-    { label: t("nav.reports"), href: "/dashboard/reports", icon: BarChart3 },
-    { label: t("nav.settings"), href: "/dashboard/settings", icon: Settings },
+    { label: t("nav.dashboard"), href: `${basePath}`, icon: LayoutDashboard },
+    { label: "Smart Calculator", href: `${basePath}/calculator`, icon: Calculator },
+    { label: "Tools - Payment Verification", href: paymentVerificationPath, icon: ShieldCheck },
+    { label: t("nav.branches"), href: `${basePath}/branches`, icon: GitBranch },
+    { label: `${t("nav.branches")} - ${t("nav.create")}`, href: `${basePath}/branches/create`, icon: GitBranch },
+    { label: t("nav.products"), href: `${basePath}/products`, icon: Package },
+    { label: `${t("nav.products")} - ${t("nav.create")}`, href: `${basePath}/products/create`, icon: Package },
+    { label: `${t("nav.products")} - ${t("nav.purchases")}`, href: `${basePath}/products/purchases`, icon: Package },
+    { label: t("nav.sales"), href: `${basePath}/sales`, icon: ShoppingCart },
+    { label: `${t("nav.sales")} - ${t("nav.create")}`, href: `${basePath}/sales/create`, icon: ShoppingCart },
+    { label: t("nav.money"), href: `${basePath}/money`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.accounts")}`, href: `${basePath}/money/accounts`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.transactions")}`, href: `${basePath}/money/transactions`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.transfers")}`, href: `${basePath}/money/transfers`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.settlements")}`, href: `${basePath}/money/settlements`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.payables")}`, href: `${basePath}/money/payables`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.receivables")}`, href: `${basePath}/money/receivables`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.credit")}`, href: `${basePath}/money/credits`, icon: Receipt },
+    { label: `${t("nav.money")} - ${t("nav.totalMoney")}`, href: `${basePath}/money/total-money`, icon: Receipt },
+    { label: t("nav.users"), href: `${basePath}/users`, icon: Users },
+    { label: `${t("nav.users")} - ${t("nav.create")}`, href: `${basePath}/users/create`, icon: Users },
+    { label: t("nav.reports"), href: `${basePath}/reports`, icon: BarChart3 },
+    { label: t("nav.settings"), href: `${basePath}/settings`, icon: Settings },
   ];
 
   const filteredNavItems = useMemo(() => {
@@ -185,7 +198,7 @@ export default function DashboardLayout({ children }) {
         item.label.toLowerCase().includes(query) ||
         item.href.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [searchQuery, navigationItems]);
 
   const handleNavigateToRoute = (href) => {
     router.push(href);
@@ -203,7 +216,8 @@ export default function DashboardLayout({ children }) {
     setIsSidebarOpen(true);
   };
 
-  const isCalculator = pathname === '/dashboard/calculator'
+  const isCalculator = pathname.includes("/calculator");
+  const isPaymentVerification = pathname.includes("/payment-verification");
 
   if (authChecking) {
     return (
@@ -231,7 +245,7 @@ export default function DashboardLayout({ children }) {
         className="hidden md:flex fixed inset-y-0 left-0 z-50 bg-(--card) border-r border-(--border) flex-col transition-transform duration-200 ease-in-out md:static md:translate-x-0 shrink-0"
       >
         <div className="h-16 px-6 border-b border-(--border) flex items-center justify-between shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-2.5 rounded-lg p-1 -ml-1">
+          <Link href={basePath} className="flex items-center gap-2.5 rounded-lg p-1 -ml-1">
             <div className="bg-(--primary) text-(--primary-foreground) rounded-lg shadow-xs overflow-hidden">
               <Image src="/images/logo.png" width={36} height={36} alt={`${t("brandName")} Logo`} className="rounded-md object-cover" />
             </div>
@@ -242,8 +256,8 @@ export default function DashboardLayout({ children }) {
         {/* Sidebar Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1.5 text-sm font-medium [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <Link
-            href="/dashboard"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+            href={basePath}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive(basePath) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
               }`}
           >
             <LayoutDashboard className="w-4 h-4" />
@@ -251,16 +265,43 @@ export default function DashboardLayout({ children }) {
           </Link>
 
           {/* Smart Calculator */}
-          <Link href="/dashboard/calculator" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard/calculator") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
+          <Link href={`${basePath}/calculator`} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive(`${basePath}/calculator`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
             <Calculator className="w-4 h-4" />
             <span>Smart Calculator</span>
           </Link>
+
+          {/* Tools Group (Collapsible) */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsToolsOpen(!isToolsOpen)}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive(`${basePath}/tools`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+                }`}
+            >
+              <div className="flex items-center gap-3">
+                <Wrench className="w-4 h-4" />
+                <span>Tools</span>
+              </div>
+              {isToolsOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
+            {isToolsOpen && (
+              <div className="pl-9 space-y-1 py-1">
+                {/* 1st Member: Payment Verification */}
+                <Link
+                  href={paymentVerificationPath}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(paymentVerificationPath) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Payment Verification</span>
+                </Link>
+              </div>
+            )}
+          </div>
 
           {/* Branches */}
           <div className="space-y-1">
             <button
               onClick={() => setIsBranchesOpen(!isBranchesOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/branches") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive(`${basePath}/branches`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -271,8 +312,8 @@ export default function DashboardLayout({ children }) {
             </button>
             {isBranchesOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link href="/dashboard/branches" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/branches") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
-                <Link href="/dashboard/branches/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/branches/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
+                <Link href={`${basePath}/branches`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/branches`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href={`${basePath}/branches/create`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/branches/create`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
               </div>
             )}
           </div>
@@ -281,7 +322,7 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsProductsOpen(!isProductsOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/products") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive(`${basePath}/products`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -292,9 +333,9 @@ export default function DashboardLayout({ children }) {
             </button>
             {isProductsOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link href="/dashboard/products" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/products") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
-                <Link href="/dashboard/products/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/products/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
-                <Link href="/dashboard/products/purchases" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/products/purchases") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.purchases")}</Link>
+                <Link href={`${basePath}/products`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/products`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href={`${basePath}/products/create`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/products/create`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
+                <Link href={`${basePath}/products/purchases`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/products/purchases`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.purchases")}</Link>
               </div>
             )}
           </div>
@@ -303,7 +344,7 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsSalesOpen(!isSalesOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/sales") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive(`${basePath}/sales`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -314,8 +355,8 @@ export default function DashboardLayout({ children }) {
             </button>
             {isSalesOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link href="/dashboard/sales" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/sales") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
-                <Link href="/dashboard/sales/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/sales/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
+                <Link href={`${basePath}/sales`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/sales`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href={`${basePath}/sales/create`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/sales/create`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
               </div>
             )}
           </div>
@@ -324,7 +365,7 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsMoneyOpen(!isMoneyOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/money") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive(`${basePath}/money`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -335,15 +376,15 @@ export default function DashboardLayout({ children }) {
             </button>
             {isMoneyOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link href="/dashboard/money" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
-                <Link href="/dashboard/money/accounts" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/accounts") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.accounts")}</Link>
-                <Link href="/dashboard/money/transactions" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/transactions") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.transactions")}</Link>
-                <Link href="/dashboard/money/transfers" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/transfers") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.transfers")}</Link>
-                <Link href="/dashboard/money/settlements" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/settlements") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.settlements")}</Link>
-                <Link href="/dashboard/money/payables" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/payables") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.payables")}</Link>
-                <Link href="/dashboard/money/receivables" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/receivables") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.receivables")}</Link>
-                <Link href="/dashboard/money/credits" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/credits") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.credit")}</Link>
-                <Link href="/dashboard/money/total-money" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/money/total-money") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.totalMoney")}</Link>
+                <Link href={`${basePath}/money`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href={`${basePath}/money/accounts`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/accounts`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.accounts")}</Link>
+                <Link href={`${basePath}/money/transactions`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/transactions`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.transactions")}</Link>
+                <Link href={`${basePath}/money/transfers`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/transfers`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.transfers")}</Link>
+                <Link href={`${basePath}/money/settlements`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/settlements`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.settlements")}</Link>
+                <Link href={`${basePath}/money/payables`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/payables`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.payables")}</Link>
+                <Link href={`${basePath}/money/receivables`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/receivables`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.receivables")}</Link>
+                <Link href={`${basePath}/money/credits`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/credits`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.credit")}</Link>
+                <Link href={`${basePath}/money/total-money`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/money/total-money`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.totalMoney")}</Link>
               </div>
             )}
           </div>
@@ -352,7 +393,7 @@ export default function DashboardLayout({ children }) {
           <div className="space-y-1">
             <button
               onClick={() => setIsUsersOpen(!isUsersOpen)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/users") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive(`${basePath}/users`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"
                 }`}
             >
               <div className="flex items-center gap-3">
@@ -363,18 +404,18 @@ export default function DashboardLayout({ children }) {
             </button>
             {isUsersOpen && (
               <div className="pl-9 space-y-1 py-1">
-                <Link href="/dashboard/users" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/users") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
-                <Link href="/dashboard/users/create" className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive("/dashboard/users/create") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
+                <Link href={`${basePath}/users`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/users`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.overview")}</Link>
+                <Link href={`${basePath}/users/create`} className={`block px-3 py-2 rounded-lg text-xs transition-colors ${isExactActive(`${basePath}/users/create`) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)/50"}`}>{t("nav.create")}</Link>
               </div>
             )}
           </div>
 
-          <Link href="/dashboard/reports" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive("/dashboard/reports") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
+          <Link href={`${basePath}/reports`} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isExactActive(`${basePath}/reports`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
             <BarChart3 className="w-4 h-4" />
             <span>{t("nav.reports")}</span>
           </Link>
 
-          <Link href="/dashboard/settings" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive("/dashboard/settings") ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
+          <Link href={`${basePath}/settings`} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors outline-none border-0 ${isSubActive(`${basePath}/settings`) ? "bg-(--primary) text-(--primary-foreground)" : "text-(--muted-foreground) hover:text-(--foreground) hover:bg-(--muted)"}`}>
             <Settings className="w-4 h-4" />
             <span>{t("nav.settings")}</span>
           </Link>
@@ -440,14 +481,14 @@ export default function DashboardLayout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto  p-6 md:p-8 pb-28 md:pb-8 pt-20 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="max-w-7xl mx-auto ">{children}</div>
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 pb-28 md:pb-8 pt-20 md:pt-8 w-full [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="max-w-7xl mx-auto">{children}</div>
         </main>
 
-        {/* Mobile Floating Bottom Navigation */}
+        {/* Mobile Floating Bottom Navigation (Search, Menu, Payment Verification, Smart Calculator) */}
         <div className="md:hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-40">
-          <div className="flex items-center gap-2 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-2xl rounded-full p-2 px-3 text-(--foreground)">
-            {/* Search (Left) */}
+          <div className="flex items-center gap-1.5 bg-(--card)/90 backdrop-blur-md border border-(--border) shadow-2xl rounded-full p-1.5 px-2.5 text-(--foreground)">
+            {/* 1. Search */}
             <button
               type="button"
               onClick={handleOpenSearch}
@@ -459,13 +500,13 @@ export default function DashboardLayout({ children }) {
 
             <div className="w-[1px] h-5 bg-(--border)" />
 
-            {/* Menu (Center) */}
+            {/* 2. Menu Button (Center) */}
             <button
               type="button"
               onClick={handleOpenMenu}
-              className={`flex items-center gap-2 py-2 px-3.5 rounded-full font-semibold text-xs transition-colors cursor-pointer shadow-sm ${isCalculator
-                ? "bg-(--muted) text-(--foreground) hover:bg-(--muted)/80"
-                : "bg-(--primary) text-(--primary-foreground)"
+              className={`flex items-center gap-1.5 py-2 px-3.5 rounded-full font-semibold text-xs transition-colors cursor-pointer shadow-sm ${isCalculator || isPaymentVerification
+                  ? "bg-(--muted) text-(--foreground) hover:bg-(--muted)/80"
+                  : "bg-(--primary) text-(--primary-foreground)"
                 }`}
               aria-label="Open Mobile Menu"
             >
@@ -474,14 +515,30 @@ export default function DashboardLayout({ children }) {
 
             <div className="w-[1px] h-5 bg-(--border)" />
 
-            {/* Calculator (Right) */}
+            {/* 3. Payment Verification Quick Action */}
             <Link
-              href="/dashboard/calculator"
+              href={paymentVerificationPath}
+              className={`p-2.5 rounded-full transition-colors cursor-pointer flex items-center justify-center ${isPaymentVerification
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "hover:bg-(--muted) text-(--foreground)"
+                }`}
+              aria-label="Payment Verification"
+              title="Payment Verification"
+            >
+              <ShieldCheck className="w-5 h-5" />
+            </Link>
+
+            <div className="w-[1px] h-5 bg-(--border)" />
+
+            {/* 4. Smart Calculator */}
+            <Link
+              href={`${basePath}/calculator`}
               className={`p-2.5 rounded-full transition-colors cursor-pointer flex items-center justify-center ${isCalculator
-                ? "bg-(--primary) text-(--primary-foreground)"
-                : "hover:bg-(--muted) text-(--foreground)"
+                  ? "bg-(--primary) text-(--primary-foreground)"
+                  : "hover:bg-(--muted) text-(--foreground)"
                 }`}
               aria-label="Smart Calculator"
+              title="Smart Calculator"
             >
               <Calculator className="w-5 h-5" />
             </Link>
@@ -567,16 +624,16 @@ export default function DashboardLayout({ children }) {
                 )
               ) : (
                 <>
-                  <Link href="/dashboard" onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive("/dashboard") ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--foreground) hover:bg-(--muted)"}`}>
+                  <Link href={basePath} onClick={() => setIsSidebarOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive(basePath) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--foreground) hover:bg-(--muted)"}`}>
                     <LayoutDashboard className="w-5 h-5" />
                     <span className="text-base">{t("nav.dashboard")}</span>
                   </Link>
 
                   {/* Smart Calculator */}
                   <Link
-                    href="/dashboard/calculator"
+                    href={`${basePath}/calculator`}
                     onClick={() => setIsSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive("/dashboard/calculator")
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${isExactActive(`${basePath}/calculator`)
                       ? "bg-(--primary) text-(--primary-foreground) font-semibold"
                       : "text-(--foreground) hover:bg-(--muted)"
                       }`}
@@ -584,6 +641,29 @@ export default function DashboardLayout({ children }) {
                     <Calculator className="w-5 h-5" />
                     <span className="text-base">Smart Calculator</span>
                   </Link>
+
+                  {/* Tools Mobile Group */}
+                  <div className="space-y-1">
+                    <button onClick={() => setIsToolsOpen(!isToolsOpen)} className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
+                      <div className="flex items-center gap-3">
+                        <Wrench className="w-5 h-5" />
+                        <span>Tools</span>
+                      </div>
+                      {isToolsOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                    </button>
+                    {isToolsOpen && (
+                      <div className="pl-9 space-y-1 py-1">
+                        <Link
+                          href={paymentVerificationPath}
+                          onClick={() => setIsSidebarOpen(false)}
+                          className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg ${isExactActive(paymentVerificationPath) ? "bg-(--primary) text-(--primary-foreground) font-semibold" : "text-(--muted-foreground)"}`}
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                          <span>Payment Verification</span>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Branches */}
                   <div className="space-y-1">
@@ -596,8 +676,8 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isBranchesOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/branches" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
-                        <Link href="/dashboard/branches/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
+                        <Link href={`${basePath}/branches`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href={`${basePath}/branches/create`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
                       </div>
                     )}
                   </div>
@@ -613,9 +693,9 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isProductsOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/products" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
-                        <Link href="/dashboard/products/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
-                        <Link href="/dashboard/products/purchases" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.purchases")}</Link>
+                        <Link href={`${basePath}/products`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href={`${basePath}/products/create`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
+                        <Link href={`${basePath}/products/purchases`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.purchases")}</Link>
                       </div>
                     )}
                   </div>
@@ -631,8 +711,8 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isSalesOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/sales" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
-                        <Link href="/dashboard/sales/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
+                        <Link href={`${basePath}/sales`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href={`${basePath}/sales/create`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
                       </div>
                     )}
                   </div>
@@ -648,15 +728,15 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isMoneyOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
-                        <Link href="/dashboard/money/accounts" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.accounts")}</Link>
-                        <Link href="/dashboard/money/transactions" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.transactions")}</Link>
-                        <Link href="/dashboard/money/transfers" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.transfers")}</Link>
-                        <Link href="/dashboard/money/settlements" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.settlements")}</Link>
-                        <Link href="/dashboard/money/payables" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.payables")}</Link>
-                        <Link href="/dashboard/money/receivables" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.receivables")}</Link>
-                        <Link href="/dashboard/money/credits" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.credit")}</Link>
-                        <Link href="/dashboard/money/total-money" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.totalMoney")}</Link>
+                        <Link href={`${basePath}/money`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href={`${basePath}/money/accounts`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.accounts")}</Link>
+                        <Link href={`${basePath}/money/transactions`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.transactions")}</Link>
+                        <Link href={`${basePath}/money/transfers`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.transfers")}</Link>
+                        <Link href={`${basePath}/money/settlements`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.settlements")}</Link>
+                        <Link href={`${basePath}/money/payables`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.payables")}</Link>
+                        <Link href={`${basePath}/money/receivables`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.receivables")}</Link>
+                        <Link href={`${basePath}/money/credits`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.credit")}</Link>
+                        <Link href={`${basePath}/money/total-money`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.totalMoney")}</Link>
                       </div>
                     )}
                   </div>
@@ -672,18 +752,18 @@ export default function DashboardLayout({ children }) {
                     </button>
                     {isUsersOpen && (
                       <div className="pl-9 space-y-1 py-1">
-                        <Link href="/dashboard/users" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
-                        <Link href="/dashboard/users/create" onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
+                        <Link href={`${basePath}/users`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.overview")}</Link>
+                        <Link href={`${basePath}/users/create`} onClick={() => setIsSidebarOpen(false)} className="block px-3 py-2 text-sm text-(--muted-foreground)">{t("nav.create")}</Link>
                       </div>
                     )}
                   </div>
 
-                  <Link href="/dashboard/reports" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
+                  <Link href={`${basePath}/reports`} onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                     <BarChart3 className="w-5 h-5" />
                     <span>{t("nav.reports")}</span>
                   </Link>
 
-                  <Link href="/dashboard/settings" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
+                  <Link href={`${basePath}/settings`} onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-base text-(--foreground) hover:bg-(--muted)">
                     <Settings className="w-5 h-5" />
                     <span>{t("nav.settings")}</span>
                   </Link>
