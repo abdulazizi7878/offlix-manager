@@ -1,18 +1,15 @@
 
 import { NextResponse } from "next/server";
 
-
 const allowedOrigins = [
     "https://offlix-manager-mobile-app.vercel.app",
     "http://localhost:8081",
 ];
 
-
 export function proxy(request) {
     const { pathname } = request.nextUrl;
     const origin = request.headers.get("origin");
 
-    // Handle CORS for API requests.
     if (pathname.startsWith("/api/")) {
         const isAllowedOrigin =
             origin && allowedOrigins.includes(origin);
@@ -54,7 +51,6 @@ export function proxy(request) {
         return response;
     }
 
-    // Existing account check.
     const hasAccount = request.cookies.has("offlix_session");
 
     if (pathname === "/" && hasAccount) {
