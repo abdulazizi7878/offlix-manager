@@ -1,11 +1,12 @@
 
 import { NextResponse } from "next/server";
 
+
 const allowedOrigins = [
-    "https://offlix-manager-mobile-app.vercel.app/",
+    "https://offlix-manager-mobile-app.vercel.app",
     "http://localhost:8081",
-    "http://tom.offlix.app",
 ];
+
 
 export function proxy(request) {
     const { pathname } = request.nextUrl;
